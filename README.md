@@ -1,1 +1,0 @@
-# mesocircuit-model
