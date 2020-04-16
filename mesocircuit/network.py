@@ -1,28 +1,7 @@
-# -*- coding: utf-8 -*-
-#
-# network.py
-#
-# This file is part of NEST.
-#
-# Copyright (C) 2004 The NEST Initiative
-#
-# NEST is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-#
-# NEST is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
+"""PyNEST Mesocircuit: Network Class
+------------------------------------
 
-"""PyNEST Microcircuit: Network Class
-----------------------------------------
-
-Main file of the microcircuit defining the ``Network`` class with functions to
+Main file of the mesocircuit defining the ``Network`` class with functions to
 build and simulate the network.
 
 """
@@ -126,7 +105,7 @@ class Network:
         nest.Cleanup()
 
     def simulate(self, t_sim):
-        """ Simulates the microcircuit.
+        """ Simulates the mesocircuit.
 
         Parameters
         ----------
@@ -473,7 +452,7 @@ class Network:
                         syn_spec=syn_dict)
 
     def __connect_recording_devices(self):
-        """ Connects the recording devices to the microcircuit."""
+        """ Connects the recording devices to the mesocircuit."""
         if nest.Rank == 0:
             print('Connecting recording devices.')
 
@@ -484,7 +463,7 @@ class Network:
                 nest.Connect(self.voltmeters[i], target_pop)
 
     def __connect_poisson_bg_input(self):
-        """ Connects the Poisson generators to the microcircuit."""
+        """ Connects the Poisson generators to the mesocircuit."""
         if nest.Rank() == 0:
             print('Connecting Poisson generators for background input.')
 

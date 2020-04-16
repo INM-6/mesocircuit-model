@@ -1,26 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# network_params.py
-#
-# This file is part of NEST.
-#
-# Copyright (C) 2004 The NEST Initiative
-#
-# NEST is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-#
-# NEST is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with NEST.  If not, see <http://www.gnu.org/licenses/>.
-
-"""PyNEST Microcircuit: Network Parameters
----------------------------------------------
+"""PyNEST Mesocircuit: Network Parameters
+-----------------------------------------
 
 A dictionary with base network and neuron parameters is enhanced with derived
 parameters.
@@ -68,9 +49,9 @@ net_dict = {
     'full_num_neurons':
         np.array([20683, 5834, 21915, 5479, 4850, 1065, 14395, 2948]),
     # mean rates of the different populations in the non-scaled version of the
-    # microcircuit (in spikes/s; same order as in 'populations');
+    # mesocircuit (in spikes/s; same order as in 'populations');
     # necessary for the scaling of the network.
-    # The values were optained by running this PyNEST microcircuit with 12 MPI
+    # The values were optained by running this PyNEST mesocircuit with 12 MPI
     # processes and both 'N_scaling' and 'K_scaling' set to 1.
     'full_mean_rates':
         np.array([0.943, 3.026, 4.368, 5.882, 7.733, 8.664, 1.096, 7.851]),
