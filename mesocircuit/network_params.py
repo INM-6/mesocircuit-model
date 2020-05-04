@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-#
 """PyNEST Mesocircuit: Network Parameters
 -----------------------------------------
 
@@ -122,7 +120,14 @@ net_dict = {
         # time constant of postsynaptic currents (in ms)
         'tau_syn': 0.5,
         # refractory period of the neurons after a spike (in ms)
-        't_ref': 2.0}}
+        't_ref': 2.0},
+        
+    # spatial parameters
+    # side length (in mm) of square layers in which neurons are randomly
+    # distributed
+    'extent': 4.,
+        
+        }
 
 # derive matrix of mean PSPs,
 # the mean PSP of the connection from L4E to L23E is doubled

@@ -289,9 +289,17 @@ class Network:
 
         self.pops = []
         for i in np.arange(self.num_pops):
-            population = nest.Create(self.net_dict['neuron_model'],
-                                     self.num_neurons[i])
 
+            # random positions in 2D with periodic boundary conditions
+            positions = nest.spatial.free(
+                pos=nest.random.uniform(min=-self.net_dict['extent']/2.,
+                                        max=self.net_dict['extent']/2.),
+                edge_wrap=True,
+                num_dimensions=2)
+
+            population = nest.Create(self.net_dict['neuron_model'],
+                                     self.num_neurons[i],
+                                     positions=positions)
             population.set(
                 tau_syn_ex=self.net_dict['neuron_params']['tau_syn'],
                 tau_syn_in=self.net_dict['neuron_params']['tau_syn'],
