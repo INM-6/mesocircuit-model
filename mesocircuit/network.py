@@ -168,11 +168,17 @@ class Network:
             self.net_dict['full_num_neurons'])
 
         # scaled numbers of neurons and synapses
-        self.num_neurons = np.round((self.net_dict['full_num_neurons'] *
-                                     self.net_dict['N_scaling'])).astype(int)
-        self.num_synapses = np.round((full_num_synapses *
-                                      self.net_dict['N_scaling'] *
-                                      self.net_dict['K_scaling'])).astype(int)
+        num_neurons_float = (self.net_dict['full_num_neurons'] *
+                             self.net_dict['N_scaling'])
+        num_synapses_float = (full_num_synapses *
+                              self.net_dict['N_scaling'] *
+                              self.net_dict['K_scaling'])
+        self.num_neurons = np.round(num_neurons_float).astype(int)
+        self.num_synapses = np.round(num_synapses_float).astype(int)
+        # indegrees of recurrent connections are only explicitly used if
+        # 'connect_method' is 'fixedindegree*'
+        self.indegrees = np.round((num_synapses_float /
+                                   num_neurons_float[:,np.newaxis])).astype(int)
         self.ext_indegrees = np.round((self.net_dict['K_ext'] *
                                        self.net_dict['K_scaling'])).astype(int)
 
@@ -426,9 +432,30 @@ class Network:
         for i, target_pop in enumerate(self.pops):
             for j, source_pop in enumerate(self.pops):
                 if self.num_synapses[i][j] >= 0.:
-                    conn_dict_rec = {
-                        'rule': 'fixed_total_number',
-                        'N': self.num_synapses[i][j]}
+
+                    if self.net_dict['connect_method'] == 'fixedtotalnumber':
+                        conn_dict_rec = {
+                            'rule': 'fixed_total_number',
+                            'N': self.num_synapses[i][j],
+                            'allow_autapses': False,
+                            'allow_multapses': True}
+                    elif self.net_dict['connect_method'] == 'fixedindegree':
+                        conn_dict_rec = {
+                            'rule': 'fixed_indegree',
+                            'indegree': self.indegrees[i][j],
+                            'allow_autapses': False,
+                            'allow_multapses': True}
+                    elif self.net_dict['connect_method'] == 'fixedindegree_exp':
+                        conn_dict_rec = {
+                            'rule': 'fixed_indegree',
+                            'indegree': self.indegrees[i][j],
+                            'p': nest.spatial_distributions.exponential(
+                                x=nest.spatial.distance,
+                                beta=self.net_dict['beta'][i][j]),
+                            'mask': {'circular': {
+                                'radius': self.net_dict['extent'] / 2.}},
+                            'allow_autapses': False,
+                            'allow_multapses': True}
 
                     if self.weight_matrix_mean[i][j] < 0:
                         w_min = np.NINF

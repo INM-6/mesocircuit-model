@@ -121,8 +121,28 @@ net_dict = {
         'tau_syn': 0.5,
         # refractory period of the neurons after a spike (in ms)
         't_ref': 2.0},
-        
-    # spatial parameters
+
+    # method to draw recurrent network connections, options are:
+    # 'fixedtotalnumber': same routine as in the original microcircuit, i.e.,
+    #                     fixed total number of connections, no space
+    # 'fixedindegree': fixed indegree, no space
+    # 'fixedindegree_exp': fixed indegree, distance-dependent connection
+    #                      probabilities with an exponential profile, uses the
+    #                      decay parameter 'beta'
+    'connect_method': 'fixedindegree_exp',
+    # decay parameter of exponential profile (in mm),
+    # used if 'connect_medhod' is 'fixedindegree_exp',
+    # default values extracted from Reimann2017, Supplement 1, Figure S2,
+    # format:   E->E   I->E
+    #           E->I   I->I
+    'beta': np.tile([[0.232, 0.161],
+                     [0.125, 0.120]], (4,4)),
+
+    # If beta_exh_inh is not None, it must be a list with excitatory and
+    # inhibitory decay parameters [beta_exc, beta_inh] which will be use to
+    # override the matrix beta above.
+    'beta_exc_inh': None,
+
     # side length (in mm) of square layers in which neurons are randomly
     # distributed
     'extent': 4.,
@@ -146,5 +166,13 @@ updated_dict = {
         net_dict['delay_exc_mean'],
         net_dict['delay_inh_mean'],
         len(net_dict['populations']))}
+
+if net_dict['beta_exc_inh'] != None:
+    updated_dict.update({
+        # matrix of decay parameters
+        'beta': get_exc_inh_matrix(
+            net_dict['beta_exc_inh'][0],
+            net_dict['beta_exc_inh'][1],
+            len(net_dict['populations']))})
 
 net_dict.update(updated_dict)
