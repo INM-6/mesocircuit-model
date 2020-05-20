@@ -71,6 +71,14 @@ net_dict = {
     'weight_rel_std': 0.1,
     # relative inhibitory weight
     'g': -4,
+
+    # delay type, options are:
+    # 'normal': normally distributed delays as in the original microcircuit
+    # 'linear': constant offset, linearly distance-dependent and with normally
+    #           distributed variability(default)
+    'delay_type': 'linear',
+
+    # delay parameters for the 'delay_type' set to 'normal'
     # mean delay of excitatory connections (in ms)
     'delay_exc_mean': 1.5,
     # mean delay of inhibitory connections (in ms)
@@ -78,6 +86,15 @@ net_dict = {
     # relative standard deviation of the delay of excitatory and
     # inhibitory connections
     'delay_rel_std': 0.5,
+
+    # delay parameters for the 'delay_type' set to 'linear'
+    # constant part of the linear delay (in ms)
+    'delay_offset_exc_inh': [0.5, 0.5],
+    # propagation speed (in mm/ms)
+    'prop_speed_exc_inh': [0.3, 0.3],
+    # relative standard deviation of the linear delay of excitatory and
+    # inhibitory connections
+    'delay_lin_rel_std': 0.1,
 
     # turn Poisson input on or off (True or False)
     # if False: DC input is applied for compensation
@@ -128,15 +145,16 @@ net_dict = {
     # 'fixedindegree': fixed indegree, no space
     # 'fixedindegree_exp': fixed indegree, distance-dependent connection
     #                      probabilities with an exponential profile, uses the
-    #                      decay parameter 'beta'
+    #                      decay parameter 'beta' (default)
     'connect_method': 'fixedindegree_exp',
     # decay parameter of exponential profile (in mm),
     # used if 'connect_medhod' is 'fixedindegree_exp',
     # default values extracted from Reimann2017, Supplement 1, Figure S2,
     # format:   E->E   I->E
     #           E->I   I->I
+    # TODO: RIGHT NOW WITH LARGE SCALING FACTOR TO BE PROPERLY IMPLEMENTED OR REMOVED
     'beta': np.tile([[0.232, 0.161],
-                     [0.125, 0.120]], (4,4)),
+                     [0.125, 0.120]], (4,4)) * 5.,
 
     # If beta_exh_inh is not None, it must be a list with excitatory and
     # inhibitory decay parameters [beta_exc, beta_inh] which will be use to
@@ -165,6 +183,18 @@ updated_dict = {
     'delay_matrix_mean': get_exc_inh_matrix(
         net_dict['delay_exc_mean'],
         net_dict['delay_inh_mean'],
+        len(net_dict['populations'])),
+
+    # matrix of delay offsets for linear delays
+    'delay_offset_matrix': get_exc_inh_matrix(
+        net_dict['delay_offset_exc_inh'][0],
+        net_dict['delay_offset_exc_inh'][1],
+        len(net_dict['populations'])),
+
+    # matrix of propagation speeds for linear delays
+    'prop_speed_matrix': get_exc_inh_matrix(
+        net_dict['prop_speed_exc_inh'][0],
+        net_dict['prop_speed_exc_inh'][1],
         len(net_dict['populations']))}
 
 if net_dict['beta_exc_inh'] != None:

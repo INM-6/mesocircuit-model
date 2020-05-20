@@ -433,6 +433,7 @@ class Network:
             for j, source_pop in enumerate(self.pops):
                 if self.num_synapses[i][j] >= 0.:
 
+                    # specify which connections exist
                     if self.net_dict['connect_method'] == 'fixedtotalnumber':
                         conn_dict_rec = {
                             'rule': 'fixed_total_number',
@@ -457,12 +458,27 @@ class Network:
                             'allow_autapses': False,
                             'allow_multapses': True}
 
+                    # specify synapse parameters
                     if self.weight_matrix_mean[i][j] < 0:
                         w_min = np.NINF
                         w_max = 0.0
                     else:
                         w_min = 0.0
                         w_max = np.Inf
+
+                    if self.net_dict['delay_type'] == 'normal':
+                        delay_param = nest.random.normal(
+                            mean=self.net_dict['delay_matrix_mean'][i][j],
+                            std=(self.net_dict['delay_matrix_mean'][i][j] *
+                                 self.net_dict['delay_rel_std']))
+                    elif self.net_dict['delay_type'] == 'linear':
+                        delay_param = (
+                            (self.net_dict['delay_offset_matrix'][i][j] +
+                             nest.spatial.distance /
+                             self.net_dict['prop_speed_matrix'][i][j]) *
+                            nest.random.normal(
+                                mean=1.,
+                                std=self.net_dict['delay_lin_rel_std']))
 
                     syn_dict = {
                         'synapse_model': 'static_synapse',
@@ -474,10 +490,7 @@ class Network:
                             min=w_min,
                             max=w_max),
                         'delay': nest.math.redraw(
-                            nest.random.normal(
-                                mean=self.net_dict['delay_matrix_mean'][i][j],
-                                std=(self.net_dict['delay_matrix_mean'][i][j] *
-                                     self.net_dict['delay_rel_std'])),
+                            delay_param,
                             min=self.sim_resolution,
                             max=np.Inf)}
 
