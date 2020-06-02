@@ -6,14 +6,102 @@ mesocircuit.
 
 """
 
+import numpy as np
 from matplotlib.patches import Polygon
 import matplotlib.pyplot as plt
+import parameters as ps
 import os
 import sys
-import numpy as np
+import operator
+import pickle
+import hashlib
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
+
+# default parameters
+from sim_params import sim_dict
+from network_params import net_dict
+from stimulus_params import stim_dict
+
+
+def evaluate_parameterspaces(filename='parameterspaces', paramspace_keys=[]):
+    """
+    """
+    f = __import__(filename)
+
+    parameterspaces = {}
+    parametersets = {}
+
+    for paramspace_key in sorted(f.new_dicts):
+        if len(paramspace_keys)==0 or paramspace_key in paramspace_keys:
+            print(paramspace_key)
+
+            parameterspaces[paramspace_key] = ps.ParameterSpace({})
+            # start with default parameters and update
+            for dic,vdic in zip(
+                ['sim_dict', 'net_dict', 'stim_dict'],
+                [sim_dict, net_dict, stim_dict]):
+                parameterspaces[paramspace_key][dic] = dict(vdic) # copy is needed
+                if dic in f.new_dicts[paramspace_key]:
+                    parameterspaces[paramspace_key][dic].update(
+                    f.new_dicts[paramspace_key][dic])
+
+            for paramset in parameterspaces[paramspace_key].iter_inner():
+
+                # TODO derive parameters and add them to dictionary
+
+
+
+                ps_id = get_unique_id(paramset)
+                print(ps_id)    
+
+                # set paths
+                # write all parameters to file
+
+    return
+
+def get_unique_id(d):
+    """
+    Creates a unique hash key for an input dictionary.
+
+    Parameters
+    ----------
+    d : dict
+        E.g., parameter dictionary.
+
+    Returns
+    -------
+    key : str
+        Hash key.
+    """
+    d_sorted = sort_deep_dict(d)
+    string = pickle.dumps(d_sorted)
+    key = hashlib.md5(string).hexdigest()
+    return key
+
+
+def sort_deep_dict(d):
+    """
+    Sorts arbitrarily deep dictionaries into tuples.
+
+    Parameter
+    ---------
+    d : dict
+
+    Returns
+    -------
+    x : list of tuples of tuples of tuples ...
+    """
+    x = sorted(iter(list(d.items())), key=operator.itemgetter(0))
+    for i, (key, value) in enumerate(x):
+        if type(value) == dict or type(value) == ps.ParameterSet:
+            y = sorted(iter(list(value.items())), key=operator.itemgetter(0))
+            x[i] = (key, y)
+            for j, (k, v) in enumerate(y):
+                if type(v) == dict or type(v) == ps.ParameterSet:
+                    y[j] = (k, sort_deep_dict(v))
+    return x
 
 
 def num_synapses_from_conn_probs(conn_probs, popsize1, popsize2):
@@ -51,7 +139,7 @@ def postsynaptic_potential_to_current(C_m, tau_m, tau_syn):
     the voltage impulse response
     :math:`h(t)=\frac{1}{\tau_\mathrm{m}}\mathrm{e}^{-t/\tau_\mathrm{m}}\Theta (t)`,
     and
-    :math:`\Theta(t)=1` if :math:`t\leq 0` and zero otherwise.
+    :math:`\Theta(t)=1` if :math:`t\geq 0` and zero otherwise.
 
     The ``PSP`` is considered as the maximum of ``v``, i.e., it is
     computed by setting the derivative of ``v(t)`` to zero.
