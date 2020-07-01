@@ -25,16 +25,44 @@ from network_params import net_dict
 from stimulus_params import stim_dict
 
 
-def evaluate_parameterspaces(filename='parameterspaces', paramspace_keys=[]):
+def evaluate_parameterspaces(
+    filename='', paramspace_keys=[], with_base_params=True):
     """
+    Parameters
+    ----------
+    filename
+        Name of the file <filename>.py defining the parameterspaces to be
+        evaluated (without file extension). The paramterspaces need to be in a
+        dictionary named 'ps_dicts'.
+        If no filename is given, i.e., filename='', parameters are evaluated
+        according to the base parameters (default='').
+    paramspace_keys
+        List of keys of parameterspaces defined in <filename>.py. Providing an
+        empty list means that all keys are evaluated (default=[]).
+    with_base_params
+        Whether to include a parameterspace with only base parameters
+        (default=True).
     """
-    f = __import__(filename)
+    
+    ps_dicts = {}
+    try:
+        f = __import__(filename)
+        ps_dicts.update(f.ps_dicts)
+    except:
+        pass
+    if with_base_params:
+        ps_dicts.update({'base': {}})
 
+    # parameterspaces built with the parameters module and indexed by
+    # paramspace_key
     parameterspaces = {}
+    # collection of unique parametersets indexed by ps_id
     parametersets = {}
 
-    for paramspace_key in sorted(f.new_dicts):
-        if len(paramspace_keys)==0 or paramspace_key in paramspace_keys:
+    for paramspace_key in sorted(ps_dicts):
+        if (len(paramspace_keys)==0 or # all keys
+            paramspace_key in paramspace_keys or # selected key(s)
+            paramspace_key=='base'): # base parameters if with_base_params
             print(paramspace_key)
 
             parameterspaces[paramspace_key] = ps.ParameterSpace({})
@@ -43,23 +71,69 @@ def evaluate_parameterspaces(filename='parameterspaces', paramspace_keys=[]):
                 ['sim_dict', 'net_dict', 'stim_dict'],
                 [sim_dict, net_dict, stim_dict]):
                 parameterspaces[paramspace_key][dic] = dict(vdic) # copy is needed
-                if dic in f.new_dicts[paramspace_key]:
+                if dic in ps_dicts[paramspace_key]:
                     parameterspaces[paramspace_key][dic].update(
-                    f.new_dicts[paramspace_key][dic])
+                    ps_dicts[paramspace_key][dic])
 
             for paramset in parameterspaces[paramspace_key].iter_inner():
-
-                # TODO derive parameters and add them to dictionary
-
-
-
                 ps_id = get_unique_id(paramset)
-                print(ps_id)    
+                if ps_id in sorted(parametersets):
+                    print('Skipping {0}, already in job list.'.format(ps_id))
+                    pass
+                else:
+                    parametersets[ps_id] = paramset
+                    print(ps_id)
 
-                # set paths
-                # write all parameters to file
+                    evaluate_parameterset(ps_id, paramset)
 
     return
+
+
+def evaluate_parameterset(ps_id, paramset):
+                
+    # paths for raw and processed output
+    paramset['sim_dict']['data_path_raw'] = os.path.join(
+        paramset['sim_dict']['data_path'], 'raw', ps_id)
+    paramset['sim_dict']['data_path_proc'] = os.path.join(    
+        paramset['sim_dict']['data_path'], 'proc', ps_id)
+
+    for path in [
+        paramset['sim_dict']['data_path_raw'],
+        paramset['sim_dict']['data_path_proc']]:
+        if not os.path.isdir(path):
+            os.makedirs(path) # also creates sub directories
+
+    # TODO
+        # data directory
+        #self.sim_dict['data_path_raw'] = sim_dict['data_path_raw']
+        #if nest.Rank() == 0:
+        #    if os.path.isdir(self.data_path):
+        #        message = '  Directory already existed.'
+        #        if self.sim_dict['overwrite_files']:
+        #            message += ' Old data will be overwritten.'
+        #    else:
+        #        os.mkdir(self.data_path)
+        #        message = '  Directory has been created.'
+        #    print('Data will be written to: {}\n{}\n'.format(self.data_path,
+        #                                                     message))
+
+
+
+    
+    # TODO derive parameters, take out of network class
+    # TODO write parameters to file
+
+
+    param_path = os.path.join(
+        paramset['sim_dict']['data_path_raw'], 'param_dicts')
+    if not os.path.isdir(param_path):
+        os.makedirs(param_path)
+    for dic in ['sim_dict', 'net_dict', 'stim_dict']:
+        with open(os.path.join(param_path, dic + '.pkl'), 'wb') as f:
+            pickle.dump(paramset[dic], f)
+    return
+
+
 
 def get_unique_id(d):
     """

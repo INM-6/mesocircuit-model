@@ -39,17 +39,17 @@ class Network:
         self.stim_dict = stim_dict
 
         # data directory
-        self.data_path = sim_dict['data_path']
-        if nest.Rank() == 0:
-            if os.path.isdir(self.data_path):
-                message = '  Directory already existed.'
-                if self.sim_dict['overwrite_files']:
-                    message += ' Old data will be overwritten.'
-            else:
-                os.mkdir(self.data_path)
-                message = '  Directory has been created.'
-            print('Data will be written to: {}\n{}\n'.format(self.data_path,
-                                                             message))
+        #self.sim_dict['data_path_raw'] = sim_dict['data_path_raw']
+        #if nest.Rank() == 0:
+        #    if os.path.isdir(self.data_path):
+        #        message = '  Directory already existed.'
+        #        if self.sim_dict['overwrite_files']:
+        #            message += ' Old data will be overwritten.'
+        #    else:
+        #        os.mkdir(self.data_path)
+        #        message = '  Directory has been created.'
+        #    print('Data will be written to: {}\n{}\n'.format(self.data_path,
+        #                                                     message))
 
         # derive parameters based on input dictionaries
         self.__derive_parameters()
@@ -142,7 +142,7 @@ class Network:
         if nest.Rank() == 0:
             print('Interval to plot spikes: {} ms'.format(raster_plot_interval))
             helpers.plot_raster(
-                self.data_path,
+                self.sim_dict['data_path_raw'],
                 'spike_detector',
                 raster_plot_interval[0],
                 raster_plot_interval[1],
@@ -151,9 +151,9 @@ class Network:
             print('Interval to compute firing rates: {} ms'.format(
                 firing_rates_interval))
             helpers.firing_rates(
-                self.data_path, 'spike_detector',
+                self.sim_dict['data_path_raw'], 'spike_detector',
                 firing_rates_interval[0], firing_rates_interval[1])
-            helpers.boxplot(self.data_path, self.net_dict['populations'])
+            helpers.boxplot(self.sim_dict['data_path_raw'], self.net_dict['populations'])
 
     def __derive_parameters(self):
         """
@@ -332,7 +332,7 @@ class Network:
 
         # write node ids to file
         if nest.Rank() == 0:
-            fn = os.path.join(self.data_path, 'population_nodeids.dat')
+            fn = os.path.join(self.sim_dict['data_path_raw'], 'population_nodeids.dat')
             with open(fn, 'w+') as f:
                 for pop in self.pops:
                     f.write('{} {}\n'.format(pop[0].global_id,
@@ -351,7 +351,7 @@ class Network:
             if nest.Rank() == 0:
                 print('  Creating spike detectors.')
             sd_dict = {'record_to': 'ascii',
-                       'label': os.path.join(self.data_path, 'spike_detector')}
+                       'label': os.path.join(self.sim_dict['data_path_raw'], 'spike_detector')}
             self.spike_detectors = nest.Create('spike_detector',
                                                n=self.num_pops,
                                                params=sd_dict)
@@ -362,7 +362,7 @@ class Network:
             vm_dict = {'interval': self.sim_dict['rec_V_int'],
                        'record_to': 'ascii',
                        'record_from': ['V_m'],
-                       'label': os.path.join(self.data_path, 'voltmeter')}
+                       'label': os.path.join(self.sim_dict['data_path_raw'], 'voltmeter')}
             self.voltmeters = nest.Create('voltmeter',
                                           n=self.num_pops,
                                           params=vm_dict)
