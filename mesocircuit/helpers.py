@@ -28,6 +28,9 @@ from stimulus_params import stim_dict
 def evaluate_parameterspaces(
     filename='', paramspace_keys=[], with_base_params=True):
     """
+    Evaluates the parameter spaces as specified by the arguments.
+
+
     Parameters
     ----------
     filename
@@ -42,6 +45,13 @@ def evaluate_parameterspaces(
     with_base_params
         Whether to include a parameterspace with only base parameters
         (default=True).
+
+    Returns
+    -------
+    parameterview
+        Dictionary as overview. Keys are names of parameter spaces and values
+        are lists of parameter set ids.
+
     """
     
     ps_dicts = {}
@@ -58,12 +68,15 @@ def evaluate_parameterspaces(
     parameterspaces = {}
     # collection of unique parametersets indexed by ps_id
     parametersets = {}
+    # overview of parameterspaces and corresponding ps_ids
+    parameterview = {}
 
     for paramspace_key in sorted(ps_dicts):
         if (len(paramspace_keys)==0 or # all keys
             paramspace_key in paramspace_keys or # selected key(s)
             paramspace_key=='base'): # base parameters if with_base_params
             print(paramspace_key)
+            parameterview[paramspace_key]= []
 
             parameterspaces[paramspace_key] = ps.ParameterSpace({})
             # start with default parameters and update
@@ -81,59 +94,64 @@ def evaluate_parameterspaces(
                     print('Skipping {0}, already in job list.'.format(ps_id))
                     pass
                 else:
-                    parametersets[ps_id] = paramset
                     print(ps_id)
+                    parametersets[ps_id] = paramset
+                    parameterview[paramspace_key].append([
+                        paramset['sim_dict']['data_path'], ps_id])
 
                     evaluate_parameterset(ps_id, paramset)
 
-    return
+    return parameterview
 
 
 def evaluate_parameterset(ps_id, paramset):
-                
-    # paths for raw and processed output
-    paramset['sim_dict']['data_path_raw'] = os.path.join(
-        paramset['sim_dict']['data_path'], 'raw', ps_id)
-    paramset['sim_dict']['data_path_proc'] = os.path.join(    
-        paramset['sim_dict']['data_path'], 'proc', ps_id)
+    """
+    Set paths, derive parameters and write jobscripts for this prameter set.
 
-    for path in [
-        paramset['sim_dict']['data_path_raw'],
-        paramset['sim_dict']['data_path_proc']]:
+    Parameters
+    ----------
+    ps_id
+        Unique parameter set id.
+    paramset
+        Parameter set corresponding to ps_id.    
+
+    """
+                
+    # set paths and create directories for parameters, jobscripts and
+    # raw and processed output data
+    for dname in ['parameters', 'jobscripts', 'raw_data', 'processed_data']:
+        path = os.path.join(paramset['sim_dict']['data_path'], dname, ps_id)
         if not os.path.isdir(path):
             os.makedirs(path) # also creates sub directories
-
-    # TODO
-        # data directory
-        #self.sim_dict['data_path_raw'] = sim_dict['data_path_raw']
-        #if nest.Rank() == 0:
-        #    if os.path.isdir(self.data_path):
-        #        message = '  Directory already existed.'
-        #        if self.sim_dict['overwrite_files']:
-        #            message += ' Old data will be overwritten.'
-        #    else:
-        #        os.mkdir(self.data_path)
-        #        message = '  Directory has been created.'
-        #    print('Data will be written to: {}\n{}\n'.format(self.data_path,
-        #                                                     message))
+        paramset['sim_dict']['path_' + dname] = path
 
 
+    # TODO derive parameters, take out of network class
+
+    # write final parameters to file (TODO consider human-readable .json)
+    for dic in ['sim_dict', 'net_dict', 'stim_dict']:
+        with open(os.path.join(paramset['sim_dict']['path_parameters'],
+            dic + '.pkl'), 'wb') as f:
+            pickle.dump(paramset[dic], f)
 
     
-    # TODO derive parameters, take out of network class
-    # TODO write parameters to file
+    # write jobscripts
+    run_cmd = \
+        'python3 run_mesocircuit.py ' + paramset['sim_dict']['path_parameters']
 
+    if paramset['sim_dict']['computer'] == 'local':
+        jobscript = (
+            '#!/bin/bash -x' + '\n' +
+            'mpirun -n ' + str(paramset['sim_dict']['num_mpi_per_node']) + ' ' +
+            run_cmd)
+    elif paramset['sim_dict']['computer'] == 'jureca':
+        raise Exception # TODO add juerca
 
-    param_path = os.path.join(
-        paramset['sim_dict']['data_path_raw'], 'param_dicts')
-    if not os.path.isdir(param_path):
-        os.makedirs(param_path)
-    for dic in ['sim_dict', 'net_dict', 'stim_dict']:
-        with open(os.path.join(param_path, dic + '.pkl'), 'wb') as f:
-            pickle.dump(paramset[dic], f)
+    with open(os.path.join(paramset['sim_dict']['path_jobscripts'],
+        'mesocircuit_network.sh'), 'w') as f:
+        f.write(jobscript)
+
     return
-
-
 
 def get_unique_id(d):
     """
