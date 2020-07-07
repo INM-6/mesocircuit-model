@@ -1,22 +1,31 @@
 """PyNEST Mesocircuit: Run Simulation
 -------------------------------------
 
-This is an example script for running the mesocircuit model and generating
-basic plots of the network activity.
-
+Run a simulation of the mesocircuit model.
 """
 
 ###############################################################################
 # Import the necessary modules and start the time measurements.
 
-from stimulus_params import stim_dict
-from network_params import net_dict
-from sim_params import sim_dict
-import network
+import os
+import sys
+import pickle
 import nest
-import numpy as np
+import network
 import time
 time_start = time.time()
+
+################################################################################
+# Load simulation, network and stimulation parameters from files located in the
+# a folder provided as command line argument.
+
+path_parameters = sys.argv[1]
+
+dics = []
+for dic in ['sim_dict', 'net_dict', 'stim_dict']:
+    with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
+        dics.append(pickle.load(f))
+sim_dict, net_dict, stim_dict = dics
 
 ###############################################################################
 # Initialize the network with simulation, network and stimulation parameters,
@@ -44,21 +53,6 @@ net.simulate(sim_dict['t_sim'])
 time_simulate = time.time()
 
 ###############################################################################
-# Plot a spike raster of the simulated neurons and a box plot of the firing
-# rates for each population.
-# For visual purposes only, spikes 100 ms before and 100 ms after the thalamic
-# stimulus time are plotted here by default.
-# The computation of spike rates discards the presimulation time to exclude
-# initialization artifacts.
-
-raster_plot_interval = np.array([stim_dict['th_start'] - 100.0,
-                                 stim_dict['th_start'] + 100.0])
-firing_rates_interval = np.array([sim_dict['t_presim'],
-                                  sim_dict['t_presim'] + sim_dict['t_sim']])
-net.evaluate(raster_plot_interval, firing_rates_interval)
-time_evaluate = time.time()
-
-###############################################################################
 # Summarize time measurements. Rank 0 usually takes longest because of the
 # data evaluation and print calls.
 
@@ -66,7 +60,7 @@ print(
     '\nTimes of Rank {}:\n'.format(
         nest.Rank()) +
     '  Total time:          {:.3f} s\n'.format(
-        time_evaluate -
+        time_simulate -
         time_start) +
     '  Time to initialize:  {:.3f} s\n'.format(
         time_network -
@@ -82,7 +76,4 @@ print(
         time_create) +
     '  Time to simulate:    {:.3f} s\n'.format(
         time_simulate -
-        time_presimulate) +
-    '  Time to evaluate:    {:.3f} s\n'.format(
-        time_evaluate -
-        time_simulate))
+        time_presimulate))
