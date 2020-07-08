@@ -28,12 +28,12 @@ sim_dict = {
     'rec_V_int': 1.0,
 
     # machine to run the simulation on. Options are 'local' and 'jureca'.
-    'computer': 'local',
+    'computer': 'jureca',
     # print the time progress. This should only be used when the simulation
     # is run on a local machine.
-    'print_time': True,
+    'print_time': False,
     # path to save the output data
-    'data_path': os.path.join(os.getcwd(), 'mesocircuit_data'),
+    'data_path': os.path.join(os.getcwd(), 'data'),
     # if True, data will be overwritten,
     # if False, a NESTError is raised if the files already exist
     'overwrite_files': True,

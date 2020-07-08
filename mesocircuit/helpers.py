@@ -148,7 +148,7 @@ def evaluate_parameterset(ps_id, paramset):
         raise Exception # TODO add juerca
 
     with open(os.path.join(paramset['sim_dict']['path_jobscripts'],
-        'mesocircuit_network.sh'), 'w') as f:
+        'network.sh'), 'w') as f:
         f.write(jobscript)
 
     return
