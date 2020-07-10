@@ -89,6 +89,7 @@ net_dict = {
     # 'optimized': population-specific mean and standard deviation, allowing a
     #              reduction of the initial activity burst in the network
     #              (default)
+    # TODO check if 'optimizied' works well with mesocircuit
     'V0_type': 'optimized',
     # parameters of the neuron model
     'neuron_params': {

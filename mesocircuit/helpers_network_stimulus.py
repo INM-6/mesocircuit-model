@@ -41,10 +41,6 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
             net_dict['delay_exc_mean'],
             net_dict['delay_inh_mean'],
             net_dict['num_pops'])
-        # remove keys related to linear delay # TODO unsure if necessary
-        del net_dict['delay_offset_exc_inh']
-        del net_dict['prop_speed_exc_inh']
-        del net_dict['delay_lin_rel_std']
     
     elif net_dict['delay_type'] == 'linear':
         # matrix of delay offsets
@@ -57,10 +53,6 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
             net_dict['prop_speed_exc_inh'][0],
             net_dict['prop_speed_exc_inh'][1],
             net_dict['num_pops'])
-        # remove keys related to normal delay
-        del net_dict['delay_exc_mean']
-        del net_dict['delay_inh_mean']
-        del net_dict['delay_rel_std']
 
     # decay parameters of exponential profile
     if net_dict['beta_exc_inh'] != None:
@@ -89,7 +81,6 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     PSC_ext = net_dict['PSP_exc_mean'] * PSC_over_PSP
 
 
-    # TODO fix float vs. integer issue
     # linear scaling of neuron numbers with square area
     area = net_dict['extent']**2
     full_num_neurons = net_dict['num_neurons_1mm2'] * area

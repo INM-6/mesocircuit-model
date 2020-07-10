@@ -5,11 +5,10 @@ import prelim_analysis as ana
 
 parameterview = helpers.evaluate_parameterspaces(
     filename='parameterspaces',
-    paramspace_keys=['local_downscale'],
     with_base_params=False)
 
 # local test run
-data_path, ps_id = parameterview['local_downscale'][0]
+data_path, ps_id = parameterview['local_microcircuit'][0]
 if 1:
     jobscript = os.path.join(data_path, 'jobscripts', ps_id , 'network.sh')
     os.system('sh ' + jobscript)

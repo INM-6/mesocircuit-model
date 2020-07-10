@@ -1,22 +1,38 @@
 import os
 import parameters as ps
 
-local_sim_dict = {'computer': 'local',
-                  'print_time': True}
+local_sim_dict = {
+    'computer': 'local',
+    'print_time': True}
 
 jureca_sim_dict = {} # TODO
+
+net_dict_microcircuit = {
+    'delay_type': 'normal',
+    'connect_method': 'fixedtotalnumber',
+    'extent': 1.}
 
 # main dictionary as used by evaluate_parameterspaces() in helpers.py
 ps_dicts = {
 
-    'local_downscale': {
-        'sim_dict': {**local_sim_dict,
-                     **{'data_path': os.path.join(os.getcwd(),
-                                                  'data_local_downscale')}},
+    'local_microcircuit': {
+        'sim_dict': {
+            **local_sim_dict,
+            **{'data_path': os.path.join(os.getcwd(),
+                                         'data_local_microcircuit')}},
         'net_dict': {
-            'N_scaling': 0.1,
+            **net_dict_microcircuit,
+            **{'N_scaling': 0.1,
+               'K_scaling': 0.1}},
+    },
+    'local_mesocircuit': {
+        'sim_dict': {
+            **local_sim_dict,
+            **{'data_path': os.path.join(os.getcwd(),
+                                         'data_local_mesocircuit')}},
+        'net_dict': {
+            'N_scaling': 0.01,
             'K_scaling': 0.1,
-            'delay_type': 'normal',
-            'extent': 1.},
+            'beta_scaling': ps.ParameterRange([3., 5.])},
     }
 }
