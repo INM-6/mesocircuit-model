@@ -105,43 +105,6 @@ class Network:
 
         nest.Simulate(t_sim)
 
-    def evaluate(self, raster_plot_interval, firing_rates_interval):
-        """ Displays simulation results.
-
-        Creates a spike raster plot.
-        Calculates the firing rate of each population and displays them as a
-        box plot.
-
-        Parameters
-        ----------
-        raster_plot_interval
-            Times (in ms) to start and stop loading spike times for raster plot
-            (included).
-        firing_rates_interval
-            Times (in ms) to start and stop lading spike times for computing
-            firing rates (included).
-
-        Returns
-        -------
-            None
-
-        """
-        if nest.Rank() == 0:
-            print('Interval to plot spikes: {} ms'.format(raster_plot_interval))
-            helpers.plot_raster(
-                self.sim_dict['path_raw_data'],
-                'spike_detector',
-                raster_plot_interval[0],
-                raster_plot_interval[1],
-                self.net_dict['N_scaling'])
-
-            print('Interval to compute firing rates: {} ms'.format(
-                firing_rates_interval))
-            helpers.firing_rates(
-                self.sim_dict['path_raw_data'], 'spike_detector',
-                firing_rates_interval[0], firing_rates_interval[1])
-            helpers.boxplot(self.sim_dict['path_raw_data'], self.net_dict['populations'])
-
     def __check_parameters(self):
         """
         Checks parameters and prints information.

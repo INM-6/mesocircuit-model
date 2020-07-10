@@ -43,5 +43,5 @@ sim_dict = {
     # number of MPI processes per compute node
     'num_mpi_per_node': 2,
     # number of threads per MPI process
-    'local_num_threads': 6,
+    'local_num_threads': 4,
 }
