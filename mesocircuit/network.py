@@ -38,8 +38,8 @@ class Network:
         self.net_dict = net_dict
         self.stim_dict = stim_dict
 
-        # derive parameters based on input dictionaries
-        self.__derive_parameters()
+        # check parameters and print information
+        self.__check_parameters()
 
         # initialize the NEST kernel
         self.__setup_nest()
@@ -142,81 +142,12 @@ class Network:
                 firing_rates_interval[0], firing_rates_interval[1])
             helpers.boxplot(self.sim_dict['path_raw_data'], self.net_dict['populations'])
 
-    def __derive_parameters(self):
+    def __check_parameters(self):
         """
-        Derives and adjusts parameters and stores them as class attributes.
+        Checks parameters and prints information.
+        In the current implementation only a message specifying the neuron
+        and indegree scaling is printed.
         """
-        self.num_pops = len(self.net_dict['populations'])
-
-        # total number of synapses between neuronal populations before scaling
-        full_num_synapses = helpers.num_synapses_from_conn_probs(
-            self.net_dict['conn_probs'],
-            self.net_dict['full_num_neurons'],
-            self.net_dict['full_num_neurons'])
-
-        # scaled numbers of neurons and synapses
-        num_neurons_float = (self.net_dict['full_num_neurons'] *
-                             self.net_dict['N_scaling'])
-        num_synapses_float = (full_num_synapses *
-                              self.net_dict['N_scaling'] *
-                              self.net_dict['K_scaling'])
-        self.num_neurons = np.round(num_neurons_float).astype(int)
-        self.num_synapses = np.round(num_synapses_float).astype(int)
-        # indegrees of recurrent connections are only explicitly used if
-        # 'connect_method' is 'fixedindegree*'
-        self.indegrees = np.round((num_synapses_float /
-                                   num_neurons_float[:,np.newaxis])).astype(int)
-        self.ext_indegrees = np.round((self.net_dict['K_ext'] *
-                                       self.net_dict['K_scaling'])).astype(int)
-
-        # conversion from PSPs to PSCs
-        PSC_over_PSP = helpers.postsynaptic_potential_to_current(
-            self.net_dict['neuron_params']['C_m'],
-            self.net_dict['neuron_params']['tau_m'],
-            self.net_dict['neuron_params']['tau_syn'])
-        PSC_matrix_mean = self.net_dict['PSP_matrix_mean'] * PSC_over_PSP
-        PSC_ext = self.net_dict['PSP_exc_mean'] * PSC_over_PSP
-
-        # DC input compensates for potentially missing Poisson input
-        if self.net_dict['poisson_input']:
-            DC_amp = np.zeros(self.num_pops)
-        else:
-            if nest.Rank() == 0:
-                print('DC input compensates for missing Poisson input.\n')
-            DC_amp = helpers.dc_input_compensating_poisson(
-                self.net_dict['bg_rate'], self.net_dict['K_ext'],
-                self.net_dict['neuron_params']['tau_syn'],
-                PSC_ext)
-
-        # adjust weights and DC amplitude if the indegree is scaled
-        if self.net_dict['K_scaling'] != 1:
-            PSC_matrix_mean, PSC_ext, DC_amp = \
-                helpers.adjust_weights_and_input_to_synapse_scaling(
-                    self.net_dict['full_num_neurons'],
-                    full_num_synapses, self.net_dict['K_scaling'],
-                    PSC_matrix_mean, PSC_ext,
-                    self.net_dict['neuron_params']['tau_syn'],
-                    self.net_dict['full_mean_rates'],
-                    DC_amp,
-                    self.net_dict['poisson_input'],
-                    self.net_dict['bg_rate'], self.net_dict['K_ext'])
-
-        # store final parameters as class attributes
-        self.weight_matrix_mean = PSC_matrix_mean
-        self.weight_ext = PSC_ext
-        self.DC_amp = DC_amp
-
-        # thalamic input
-        if self.stim_dict['thalamic_input']:
-            num_th_synapses = helpers.num_synapses_from_conn_probs(
-                self.stim_dict['conn_probs_th'],
-                self.stim_dict['num_th_neurons'],
-                self.net_dict['full_num_neurons'])[0]
-            self.weight_th = self.stim_dict['PSP_th'] * PSC_over_PSP
-            if self.net_dict['K_scaling'] != 1:
-                num_th_synapses *= self.net_dict['K_scaling']
-                self.weight_th /= np.sqrt(self.net_dict['K_scaling'])
-            self.num_th_synapses = np.round(num_th_synapses).astype(int)
 
         if nest.Rank() == 0:
             message = ''
@@ -281,7 +212,7 @@ class Network:
             print('Creating neuronal populations.')
 
         self.pops = []
-        for i in np.arange(self.num_pops):
+        for i in np.arange(self.net_dict['num_pops']):
 
             # random positions in 2D with periodic boundary conditions
             positions = nest.spatial.free(
@@ -291,7 +222,7 @@ class Network:
                 num_dimensions=2)
 
             population = nest.Create(self.net_dict['neuron_model'],
-                                     self.num_neurons[i],
+                                     self.net_dict['num_neurons'][i],
                                      positions=positions)
             population.set(
                 tau_syn_ex=self.net_dict['neuron_params']['tau_syn'],
@@ -300,7 +231,7 @@ class Network:
                 V_th=self.net_dict['neuron_params']['V_th'],
                 V_reset=self.net_dict['neuron_params']['V_reset'],
                 t_ref=self.net_dict['neuron_params']['t_ref'],
-                I_e=self.DC_amp[i])
+                I_e=self.net_dict['DC_amp'][i])
 
             if self.net_dict['V0_type'] == 'optimized':
                 population.set(V_m=nest.random.normal(
@@ -340,7 +271,7 @@ class Network:
             sd_dict = {'record_to': 'ascii',
                        'label': os.path.join(self.sim_dict['path_raw_data'], 'spike_detector')}
             self.spike_detectors = nest.Create('spike_detector',
-                                               n=self.num_pops,
+                                               n=self.net_dict['num_pops'],
                                                params=sd_dict)
 
         if 'voltmeter' in self.sim_dict['rec_dev']:
@@ -351,7 +282,7 @@ class Network:
                        'record_from': ['V_m'],
                        'label': os.path.join(self.sim_dict['path_raw_data'], 'voltmeter')}
             self.voltmeters = nest.Create('voltmeter',
-                                          n=self.num_pops,
+                                          n=self.net_dict['num_pops'],
                                           params=vm_dict)
 
     def __create_poisson_bg_input(self):
@@ -366,9 +297,9 @@ class Network:
             print('Creating Poisson generators for background input.')
 
         self.poisson_bg_input = nest.Create('poisson_generator',
-                                            n=self.num_pops)
+                                            n=self.net_dict['num_pops'])
         self.poisson_bg_input.rate = \
-            self.net_dict['bg_rate'] * self.ext_indegrees
+            self.net_dict['bg_rate'] * self.net_dict['ext_indegrees']
 
     def __create_thalamic_stim_input(self):
         """ Creates the thalamic neuronal population if specified in
@@ -408,7 +339,7 @@ class Network:
                    'start': self.stim_dict['dc_start'],
                    'stop': (self.stim_dict['dc_start'] +
                             self.stim_dict['dc_dur'])}
-        self.dc_stim_input = nest.Create('dc_generator', n=self.num_pops,
+        self.dc_stim_input = nest.Create('dc_generator', n=self.net_dict['num_pops'],
                                          params=dc_dict)
 
     def __connect_neuronal_populations(self):
@@ -418,25 +349,25 @@ class Network:
 
         for i, target_pop in enumerate(self.pops):
             for j, source_pop in enumerate(self.pops):
-                if self.num_synapses[i][j] >= 0.:
+                if self.net_dict['num_synapses'][i][j] >= 0.:
 
                     # specify which connections exist
                     if self.net_dict['connect_method'] == 'fixedtotalnumber':
                         conn_dict_rec = {
                             'rule': 'fixed_total_number',
-                            'N': self.num_synapses[i][j],
+                            'N': self.net_dict['num_synapses'][i][j],
                             'allow_autapses': False,
                             'allow_multapses': True}
                     elif self.net_dict['connect_method'] == 'fixedindegree':
                         conn_dict_rec = {
                             'rule': 'fixed_indegree',
-                            'indegree': self.indegrees[i][j],
+                            'indegree': self.net_dict['indegrees'][i][j],
                             'allow_autapses': False,
                             'allow_multapses': True}
                     elif self.net_dict['connect_method'] == 'fixedindegree_exp':
                         conn_dict_rec = {
                             'rule': 'fixed_indegree',
-                            'indegree': self.indegrees[i][j],
+                            'indegree': self.net_dict['indegrees'][i][j],
                             'p': nest.spatial_distributions.exponential(
                                 x=nest.spatial.distance,
                                 beta=self.net_dict['beta'][i][j]),
@@ -446,7 +377,7 @@ class Network:
                             'allow_multapses': True}
 
                     # specify synapse parameters
-                    if self.weight_matrix_mean[i][j] < 0:
+                    if self.net_dict['weight_matrix_mean'][i][j] < 0:
                         w_min = np.NINF
                         w_max = 0.0
                     else:
@@ -471,8 +402,8 @@ class Network:
                         'synapse_model': 'static_synapse',
                         'weight': nest.math.redraw(
                             nest.random.normal(
-                                mean=self.weight_matrix_mean[i][j],
-                                std=abs(self.weight_matrix_mean[i][j] *
+                                mean=self.net_dict['weight_matrix_mean'][i][j],
+                                std=abs(self.net_dict['weight_matrix_mean'][i][j] *
                                         self.net_dict['weight_rel_std'])),
                             min=w_min,
                             max=w_max),
@@ -507,7 +438,7 @@ class Network:
 
             syn_dict_poisson = {
                 'synapse_model': 'static_synapse',
-                'weight': self.weight_ext,
+                'weight': self.net_dict['weight_ext'],
                 'delay': self.net_dict['delay_poisson']}
 
             nest.Connect(
@@ -527,13 +458,13 @@ class Network:
         for i, target_pop in enumerate(self.pops):
             conn_dict_th = {
                 'rule': 'fixed_total_number',
-                'N': self.num_th_synapses[i]}
+                'N': self.stim_dict['num_th_synapses'][i]}
 
             syn_dict_th = {
                 'weight': nest.math.redraw(
                     nest.random.normal(
-                        mean=self.weight_th,
-                        std=self.weight_th * self.net_dict['weight_rel_std']),
+                        mean=self.net_dict['weight_th'],
+                        std=self.net_dict['weight_th'] * self.net_dict['weight_rel_std']),
                     min=0.0,
                     max=np.Inf),
                 'delay': nest.math.redraw(

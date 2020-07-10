@@ -1,0 +1,353 @@
+"""PyNEST Mesocircuit: Helper Functions Network Stimulus
+--------------------------------------------------------
+
+Helper functions for deriving dependent network and stimulus parameters from
+base parameter dictionaries.
+
+"""
+
+import numpy as np
+import copy
+
+def derive_dependent_parameters(base_net_dict, base_stim_dict):
+    """
+    Derives network and stimulus parameters which depend on the base parameters.
+    Returns the dictionaries which serve as input to the Network class.
+
+    Parameters
+    ----------
+    base_net_dict
+        Dictionary with base network parameters.
+    base_stim_dict
+        Dictionary with base stimulus parameters.
+
+    Returns
+    -------
+    net_dict
+        Dictionary containing base and derived network parameters.
+    stim_dict
+        Dictionary containing base and derived stimulus parameters.
+    """
+    # network parameters
+    net_dict = copy.copy(base_net_dict)
+
+    # number of cortical populations
+    net_dict['num_pops'] = len(net_dict['populations'])
+
+    # matrices for delays
+    if net_dict['delay_type'] == 'normal':
+        # matrix of mean delays
+        net_dict['delay_matrix_mean'] = get_exc_inh_matrix(
+            net_dict['delay_exc_mean'],
+            net_dict['delay_inh_mean'],
+            net_dict['num_pops'])
+        # remove keys related to linear delay # TODO unsure if necessary
+        del net_dict['delay_offset_exc_inh']
+        del net_dict['prop_speed_exc_inh']
+        del net_dict['delay_lin_rel_std']
+    
+    elif net_dict['delay_type'] == 'linear':
+        # matrix of delay offsets
+        net_dict['delay_offset_matrix'] = get_exc_inh_matrix(
+            net_dict['delay_offset_exc_inh'][0],
+            net_dict['delay_offset_exc_inh'][1],
+            net_dict['num_pops'])
+        # matrix of propagation speeds
+        net_dict['prop_speed_matrix'] = get_exc_inh_matrix(
+            net_dict['prop_speed_exc_inh'][0],
+            net_dict['prop_speed_exc_inh'][1],
+            net_dict['num_pops'])
+        # remove keys related to normal delay
+        del net_dict['delay_exc_mean']
+        del net_dict['delay_inh_mean']
+        del net_dict['delay_rel_std']
+
+    # decay parameters of exponential profile
+    if net_dict['beta_exc_inh'] != None:
+        # matrix of decay parameters
+        net_dict['beta'] = get_exc_inh_matrix(
+            net_dict['beta_exc_inh'][0],
+            net_dict['beta_exc_inh'][1],
+            net_dict['num_pops'])
+    else:
+        net_dict['beta'] = net_dict['beta_unscaled'] * net_dict['beta_scaling']
+
+    # matrix of mean PSPs
+    # the mean PSP of the connection from L4E to L23E is doubled
+    PSP_matrix_mean = get_exc_inh_matrix(
+        net_dict['PSP_exc_mean'],
+        net_dict['PSP_exc_mean'] * net_dict['g'],
+        net_dict['num_pops'])
+    PSP_matrix_mean[0, 2] = 2. * net_dict['PSP_exc_mean']
+
+    # conversion from PSPs to PSCs
+    PSC_over_PSP = postsynaptic_potential_to_current(
+        net_dict['neuron_params']['C_m'],
+        net_dict['neuron_params']['tau_m'],
+        net_dict['neuron_params']['tau_syn'])
+    PSC_matrix_mean = PSP_matrix_mean * PSC_over_PSP
+    PSC_ext = net_dict['PSP_exc_mean'] * PSC_over_PSP
+
+    # TODO apply here scaling to area and with spatial profiles
+    # total number of synapses between neuronal populations before scaling
+    full_num_synapses = num_synapses_from_conn_probs(
+        net_dict['conn_probs'],
+        net_dict['full_num_neurons'],
+        net_dict['full_num_neurons'])
+
+    # scaled numbers of neurons and synapses
+    num_neurons_float = (net_dict['full_num_neurons'] *
+                         net_dict['N_scaling'])
+    num_synapses_float = (full_num_synapses *
+                          net_dict['N_scaling'] *
+                          net_dict['K_scaling'])
+    net_dict['num_neurons'] = np.round(num_neurons_float).astype(int)
+    net_dict['num_synapses'] = np.round(num_synapses_float).astype(int)
+    # indegrees of recurrent connections are only explicitly used if
+    # 'connect_method' is 'fixedindegree*'
+    net_dict['indegrees'] = np.round((num_synapses_float /
+                            num_neurons_float[:,np.newaxis])).astype(int)
+    net_dict['ext_indegrees'] = np.round((net_dict['K_ext'] *
+                                net_dict['K_scaling'])).astype(int)
+
+    # DC input compensates for potentially missing Poisson input
+    if net_dict['poisson_input']:
+        DC_amp = np.zeros(net_dict['num_pops'])
+    else:
+        if nest.Rank() == 0:
+            print('DC input compensates for missing Poisson input.\n')
+        DC_amp = dc_input_compensating_poisson(
+            net_dict['bg_rate'], net_dict['K_ext'],
+            net_dict['neuron_params']['tau_syn'],
+            PSC_ext)
+
+    # adjust weights and DC amplitude if the indegree is scaled
+    if net_dict['K_scaling'] != 1:
+        PSC_matrix_mean, PSC_ext, DC_amp = \
+            adjust_weights_and_input_to_synapse_scaling(
+                net_dict['full_num_neurons'],
+                full_num_synapses, net_dict['K_scaling'],
+                PSC_matrix_mean, PSC_ext,
+                net_dict['neuron_params']['tau_syn'],
+                net_dict['full_mean_rates'],
+                DC_amp,
+                net_dict['poisson_input'],
+                net_dict['bg_rate'], net_dict['K_ext'])
+
+    # store final parameters in dictionary
+    net_dict['weight_matrix_mean'] = PSC_matrix_mean
+    net_dict['weight_ext'] = PSC_ext
+    net_dict['DC_amp'] = DC_amp
+
+
+    # stimulus parameters
+    stim_dict = copy.copy(base_stim_dict)
+
+    # thalamic input
+    if stim_dict['thalamic_input']:
+        num_th_synapses = helpers.num_synapses_from_conn_probs(
+            stim_dict['conn_probs_th'],
+            stim_dict['num_th_neurons'],
+            net_dict['full_num_neurons'])[0]
+        stim_dict['weight_th'] = stim_dict['PSP_th'] * PSC_over_PSP
+        if net_dict['K_scaling'] != 1:
+            num_th_synapses *= net_dict['K_scaling']
+            stim_dict['weight_th'] /= np.sqrt(net_dict['K_scaling'])
+        stim_dict['num_th_synapses'] = np.round(num_th_synapses).astype(int)
+
+    return net_dict, stim_dict
+
+
+def get_exc_inh_matrix(val_exc, val_inh, num_pops):
+    """ Creates a matrix for excitatory and inhibitory values.
+
+    Parameters
+    ----------
+    val_exc
+        Excitatory value.
+    val_inh
+        Inhibitory value.
+    num_pops
+        Number of populations.
+
+    Returns
+    -------
+    matrix
+        A matrix of of size (num_pops x num_pops).
+
+    """
+    matrix = np.zeros((num_pops, num_pops))
+    matrix[:, 0:num_pops:2] = val_exc
+    matrix[:, 1:num_pops:2] = val_inh
+    return matrix
+
+
+def num_synapses_from_conn_probs(conn_probs, popsize1, popsize2):
+    """Computes the total number of synapses between two populations from
+    connection probabilities.
+
+    Here it is irrelevant which population is source and which target.
+
+    Paramters
+    ---------
+    conn_probs
+        Matrix of connection probabilities.
+    popsize1
+        Size of first poulation.
+    popsize2
+        Size of second population.
+
+    Returns
+    -------
+    num_synapses
+        Matrix of synapse numbers.
+    """
+    prod = np.outer(popsize1, popsize2)
+    num_synapses = np.log(1. - conn_probs) / np.log((prod - 1.) / prod)
+    return num_synapses
+
+
+def postsynaptic_potential_to_current(C_m, tau_m, tau_syn):
+    """ Computes a factor to convert postsynaptic potentials to currents.
+
+    The time course of the postsynaptic potential ``v`` is computed as
+    :math: `v(t)=(i*h)(t)`
+    with the exponential postsynaptic current
+    :math:`i(t)=J\mathrm{e}^{-t/\tau_\mathrm{syn}}\Theta (t)`,
+    the voltage impulse response
+    :math:`h(t)=\frac{1}{\tau_\mathrm{m}}\mathrm{e}^{-t/\tau_\mathrm{m}}\Theta (t)`,
+    and
+    :math:`\Theta(t)=1` if :math:`t\geq 0` and zero otherwise.
+
+    The ``PSP`` is considered as the maximum of ``v``, i.e., it is
+    computed by setting the derivative of ``v(t)`` to zero.
+    The expression for the time point at which ``v`` reaches its maximum
+    can be found in Eq. 5 of [1]_.
+
+    The amplitude of the postsynaptic current ``J`` corresponds to the
+    synaptic weight ``PSC``.
+
+    References
+    ----------
+    .. [1] Hanuschkin A, Kunkel S, Helias M, Morrison A and Diesmann M (2010)
+           A general and efficient method for incorporating precise spike times
+           in globally time-driven simulations.
+           Front. Neuroinform. 4:113.
+           DOI: `10.3389/fninf.2010.00113 <https://doi.org/10.3389/fninf.2010.00113>`__.
+
+    Parameters
+    ----------
+    C_m
+        Membrane capacitance (in pF).
+    tau_m
+        Membrane time constant (in ms).
+    tau_syn
+        Synaptic time constant (in ms).
+
+    Returns
+    -------
+    PSC_over_PSP
+        Conversion factor to be multiplied to a `PSP` (in mV) to obtain a `PSC`
+        (in pA).
+
+    """
+    sub = 1. / (tau_syn - tau_m)
+    pre = tau_m * tau_syn / C_m * sub
+    frac = (tau_m / tau_syn) ** sub
+
+    PSC_over_PSP = 1. / (pre * (frac**tau_m - frac**tau_syn))
+    return PSC_over_PSP
+
+
+def dc_input_compensating_poisson(bg_rate, K_ext, tau_syn, PSC_ext):
+    """ Computes DC input if no Poisson input is provided to the mesocircuit.
+
+    Parameters
+    ----------
+    bg_rate
+        Rate of external Poisson generators (in spikes/s).
+    K_ext
+        External indegrees.
+    tau_syn
+        Synaptic time constant (in ms).
+    PSC_ext
+        Weight of external connections (in pA).
+
+    Returns
+    -------
+    DC
+        DC input (in pA) which compensates lacking Poisson input.
+    """
+    DC = bg_rate * K_ext * PSC_ext * tau_syn * 0.001
+    return DC
+
+
+def adjust_weights_and_input_to_synapse_scaling(
+        full_num_neurons,
+        full_num_synapses,
+        K_scaling,
+        mean_PSC_matrix,
+        PSC_ext,
+        tau_syn,
+        full_mean_rates,
+        DC_amp,
+        poisson_input,
+        bg_rate,
+        K_ext):
+    """ Adjusts weights and external input to scaling of indegrees.
+
+    The recurrent and external weights are adjusted to the scaling
+    of the indegrees. Extra DC input is added to compensate for the
+    scaling in order to preserve the mean and variance of the input.
+
+    Parameters
+    ----------
+    full_num_neurons
+        Total numbers of neurons.
+    full_num_synapses
+        Total numbers of synapses.
+    K_scaling
+        Scaling factor for indegrees.
+    mean_PSC_matrix
+        Weight matrix (in pA).
+    PSC_ext
+        External weight (in pA).
+    tau_syn
+        Synaptic time constant (in ms).
+    full_mean_rates
+        Firing rates of the full network (in spikes/s).
+    DC_amp
+        DC input current (in pA).
+    poisson_input
+        True if Poisson input is used.
+    bg_rate
+        Firing rate of Poisson generators (in spikes/s).
+    K_ext
+        External indegrees.
+
+    Returns
+    -------
+    PSC_matrix_new
+        Adjusted weight matrix (in pA).
+    PSC_ext_new
+        Adjusted external weight (in pA).
+    DC_amp_new
+        Adjusted DC input (in pA).
+
+    """
+    PSC_matrix_new = mean_PSC_matrix / np.sqrt(K_scaling)
+    PSC_ext_new = PSC_ext / np.sqrt(K_scaling)
+
+    # recurrent input of full network
+    indegree_matrix = \
+        full_num_synapses / full_num_neurons[:, np.newaxis]
+    input_rec = np.sum(mean_PSC_matrix * indegree_matrix * full_mean_rates,
+                       axis=1)
+
+    DC_amp_new = DC_amp \
+        + 0.001 * tau_syn * (1. - np.sqrt(K_scaling)) * input_rec
+
+    if poisson_input:
+        input_ext = PSC_ext * K_ext * bg_rate
+        DC_amp_new += 0.001 * tau_syn * (1. - np.sqrt(K_scaling)) * input_ext
+    return PSC_matrix_new, PSC_ext_new, DC_amp_new

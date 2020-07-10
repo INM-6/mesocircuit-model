@@ -59,7 +59,7 @@ time_simulate = time.time()
 print(
     '\nTimes of Rank {}:\n'.format(
         nest.Rank()) +
-    '  Total time:          {:.3f} s\n'.format(
+    '  Total network time:  {:.3f} s\n'.format(
         time_simulate -
         time_start) +
     '  Time to initialize:  {:.3f} s\n'.format(

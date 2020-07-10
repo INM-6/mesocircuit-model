@@ -8,31 +8,6 @@ parameters.
 
 import numpy as np
 
-
-def get_exc_inh_matrix(val_exc, val_inh, num_pops):
-    """ Creates a matrix for excitatory and inhibitory values.
-
-    Parameters
-    ----------
-    val_exc
-        Excitatory value.
-    val_inh
-        Inhibitory value.
-    num_pops
-        Number of populations.
-
-    Returns
-    -------
-    matrix
-        A matrix of of size (num_pops x num_pops).
-
-    """
-    matrix = np.zeros((num_pops, num_pops))
-    matrix[:, 0:num_pops:2] = val_exc
-    matrix[:, 1:num_pops:2] = val_inh
-    return matrix
-
-
 net_dict = {
     # factor to scale the number of neurons
     'N_scaling': 1.,
@@ -43,7 +18,7 @@ net_dict = {
     # names of the simulated neuronal populations
     'populations': ['L23E', 'L23I', 'L4E', 'L4I', 'L5E', 'L5I', 'L6E', 'L6I'],
     # number of neurons in the different populations (same order as
-    # 'populations')
+    # 'populations') # TODO rename to 1mm2 and apply scaling
     'full_num_neurons':
         np.array([20683, 5834, 21915, 5479, 4850, 1065, 14395, 2948]),
     # mean rates of the different populations in the non-scaled version of the
@@ -152,57 +127,19 @@ net_dict = {
     # default values extracted from Reimann2017, Supplement 1, Figure S2,
     # format:   E->E   I->E
     #           E->I   I->I
-    # TODO: RIGHT NOW WITH LARGE SCALING FACTOR TO BE PROPERLY IMPLEMENTED OR REMOVED
-    'beta': np.tile([[0.232, 0.161],
-                     [0.125, 0.120]], (4,4)) * 5.,
+    'beta_unscaled': np.tile([[0.232, 0.161],
+                              [0.125, 0.120]], (4,4)),
+    # scaling factor applied to all elements of beta_unscaled.
+    # The final beta is beta_unscaled * beta_scaling.
+    'beta_scaling': 5.,
 
     # If beta_exh_inh is not None, it must be a list with excitatory and
-    # inhibitory decay parameters [beta_exc, beta_inh] which will be use to
+    # inhibitory decay parameters [beta_exc, beta_inh] which will be used to
     # override the matrix beta above.
     'beta_exc_inh': None,
 
     # side length (in mm) of square layers in which neurons are randomly
     # distributed
     'extent': 4.,
-        
-        }
+    }
 
-# derive matrix of mean PSPs,
-# the mean PSP of the connection from L4E to L23E is doubled
-PSP_matrix_mean = get_exc_inh_matrix(
-    net_dict['PSP_exc_mean'],
-    net_dict['PSP_exc_mean'] * net_dict['g'],
-    len(net_dict['populations']))
-PSP_matrix_mean[0, 2] = 2. * net_dict['PSP_exc_mean']
-
-updated_dict = {
-    # matrix of mean PSPs
-    'PSP_matrix_mean': PSP_matrix_mean,
-
-    # matrix of mean delays
-    'delay_matrix_mean': get_exc_inh_matrix(
-        net_dict['delay_exc_mean'],
-        net_dict['delay_inh_mean'],
-        len(net_dict['populations'])),
-
-    # matrix of delay offsets for linear delays
-    'delay_offset_matrix': get_exc_inh_matrix(
-        net_dict['delay_offset_exc_inh'][0],
-        net_dict['delay_offset_exc_inh'][1],
-        len(net_dict['populations'])),
-
-    # matrix of propagation speeds for linear delays
-    'prop_speed_matrix': get_exc_inh_matrix(
-        net_dict['prop_speed_exc_inh'][0],
-        net_dict['prop_speed_exc_inh'][1],
-        len(net_dict['populations']))}
-
-if net_dict['beta_exc_inh'] != None:
-    updated_dict.update({
-        # matrix of decay parameters
-        'beta': get_exc_inh_matrix(
-            net_dict['beta_exc_inh'][0],
-            net_dict['beta_exc_inh'][1],
-            len(net_dict['populations']))})
-
-net_dict.update(updated_dict)
