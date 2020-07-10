@@ -11,3 +11,6 @@ if 1:
     data_path, ps_id = parameterview['local_downscale'][0]
     jobscript = os.path.join(data_path, 'jobscripts', ps_id , 'network.sh')
     os.system('sh ' + jobscript)
+
+
+# TODO submission of jobscripts to JURECA

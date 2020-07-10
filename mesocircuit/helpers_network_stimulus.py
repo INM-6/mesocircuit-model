@@ -88,25 +88,35 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     PSC_matrix_mean = PSP_matrix_mean * PSC_over_PSP
     PSC_ext = net_dict['PSP_exc_mean'] * PSC_over_PSP
 
-    # TODO apply here scaling to area and with spatial profiles
+
+    # TODO fix float vs. integer issue
+    # linear scaling of neuron numbers with square area
+    area = net_dict['extent']**2
+    full_num_neurons = net_dict['num_neurons_1mm2'] * area
+
+    # TODO apply here scaling to area with spatial profiles;
+    # right now a preliminary linear scaling is applied that "very roughly"
+    # preserves the indegrees just for testing
+    full_conn_probs = net_dict['conn_probs_1mm2'] / area
+
     # total number of synapses between neuronal populations before scaling
     full_num_synapses = num_synapses_from_conn_probs(
-        net_dict['conn_probs'],
-        net_dict['full_num_neurons'],
-        net_dict['full_num_neurons'])
+        full_conn_probs,
+        full_num_neurons,
+        full_num_neurons)
 
     # scaled numbers of neurons and synapses
-    num_neurons_float = (net_dict['full_num_neurons'] *
-                         net_dict['N_scaling'])
-    num_synapses_float = (full_num_synapses *
-                          net_dict['N_scaling'] *
-                          net_dict['K_scaling'])
-    net_dict['num_neurons'] = np.round(num_neurons_float).astype(int)
-    net_dict['num_synapses'] = np.round(num_synapses_float).astype(int)
+    num_neurons = (full_num_neurons *
+                   net_dict['N_scaling'])
+    num_synapses = (full_num_synapses *
+                    net_dict['N_scaling'] *
+                    net_dict['K_scaling'])
+    net_dict['num_neurons'] = np.round(num_neurons).astype(int)
+    net_dict['num_synapses'] = np.round(num_synapses).astype(int)
     # indegrees of recurrent connections are only explicitly used if
     # 'connect_method' is 'fixedindegree*'
-    net_dict['indegrees'] = np.round((num_synapses_float /
-                            num_neurons_float[:,np.newaxis])).astype(int)
+    net_dict['indegrees'] = np.round((num_synapses /
+                            num_neurons[:,np.newaxis])).astype(int)
     net_dict['ext_indegrees'] = np.round((net_dict['K_ext'] *
                                 net_dict['K_scaling'])).astype(int)
 
@@ -125,11 +135,11 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     if net_dict['K_scaling'] != 1:
         PSC_matrix_mean, PSC_ext, DC_amp = \
             adjust_weights_and_input_to_synapse_scaling(
-                net_dict['full_num_neurons'],
+                full_num_neurons,
                 full_num_synapses, net_dict['K_scaling'],
                 PSC_matrix_mean, PSC_ext,
                 net_dict['neuron_params']['tau_syn'],
-                net_dict['full_mean_rates'],
+                net_dict['mean_rates'],
                 DC_amp,
                 net_dict['poisson_input'],
                 net_dict['bg_rate'], net_dict['K_ext'])
@@ -143,9 +153,10 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     # stimulus parameters
     stim_dict = copy.copy(base_stim_dict)
 
-    # thalamic input
+    # thalamic input # TODO does not work right now, requires scaling as other
+    # cortical populations
     if stim_dict['thalamic_input']:
-        num_th_synapses = helpers.num_synapses_from_conn_probs(
+        num_th_synapses = num_synapses_from_conn_probs(
             stim_dict['conn_probs_th'],
             stim_dict['num_th_neurons'],
             net_dict['full_num_neurons'])[0]

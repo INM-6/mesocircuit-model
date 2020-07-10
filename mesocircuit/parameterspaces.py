@@ -9,7 +9,7 @@ ps_dicts = {
             'print_time': True,
             'data_path': os.path.join(os.getcwd(), 'data_local_downscale')},
         'net_dict': {
-            'N_scaling': 0.1,
+            'N_scaling': 0.01,
             'K_scaling': 0.1},
     }
 }

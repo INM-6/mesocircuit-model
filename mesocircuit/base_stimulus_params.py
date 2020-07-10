@@ -18,11 +18,11 @@ stim_dict = {
     'th_duration': 10.0,
     # rate of the thalamic input (in spikes/s)
     'th_rate': 120.0,
-    # number of thalamic neurons
-    'num_th_neurons': 902,
+    # number of thalamic neurons of network covering 1mm2
+    'num_th_neurons_1mm2': 902,
     # connection probabilities of the thalamus to the different populations
-    # (same order as in 'populations' in 'net_dict')
-    'conn_probs_th':
+    # (same order as in 'populations' in 'net_dict') of network covering 1mm2
+    'conn_probs_th_1mm2':
         np.array([0.0, 0.0, 0.0983, 0.0619, 0.0, 0.0, 0.0512, 0.0196]),
     # mean amplitude of the thalamic postsynaptic potential (in mV),
     # standard deviation will be taken from 'net_dict'

@@ -18,19 +18,12 @@ net_dict = {
     # names of the simulated neuronal populations
     'populations': ['L23E', 'L23I', 'L4E', 'L4I', 'L5E', 'L5I', 'L6E', 'L6I'],
     # number of neurons in the different populations (same order as
-    # 'populations') # TODO rename to 1mm2 and apply scaling
-    'full_num_neurons':
+    # 'populations') of network covering 1mm2
+    'num_neurons_1mm2':
         np.array([20683, 5834, 21915, 5479, 4850, 1065, 14395, 2948]),
-    # mean rates of the different populations in the non-scaled version of the
-    # mesocircuit (in spikes/s; same order as in 'populations');
-    # necessary for the scaling of the network.
-    # The values were optained by running this PyNEST mesocircuit with 12 MPI
-    # processes and both 'N_scaling' and 'K_scaling' set to 1.
-    'full_mean_rates':
-        np.array([0.943, 3.026, 4.368, 5.882, 7.733, 8.664, 1.096, 7.851]),
     # connection probabilities (the first index corresponds to the targets
-    # and the second to the sources)
-    'conn_probs':
+    # and the second to the sources) of network covering 1mm2
+    'conn_probs_1mm2':
         np.array(
             [[0.1009, 0.1689, 0.0437, 0.0818, 0.0323, 0., 0.0076, 0.],
              [0.1346, 0.1371, 0.0316, 0.0515, 0.0755, 0., 0.0042, 0.],
@@ -40,6 +33,14 @@ net_dict = {
              [0.0548, 0.0269, 0.0257, 0.0022, 0.06, 0.3158, 0.0086, 0.],
              [0.0156, 0.0066, 0.0211, 0.0166, 0.0572, 0.0197, 0.0396, 0.2252],
              [0.0364, 0.001, 0.0034, 0.0005, 0.0277, 0.008, 0.0658, 0.1443]]),
+    # mean rates of the different populations in the non-scaled version of the
+    # mesocircuit (in spikes/s; same order as in 'populations');
+    # necessary for the scaling of the network.
+    # The values were optained by running this PyNEST microcircuit with 12 MPI
+    # processes and both 'N_scaling' and 'K_scaling' set to 1.
+    # TODO update with full-scale mesocircuit
+    'mean_rates':
+        np.array([0.943, 3.026, 4.368, 5.882, 7.733, 8.664, 1.096, 7.851]),
     # mean amplitude of excitatory postsynaptic potential (in mV)
     'PSP_exc_mean': 0.15,
     # relative standard deviation of the weight
