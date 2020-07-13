@@ -133,14 +133,14 @@ net_dict = {
                               [0.125, 0.120]], (4,4)),
     # scaling factor applied to all elements of beta_unscaled.
     # The final beta is beta_unscaled * beta_scaling.
-    'beta_scaling': 5.,
+    'beta_scaling': 1.,
 
     # If beta_exh_inh is not None, it must be a list with excitatory and
     # inhibitory decay parameters [beta_exc, beta_inh] which will be used to
     # override the matrix beta above.
     'beta_exc_inh': None,
 
-    # side length (in mm) of square layers in which neurons are randomly
+    # side length (in mm) of square sheets in which neurons are randomly
     # distributed
     'extent': 4.,
     }
