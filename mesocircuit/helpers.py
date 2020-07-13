@@ -22,7 +22,7 @@ from base_stimulus_params import stim_dict
 
 
 def evaluate_parameterspaces(
-    filename='', paramspace_keys=[], with_base_params=True):
+    filename='', paramspace_keys=[], with_base_params=False):
     """
     Evaluates the parameter spaces as specified by the arguments.
 
@@ -40,7 +40,7 @@ def evaluate_parameterspaces(
         empty list means that all keys are evaluated (default=[]).
     with_base_params
         Whether to include a parameterspace with only base parameters
-        (default=True).
+        (default=False).
 
     Returns
     -------
@@ -58,7 +58,6 @@ def evaluate_parameterspaces(
         pass
     if with_base_params:
         ps_dicts.update({'base': {}})
-    print(ps_dicts)
 
     # parameterspaces built with the parameters module and indexed by
     # paramspace_key
@@ -132,6 +131,13 @@ def evaluate_parameterset(ps_id, paramset):
         with open(os.path.join(paramset['sim_dict']['path_parameters'],
             dic + '.pkl'), 'wb') as f:
             pickle.dump(paramset[dic], f)
+
+    # TODO just for testing
+    if 0:
+        for key in sorted(paramset['net_dict']):
+            print(key)
+            print(paramset['net_dict'][key])
+            print()
 
     
     # write jobscripts
