@@ -84,32 +84,52 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     # linear scaling of neuron numbers with square area
     area = net_dict['extent']**2
     full_num_neurons = net_dict['num_neurons_1mm2'] * area
+    net_dict['full_num_neurons'] = np.round(full_num_neurons).astype(int)
+    net_dict['full_num_neurons_sum'] = \
+        np.round(np.sum(full_num_neurons)).astype(int)
 
-    # TODO apply here scaling to area with spatial profiles;
-    # right now a preliminary linear scaling is applied that "very roughly"
-    # preserves the indegrees just for testing
-    full_conn_probs = net_dict['conn_probs_1mm2'] / area
+    # number of synapses of a full-scale 1mm2 network
+    num_synapses_1mm2 = num_synapses_from_conn_probs(
+        net_dict['conn_probs_1mm2'],
+        net_dict['num_neurons_1mm2'],
+        net_dict['num_neurons_1mm2'])
 
-    # total number of synapses between neuronal populations before scaling
-    full_num_synapses = num_synapses_from_conn_probs(
-        full_conn_probs,
-        full_num_neurons,
-        full_num_neurons)
+    print(np.round(num_synapses_1mm2).astype(int))
+    print(np.round(np.sum(num_synapses_1mm2)).astype(int))
+    print()
 
-    # scaled numbers of neurons and synapses
-    num_neurons = (full_num_neurons *
-                   net_dict['N_scaling'])
-    num_synapses = (full_num_synapses *
-                    net_dict['N_scaling'] *
-                    net_dict['K_scaling'])
-    net_dict['num_neurons'] = np.round(num_neurons).astype(int)
-    net_dict['num_synapses'] = np.round(num_synapses).astype(int)
-    # indegrees of recurrent connections are only explicitly used if
-    # 'connect_method' is 'fixedindegree*'
-    net_dict['indegrees'] = np.round((num_synapses /
-                            num_neurons[:,np.newaxis])).astype(int)
-    net_dict['ext_indegrees'] = np.round((net_dict['K_ext'] *
-                                net_dict['K_scaling'])).astype(int)
+    # average indegrees in 1mm2 network
+    indegrees_1mm2 = (num_synapses_1mm2 /
+                      net_dict['num_neurons_1mm2'][:,np.newaxis])
+    net_dict['indegrees_1mm2'] = np.round(indegrees_1mm2).astype(int)
+                      
+    # indegrees are scaled only if connect_method is 'fixedindegree_exp';
+    # otherwise the indegrees from the 1mm2 network are preserved
+    if net_dict['connect_method'] == 'fixedindegree_exp': 
+        # scale indegrees from disc of 1mm2 to disc of radius extent/2.
+        net_dict['K_area_scaling'] = scale_indegrees_to_extent(
+            net_dict['beta'], net_dict['extent'])
+
+        # elementwise multiplication because K_area_scaling is a matrix
+        full_indegrees = np.multiply(indegrees_1mm2, net_dict['K_area_scaling'])
+    else:
+        full_indegrees = indegrees_1mm2
+    net_dict['full_indegrees'] = np.round(full_indegrees).astype(int)
+    full_num_synapses = full_indegrees * full_num_neurons[:, np.newaxis]
+    net_dict['full_num_synapses'] = np.round(full_num_synapses).astype(int)
+    net_dict['full_num_synapses_sum'] = \
+        np.round(np.sum(full_num_synapses)).astype(int)
+
+    # (down-)scale numbers of neurons and synapses
+    net_dict['num_neurons'] = np.round(full_num_neurons *
+                                       net_dict['N_scaling']).astype(int)
+    net_dict['indegrees'] = np.round(full_indegrees *
+                                     net_dict['K_scaling']).astype(int)
+    net_dict['num_synapses'] = np.round(full_num_synapses *
+                                        net_dict['N_scaling'] *
+                                        net_dict['K_scaling']).astype(int)
+    net_dict['ext_indegrees'] = np.round(net_dict['K_ext'] *
+                                         net_dict['K_scaling']).astype(int)
 
     # DC input compensates for potentially missing Poisson input
     if net_dict['poisson_input']:
@@ -126,8 +146,8 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     if net_dict['K_scaling'] != 1:
         PSC_matrix_mean, PSC_ext, DC_amp = \
             adjust_weights_and_input_to_synapse_scaling(
-                full_num_neurons,
-                full_num_synapses, net_dict['K_scaling'],
+                full_indegrees,
+                net_dict['K_scaling'],
                 PSC_matrix_mean, PSC_ext,
                 net_dict['neuron_params']['tau_syn'],
                 net_dict['mean_rates'],
@@ -158,6 +178,40 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
         stim_dict['num_th_synapses'] = np.round(num_th_synapses).astype(int)
 
     return net_dict, stim_dict
+
+
+def scale_indegrees_to_extent(beta, extent):
+    """
+    Computes a matrix of factors to scale indegrees from a disc of area 1mm2 to
+    a disc with radius of half of the extent. The latter corresponds to the
+    radius of the cut-off mask used by the net_dict['connect_method'] is
+    'fixedindegree_exp'.
+
+    Parameters
+    ----------
+    beta
+        Matrix of decay parameters of exponential spatial profile (in mm).
+    extent
+        Side length (in mm) of square sheets where neurons are distributed.
+
+    Returns
+    -------
+    K_indegree_scaling
+        Matrix of scaling factors to be applied to indegrees_1mm2.
+    """
+
+    def expression(beta, radius):
+        frac = radius / beta
+        return 1. - np.exp(-frac) * (1. + frac)
+
+    radius_1mm2 = 1. / np.sqrt(np.pi)
+    radius_area = extent / 2.
+
+    K_indegree_scaling = (expression(beta, radius_area) /
+                          expression(beta, radius_1mm2)) 
+
+    return K_indegree_scaling
+
 
 
 def get_exc_inh_matrix(val_exc, val_inh, num_pops):
@@ -285,8 +339,7 @@ def dc_input_compensating_poisson(bg_rate, K_ext, tau_syn, PSC_ext):
 
 
 def adjust_weights_and_input_to_synapse_scaling(
-        full_num_neurons,
-        full_num_synapses,
+        full_indegrees,
         K_scaling,
         mean_PSC_matrix,
         PSC_ext,
@@ -304,10 +357,8 @@ def adjust_weights_and_input_to_synapse_scaling(
 
     Parameters
     ----------
-    full_num_neurons
-        Total numbers of neurons.
-    full_num_synapses
-        Total numbers of synapses.
+    full_indegrees
+        Indegree matrix of the full-scale network.
     K_scaling
         Scaling factor for indegrees.
     mean_PSC_matrix
@@ -341,9 +392,7 @@ def adjust_weights_and_input_to_synapse_scaling(
     PSC_ext_new = PSC_ext / np.sqrt(K_scaling)
 
     # recurrent input of full network
-    indegree_matrix = \
-        full_num_synapses / full_num_neurons[:, np.newaxis]
-    input_rec = np.sum(mean_PSC_matrix * indegree_matrix * full_mean_rates,
+    input_rec = np.sum(mean_PSC_matrix * full_indegrees * full_mean_rates,
                        axis=1)
 
     DC_amp_new = DC_amp \
