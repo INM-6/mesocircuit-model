@@ -13,12 +13,12 @@ import operator
 import pickle
 import hashlib
 
-import helpers_network_stimulus as helpnet
+from . import helpers_network_stimulus as helpnet
 
 # default parameters
-from base_sim_params import sim_dict
-from base_network_params import net_dict
-from base_stimulus_params import stim_dict
+from .base_sim_params import sim_dict
+from .base_network_params import net_dict
+from .base_stimulus_params import stim_dict
 
 
 def evaluate_parameterspaces(
@@ -30,16 +30,16 @@ def evaluate_parameterspaces(
     Parameters
     ----------
     filename
-        Name of the file <filename>.py defining the parameterspaces to be
-        evaluated (without file extension). The paramterspaces need to be in a
+        Name of the file <filename>.py defining the parameter spaces to be
+        evaluated (without file extension). The parameters paces need to be in a
         dictionary named 'ps_dicts'.
         If no filename is given, i.e., filename='', parameters are evaluated
         according to the base parameters (default='').
     paramspace_keys
-        List of keys of parameterspaces defined in <filename>.py. Providing an
+        List of keys of parameter spaces defined in <filename>.py. Providing an
         empty list means that all keys are evaluated (default=[]).
     with_base_params
-        Whether to include a parameterspace with only base parameters
+        Whether to include a parameter space with only base parameters
         (default=False).
 
     Returns
@@ -52,10 +52,11 @@ def evaluate_parameterspaces(
     
     ps_dicts = {}
     try:
-        f = __import__(filename)
+        # TODO generalize folder name
+        f = __import__('parameterization.' + filename, fromlist=['ps_dicts'])
         ps_dicts.update(f.ps_dicts)
     except:
-        pass
+        print('No parameterspaces read from file.')
     if with_base_params:
         ps_dicts.update({'base': {}})
 
@@ -133,7 +134,7 @@ def evaluate_parameterset(ps_id, paramset):
             pickle.dump(paramset[dic], f)
 
     # TODO just for testing
-    if 0:
+    if 1:
         for key in sorted(paramset['net_dict']):
             print(key)
             print(paramset['net_dict'][key])
@@ -142,7 +143,7 @@ def evaluate_parameterset(ps_id, paramset):
     
     # write jobscripts
     run_cmd = \
-        'python3 run_mesocircuit.py ' + paramset['sim_dict']['path_parameters']
+        'python3 model_nest/run_mesocircuit.py ' + paramset['sim_dict']['path_parameters']
 
     if paramset['sim_dict']['computer'] == 'local':
         jobscript = (

@@ -94,10 +94,6 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
         net_dict['num_neurons_1mm2'],
         net_dict['num_neurons_1mm2'])
 
-    print(np.round(num_synapses_1mm2).astype(int))
-    print(np.round(np.sum(num_synapses_1mm2)).astype(int))
-    print()
-
     # average indegrees in 1mm2 network
     indegrees_1mm2 = (num_synapses_1mm2 /
                       net_dict['num_neurons_1mm2'][:,np.newaxis])

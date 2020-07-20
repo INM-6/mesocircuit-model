@@ -9,8 +9,6 @@ build and simulate the network.
 import os
 import numpy as np
 import nest
-import helpers
-
 
 class Network:
     """ Provides functions to setup NEST, to create and connect all nodes of

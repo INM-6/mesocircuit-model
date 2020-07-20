@@ -31,8 +31,8 @@ ps_dicts = {
             **{'data_path': os.path.join(os.getcwd(),
                                          'data_local_mesocircuit')}},
         'net_dict': {
-            'N_scaling': 0.01,
-            'K_scaling': 0.1,
-            'beta_scaling': ps.ParameterRange([3., 5.])},
+            'N_scaling': 0.008,
+            'K_scaling': 0.1},
+            #'beta_scaling': ps.ParameterRange([3., 5.])},
     }
 }
