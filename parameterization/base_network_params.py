@@ -16,7 +16,8 @@ net_dict = {
     # neuron model
     'neuron_model': 'iaf_psc_exp',
     # names of the simulated neuronal populations
-    'populations': ['L23E', 'L23I', 'L4E', 'L4I', 'L5E', 'L5I', 'L6E', 'L6I'],
+    'populations': np.array(
+        ['L23E', 'L23I', 'L4E', 'L4I', 'L5E', 'L5I', 'L6E', 'L6I']),
     # number of neurons in the different populations (same order as
     # 'populations') of network covering 1mm2
     'num_neurons_1mm2':
@@ -65,9 +66,9 @@ net_dict = {
 
     # delay parameters for the 'delay_type' set to 'linear'
     # constant part of the linear delay (in ms)
-    'delay_offset_exc_inh': [0.5, 0.5],
+    'delay_offset_exc_inh': np.array([0.5, 0.5]),
     # propagation speed (in mm/ms)
-    'prop_speed_exc_inh': [0.3, 0.3],
+    'prop_speed_exc_inh': np.array([0.3, 0.3]),
     # relative standard deviation of the linear delay of excitatory and
     # inhibitory connections
     'delay_lin_rel_std': 0.1,
@@ -95,12 +96,12 @@ net_dict = {
     'neuron_params': {
         # membrane potential average for the neurons (in mV)
         'V0_mean': {'original': -58.0,
-                    'optimized': [-68.28, -63.16, -63.33, -63.45,
-                                  -63.11, -61.66, -66.72, -61.43]},
+                    'optimized': np.array([-68.28, -63.16, -63.33, -63.45,
+                                           -63.11, -61.66, -66.72, -61.43])},
         # standard deviation of the average membrane potential (in mV)
         'V0_std': {'original': 10.0,
-                   'optimized': [5.36, 4.57, 4.74, 4.94,
-                                 4.94, 4.55, 5.46, 4.48]},
+                   'optimized': np.array([5.36, 4.57, 4.74, 4.94,
+                                          4.94, 4.55, 5.46, 4.48])},
         # reset membrane potential of the neurons (in mV)
         'E_L': -65.0,
         # threshold potential of the neurons (in mV)

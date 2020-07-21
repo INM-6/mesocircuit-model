@@ -137,7 +137,7 @@ def evaluate_parameterset(ps_id, paramset):
             pickle.dump(paramset[dic], f)
 
     # TODO just for testing
-    if 1:
+    if 0:
         for key in sorted(paramset['net_dict']):
             print(key)
             print(paramset['net_dict'][key])

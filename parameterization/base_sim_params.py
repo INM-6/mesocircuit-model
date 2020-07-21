@@ -34,6 +34,8 @@ sim_dict = {
     'print_time': False,
     # path to save the output data
     'data_path': os.path.join(os.getcwd(), 'data'),
+    # file name for node ids
+    'fname_nodeids': 'population_nodeids.dat',
     # if True, data will be overwritten,
     # if False, a NESTError is raised if the files already exist
     'overwrite_files': True,
