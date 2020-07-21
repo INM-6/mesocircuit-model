@@ -217,6 +217,15 @@ class Network:
                     f.write('{} {}\n'.format(pop[0].global_id,
                                              pop[-1].global_id))
 
+        # write MPI-local positions to file
+        # rank is automatically appended to file name
+        for i,pop in enumerate(self.pops):
+            fn = os.path.join(
+                self.sim_dict['path_raw_data'],
+                'positions_' + self.net_dict['populations'][i] + '.dat')
+            nest.DumpLayerNodes(pop, fn)
+
+
     def __create_recording_devices(self):
         """ Creates one recording device of each kind per population.
 
@@ -230,7 +239,8 @@ class Network:
             if nest.Rank() == 0:
                 print('  Creating spike detectors.')
             sd_dict = {'record_to': 'ascii',
-                       'label': os.path.join(self.sim_dict['path_raw_data'], 'spike_detector')}
+                       'label': os.path.join(self.sim_dict['path_raw_data'],
+                                             'spike_detector')}
             self.spike_detectors = nest.Create('spike_detector',
                                                n=self.net_dict['num_pops'],
                                                params=sd_dict)
@@ -241,7 +251,8 @@ class Network:
             vm_dict = {'interval': self.sim_dict['rec_V_int'],
                        'record_to': 'ascii',
                        'record_from': ['V_m'],
-                       'label': os.path.join(self.sim_dict['path_raw_data'], 'voltmeter')}
+                       'label': os.path.join(self.sim_dict['path_raw_data'],
+                                             'voltmeter')}
             self.voltmeters = nest.Create('voltmeter',
                                           n=self.net_dict['num_pops'],
                                           params=vm_dict)
