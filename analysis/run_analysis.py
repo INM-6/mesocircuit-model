@@ -1,4 +1,16 @@
+"""PyNEST Mesocircuit: Run Analysis
+-------------------------------------
+
+Analyze the spiking network activity of the mesocircuit.
+"""
+
+###############################################################################
+# Import the necessary modules and start the time measurements.
+import os
+import sys
+import pickle
 from mpi4py import MPI
+import analysis
 import time
 time_start = time.time()
 
@@ -7,7 +19,23 @@ COMM = MPI.COMM_WORLD
 SIZE = COMM.Get_size()
 RANK = COMM.Get_rank()
 
-# TODO
+################################################################################
+# Load simulation, network, stimulation and analysis parameters from files
+# located in the folder provided as command line argument.
+
+path_parameters = sys.argv[1]
+
+dics = []
+for dic in ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict']:
+    with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
+        dics.append(pickle.load(f))
+sim_dict, net_dict, stim_dict, ana_dict = dics
+
+
+
+
+
+ana = analysis.Analysis(sim_dict, net_dict, stim_dict, ana_dict)
 
 
 
