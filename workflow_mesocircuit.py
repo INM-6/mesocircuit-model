@@ -10,7 +10,7 @@ paramspace_keys = [])
 # local test run
 data_path, ps_id = parameterview['local_microcircuit'][0]
 #data_path, ps_id = parameterview['local_mesocircuit'][0]
-if 1:
+if 0:
     jobscript = os.path.join(data_path, 'jobscripts', ps_id , 'network.sh')
     os.system('sh ' + jobscript)
 
@@ -18,8 +18,12 @@ if 1:
 
 
 # preliminary analysis just for testing
-if 1:
+if 0:
     raster_plot_interval = np.array([500., 700.])
     firing_rates_interval = np.array([500., 1500.])
     param_path = os.path.join(data_path, 'parameters', ps_id)
     ana.evaluate(param_path, raster_plot_interval, firing_rates_interval)
+
+if 1:
+    jobscript = os.path.join(data_path, 'jobscripts', ps_id, 'analysis.sh')
+    os.system('sh ' + jobscript)
