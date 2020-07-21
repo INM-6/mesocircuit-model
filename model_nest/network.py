@@ -12,7 +12,7 @@ import nest
 
 class Network:
     """ Provides functions to setup NEST, to create and connect all nodes of
-    the network, to simulate, and to evaluate the resulting spike data.
+    the network and to simulate.
 
     Instantiating a Network object derives dependent parameters and already
     initializes the NEST kernel.
@@ -21,17 +21,17 @@ class Network:
     ---------
     sim_dict
         Dictionary containing all parameters specific to the simulation
-        (see: ``sim_params.py``).
+        (derived from: ``base_sim_params.py``).
     net_dict
          Dictionary containing all parameters specific to the neuron and
-         network models (see: ``network_params.py``).
+         network models (derived from: ``base_network_params.py``).
     stim_dict
-        Optional dictionary containing all parameter specific to the stimulus
-        (see: ``stimulus_params.py``)
+        Dictionary containing all parameters specific to a potential stimulus
+        (derived from: ``base_stimulus_params.py``)
 
     """
 
-    def __init__(self, sim_dict, net_dict, stim_dict=None):
+    def __init__(self, sim_dict, net_dict, stim_dict):
         self.sim_dict = sim_dict
         self.net_dict = net_dict
         self.stim_dict = stim_dict
@@ -211,7 +211,8 @@ class Network:
 
         # write node ids to file
         if nest.Rank() == 0:
-            fn = os.path.join(self.sim_dict['path_raw_data'], 'population_nodeids.dat')
+            fn = os.path.join(self.sim_dict['path_raw_data'],
+                              self.sim_dict['fname_nodeids'])
             with open(fn, 'w+') as f:
                 for pop in self.pops:
                     f.write('{} {}\n'.format(pop[0].global_id,

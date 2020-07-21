@@ -17,7 +17,7 @@ time_start = time.time()
 
 ################################################################################
 # Load simulation, network and stimulation parameters from files located in the
-# a folder provided as command line argument.
+# folder provided as command line argument.
 
 path_parameters = sys.argv[1]
 
