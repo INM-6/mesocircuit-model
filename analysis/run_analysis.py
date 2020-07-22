@@ -10,7 +10,7 @@ import os
 import sys
 import pickle
 from mpi4py import MPI
-import analysis
+import analysis_spike
 import time
 time_start = time.time()
 
@@ -31,11 +31,8 @@ for dic in ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict']:
         dics.append(pickle.load(f))
 sim_dict, net_dict, stim_dict, ana_dict = dics
 
-
-
-
-
-ana = analysis.Analysis(sim_dict, net_dict, stim_dict, ana_dict)
+sana = analysis_spike.SpikeAnalysis(sim_dict, net_dict, stim_dict, ana_dict)
+time_init = time.time()
 
 
 
@@ -45,4 +42,7 @@ time_stop = time.time()
 print(
     '\nTimes of Rank {}:\n'.format(RANK) +
     '  Total analysis time:  {:.3f} s\n'.format(
-        time_stop - time_start))
+        time_stop - time_start) +
+    '  Time init: {:.3f} s\n'.format(
+        time_init - time_start)
+    )
