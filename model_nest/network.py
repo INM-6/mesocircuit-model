@@ -231,6 +231,8 @@ class Network:
         """ Creates one recording device of each kind per population.
 
         Only devices which are given in ``sim_dict['rec_dev']`` are created.
+        The detector label is equal to the respective name of the recording
+        device.
 
         """
         if nest.Rank() == 0:
@@ -239,24 +241,37 @@ class Network:
         if 'spike_detector' in self.sim_dict['rec_dev']:
             if nest.Rank() == 0:
                 print('  Creating spike detectors.')
-            sd_dict = {'record_to': 'ascii',
-                       'label': os.path.join(self.sim_dict['path_raw_data'],
-                                             'spike_detector')}
+
+            sd_dict = {'record_to': 'ascii'}
             self.spike_detectors = nest.Create('spike_detector',
                                                n=self.net_dict['num_pops'],
                                                params=sd_dict)
+
+            # cannot provide list of labels with params
+            sd_labels = [os.path.join(self.sim_dict['path_raw_data'],
+                                      'spike_detector_' + pop) \
+                         for pop in self.net_dict['populations']]
+            for i,sd in enumerate(self.spike_detectors):
+                sd.label = sd_labels[i]
 
         if 'voltmeter' in self.sim_dict['rec_dev']:
             if nest.Rank() == 0:
                 print('  Creating voltmeters.')
             vm_dict = {'interval': self.sim_dict['rec_V_int'],
                        'record_to': 'ascii',
-                       'record_from': ['V_m'],
-                       'label': os.path.join(self.sim_dict['path_raw_data'],
-                                             'voltmeter')}
+                       'record_from': ['V_m']}
+                                             
             self.voltmeters = nest.Create('voltmeter',
                                           n=self.net_dict['num_pops'],
                                           params=vm_dict)
+
+            # cannot provide list of labels with params
+            vm_labels = [os.path.join(self.sim_dict['path_raw_data'],
+                                      'voltmeter_' + pop) \
+                         for pop in self.net_dict['populations']]
+            for i,vm in enumerate(self.voltmeters):
+                vm.label = vm_labels[i]
+
 
     def __create_poisson_bg_input(self):
         """ Creates the Poisson generators for ongoing background input if
