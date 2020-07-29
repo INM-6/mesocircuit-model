@@ -159,19 +159,26 @@ class SpikeAnalysis:
         # TODO maybe return tuples of filenames and datasets
                 
 
-        # get plain spike data
-        fn = os.path.join(self.sim_dict['path_processed_data'],
-                         'spike_detector_' + X + '.dat')
-        spikes = np.loadtxt(fn, dtype=self.dtypes['spike_detector'])
+        # load plain spike data and positions
+        data = []
+        for datatype in ['spike_detector', 'positions']:
+            fn = os.path.join(self.sim_dict['path_processed_data'],
+                              datatype + '_' + X + '.dat')
+            data.append(np.loadtxt(fn, dtype=self.dtypes[datatype]))
+        spikes, positions = data
 
-        # get time binned spike trains
+
+        # time binned spike trains
         sptrains = self.__compute_time_binned_sptrains(
             X, spikes, self.time_bins, dtype=np.uint8)
+
+        # position sorting array
+        pos_sorting_array = self.__get_pos_sorting_array
 
         return 
 
 
-    def __compute_time_binned_sptrains(self, X, spikes, time_bins, dtype=np.uint8):
+    def __compute_time_binned_sptrains(self, X, spikes, time_bins, dtype):
         """
         Computes a histogram with ones for each spike.
 
@@ -209,6 +216,34 @@ class SpikeAnalysis:
             (data, (spikes['nodeid'], time_indices)))
             #shape=shape, dtype=dtype) # TODO is this shape and dtype needed?
         return sptrains.tocsr()
+
+
+    def __get_pos_sorting_array(self, X, positions_X):
+        """
+        Get an array with indices for sorting node ids according to the given
+        sorting axis.
+        
+        Parameters
+        ----------
+        X
+            Population name.
+        positions_X
+            Positions of population X.
+
+        Returns
+        -------
+        argsort
+            Sorting array.
+        """
+        if self.ana_dict['sorting_axis'] == 'x':
+            argsort = np.argsort(positions_X['x_position_mm'])
+        elif self.ana_dict['sorting_axis'] == 'y':
+            argsort = np.argsort(positions_X['y_position_mm'])
+        elif self.ana_dict['sorting_axis'] == None:
+            argsort = np.arange(positions_X.size) 
+        else:
+            raise Exception ("Sorting axis is not 'x', 'y' or None.")
+        return argsort
 
 
     def __merge_preprocessed_data(self):
