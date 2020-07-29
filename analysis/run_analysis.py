@@ -31,18 +31,31 @@ for dic in ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict']:
         dics.append(pickle.load(f))
 sim_dict, net_dict, stim_dict, ana_dict = dics
 
+################################################################################
+# Instantiate a SpikeAnalysis object, preprocess the data (spatial and temporal
+# binning), and compute statistics.
+
 sana = analysis_spike.SpikeAnalysis(sim_dict, net_dict, stim_dict, ana_dict)
 time_init = time.time()
 
+sana.preprocess_data()
+time_preprocess = time.time()
 
-
+sana.compute_statistics()
 
 time_stop = time.time()
+
+################################################################################
+# Print times.
 
 print(
     '\nTimes of Rank {}:\n'.format(RANK) +
     '  Total analysis time:  {:.3f} s\n'.format(
         time_stop - time_start) +
     '  Time init: {:.3f} s\n'.format(
-        time_init - time_start)
+        time_init - time_start) +
+    '  Time preprocess: {:.3f} s\n'.format(
+        time_preprocess - time_init) +
+    '  Time statistics: {:.3f} s\n'.format(
+        time_stop - time_preprocess)
     )

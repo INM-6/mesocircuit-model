@@ -80,10 +80,11 @@ class SpikeAnalysis:
                                   self.net_dict['extent'] / 2.,
                                   self.ana_dict['binsize_space'])
 
+        # TODO consider to move the following block out of __init__()
         # convert raw node ids to processed ones
         self.nodeids_raw, self.nodeids_proc = self.__raw_to_processed_nodeids()
 
-        # merge spike and positions files
+        # merge spike and position files
         num_spikes = self.__merge_raw_files('spike_detector')
         num_neurons = self.__merge_raw_files('positions')
         # TODO maybe move somewhere else
@@ -92,6 +93,125 @@ class SpikeAnalysis:
 
         # minimal analysis as sanity check
         self.__first_glance_on_data(num_spikes)
+        return
+
+
+    def preprocess_data(self):
+        """
+        """
+        # preprocess data of each population separately
+        #self.__parallelize(self.X,
+        #                   self.__preprocess_data_X,
+        #                   int)
+
+
+        # combine population results
+        self.__merge_preprocessed_data()
+
+
+    
+
+
+
+
+
+        # spike trains of each neuron
+
+        # for each population
+        #   read data from dat file or get it somewhere else
+        #   compute spike trains
+        #   write one file per population
+        # combine population files
+        
+
+
+
+
+
+
+
+
+        # option 1: population parallel
+        # option 2: parallel in quantities to be computed
+
+        # needed quantities:
+        # pos_sorting_arrays
+        # sptrains
+        ### above also for subsampled 1mm
+
+
+        return
+
+    def __preprocess_data_X(self):
+        """
+        """
+        return
+
+
+
+
+
+    def __merge_preprocessed_data(self):
+        """
+        TODO maybe parallelize here over quantities
+        """
+        return
+
+
+
+
+
+
+    def compute_statistics(self):
+        """
+        """
+        return
+
+
+    def __parallelize(self, array, func, result_dtype, *args):
+        """
+        Uses MPI to parallelize a loop over an array evaluating a function in
+        every loop iteration and returning a result obtained with Allgather.
+
+        Parameters
+        ----------
+        array
+            Array-like to iterate over.
+        func
+            Function to be evaluated in every loop iteration.
+        result_dtype
+            Dtype of the entries in the returned array.
+        *args
+            Further arguments to function.
+
+        Returns
+        -------
+        result
+            Array combining the results of the individual MPI processes.
+        """
+        # total number of iterations
+        num_its = len(array)
+        # at most as many MPI processes needed as iterations have to be done
+        num_procs = np.min([SIZE, num_its]).astype(int)
+        # number of iterations assigned to each rank;
+        # Allgather requires equally sized chunks.
+        # if not evenly divisible, num_its_rank * num_procs > num_its such that
+        # the highest rank (= num_procs - 1) has less iterations to perform
+        num_its_rank = int(np.ceil(num_its) / num_procs)
+
+        res_local = np.zeros(num_its_rank, dtype=result_dtype)
+        res_global = np.zeros(num_its_rank * num_procs, dtype=result_dtype)
+        if RANK < num_procs:
+            for i,val in enumerate(array):
+                if RANK == int(i / num_its_rank):
+                    res_local[i % num_its_rank] = func(i, val, *args)
+        else:
+            pass
+        # gather and concatenate MPI-local results
+        COMM.Allgather(res_local, res_global)
+        result = res_global[:num_its]
+        COMM.barrier() # TODO needed? 
+        return result   
 
 
     def __raw_to_processed_nodeids(self):
@@ -152,80 +272,13 @@ class SpikeAnalysis:
             Options are 'spike_detector' and 'positions'.
 
         Returns
+        -------
         num_rows
             An array with the number of rows in the final files.
             datatype = 'spike_detector': number of spikes per population.
             datatype = 'positions': number of neurons per population.
 
         """
-
-        def merge_raw_files_X(i, X, dtype, skiprows, sortby, fmt):
-            """
-            Inner function to be used as argument of self.__parallelize()
-            with array=self.X.
-
-            Parameters
-            ----------
-            ipop
-                Iterator of populations
-                (to be set by outer parallel function).
-            X
-                Population names
-                (to be set by outer parralel function).
-            dtype
-                Numpy dtype used for loading data.
-            skiprows
-                Number of rows to skip while loading due to header.
-            sortby
-                Name to sort the processed data by.
-            fmt
-                Format used for writing processed data to file.
-                
-            Returns
-            -------
-            num_rows
-                Number of rows.
-            """
-
-            single_files = glob.glob(os.path.join(
-                self.sim_dict['path_raw_data'],
-                datatype + '_' + X + '*.dat'))
-
-            # load data from single files and combine them
-            comb_data = np.array([[]], dtype=dtype)
-            for fn in single_files:
-                data = np.loadtxt(fn, skiprows=skiprows, dtype=dtype)
-                comb_data = np.append(comb_data, data)
-
-            # change from raw to processed node ids,
-            # subtract the first one of the raw ids and add the first one
-            # of the processed ids per population 
-            comb_data['nodeid'] += \
-                -self.nodeids_raw[i][0] + \
-                self.nodeids_proc[i][0]
-
-            if 'time_ms' in comb_data.dtype.names:
-                # subtract the pre-simulation time
-                comb_data['time_ms'] -= self.sim_dict['t_presim']
-
-            # sort the final data
-            comb_data = np.sort(comb_data, order=sortby)
-
-            # number of rows corresponds to
-            # 'spike_detector': number of spikes
-            # 'positions': number of neurons
-            num_rows = np.shape(comb_data)[0]
-
-            # write to file
-            fn = os.path.join(
-                self.sim_dict['path_processed_data'],
-                datatype + '_' + X + '.dat')
-            header = '\t '.join(dtype['names']) 
-            np.savetxt(fn, comb_data, delimiter='\t',
-                       header=header, fmt=fmt)
-            return num_rows
-
-
         # specify datatype-dependent parameters
         if datatype == 'spike_detector':
             dtype = {'names': ('nodeid', 'time_ms'),
@@ -246,54 +299,79 @@ class SpikeAnalysis:
 
         # merge raw files in parallel
         num_rows = self.__parallelize(self.X,
-                                      merge_raw_files_X,
-                                      dtype, skiprows, sortby, fmt).astype(int)
+                                      self.__merge_raw_files_X,
+                                      int,
+                                      datatype, dtype, skiprows, sortby, fmt)
         return num_rows
 
 
-    def __parallelize(self, array, func, *args):
+    def __merge_raw_files_X(self, i, X, datatype, dtype, skiprows, sortby, fmt):
         """
-        Parallelizes a loop over an array evaluating a function in every loop
-        iteration.
-
-        For flexibility, the dtype of the result is not fixed.
+        Inner function for self.__merge_raw_files() to be used as argument of
+        self.__parallelize() with array=self.X.
 
         Parameters
         ----------
-        array
-            Array-like to iterate over.
-        func
-            Function to be evaluated in every loop iteration.
-        *args
-            Further arguments to function.
-
+        i
+            Iterator of populations
+            (to be set by outer parallel function).
+        X
+            Population names
+            (to be set by outer parralel function).
+        datatype
+            Options are 'spike_detector' and 'positions'.
+        dtype
+            Numpy dtype used for loading data.
+        skiprows
+            Number of rows to skip while loading due to header.
+        sortby
+            Name to sort the processed data by.
+        fmt
+            Format used for writing processed data to file.
+            
         Returns
         -------
-        result
+        num_rows
+            Number of rows.
         """
-        # total number of iterations
-        num_its = len(array)
-        # at most as many MPI processes needed as iterations have to be done
-        num_procs = np.min([SIZE, num_its]).astype(int)
-        # number of iterations assigned to each rank;
-        # Allgather requires equally sized chunks.
-        # if not evenly divisible, num_its_rank * num_procs > num_its such that
-        # the highest rank (= num_procs - 1) has less iterations to perform
-        num_its_rank = int(np.ceil(num_its) / num_procs)
 
-        res_local = np.zeros(num_its_rank)
-        res_global = np.zeros(num_its_rank * num_procs)
-        if RANK < num_procs:
-            for i,val in enumerate(array):
-                if RANK == int(i / num_its_rank):
-                    res_local[i % num_its_rank] = func(i, val, *args)
-        else:
-            pass
-        # gather and concatenate MPI-local results
-        COMM.Allgather(res_local, res_global)
-        result = res_global[:num_its]
-        COMM.barrier() # TODO needed? 
-        return result     
+        single_files = glob.glob(os.path.join(
+            self.sim_dict['path_raw_data'],
+            datatype + '_' + X + '*.dat'))
+
+        # load data from single files and combine them
+        comb_data = np.array([[]], dtype=dtype)
+        for fn in single_files:
+            data = np.loadtxt(fn, skiprows=skiprows, dtype=dtype)
+            comb_data = np.append(comb_data, data)
+
+        # change from raw to processed node ids,
+        # subtract the first one of the raw ids and add the first one
+        # of the processed ids per population 
+        comb_data['nodeid'] += \
+            -self.nodeids_raw[i][0] + \
+            self.nodeids_proc[i][0]
+
+        if 'time_ms' in comb_data.dtype.names:
+            # subtract the pre-simulation time
+            comb_data['time_ms'] -= self.sim_dict['t_presim']
+
+        # sort the final data
+        comb_data = np.sort(comb_data, order=sortby)
+
+        # number of rows corresponds to
+        # 'spike_detector': number of spikes
+        # 'positions': number of neurons
+        num_rows = np.shape(comb_data)[0]
+
+        # write to file
+        fn = os.path.join(
+            self.sim_dict['path_processed_data'],
+            datatype + '_' + X + '.dat')
+        header = '\t '.join(dtype['names']) 
+        np.savetxt(fn, comb_data, delimiter='\t',
+                    header=header, fmt=fmt)
+        return num_rows
 
 
     def __first_glance_on_data(self, num_spikes):
@@ -305,9 +383,6 @@ class SpikeAnalysis:
         num_spikes
             An array of spike counts per population.
         """
-        if RANK == 0:
-            print('First glance on data:')
-
         # compute firing rates
         rates = np.divide(num_spikes, self.N_X)
 
@@ -328,5 +403,6 @@ class SpikeAnalysis:
         overview.align = 'r'
 
         if RANK == 0:
+            print('First glance on data:')
             print(overview)
         return
