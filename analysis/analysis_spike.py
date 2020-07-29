@@ -8,6 +8,7 @@ build and simulate the network.
 
 import os
 import glob
+import h5py
 import numpy as np
 import scipy.sparse as sp
 from mpi4py import MPI
@@ -160,22 +161,64 @@ class SpikeAnalysis:
                 
 
         # load plain spike data and positions
-        data = []
+        data_load = []
         for datatype in ['spike_detector', 'positions']:
             fn = os.path.join(self.sim_dict['path_processed_data'],
                               datatype + '_' + X + '.dat')
-            data.append(np.loadtxt(fn, dtype=self.dtypes[datatype]))
-        spikes, positions = data
+            data_load.append(np.loadtxt(fn, dtype=self.dtypes[datatype]))
+        spikes, positions = data_load
 
-
+        # append lists for each computed quantity
+        # [datatype, dataset, sparse, dtype]
+        # if sparse==True: dtype is ignored (set to None for convenience)
+        data_write = []
         # time binned spike trains
         sptrains = self.__compute_time_binned_sptrains(
             X, spikes, self.time_bins, dtype=np.uint8)
+        data_write.append(['sptrains', sptrains, True, None])
 
         # position sorting array
-        pos_sorting_array = self.__get_pos_sorting_array
+        # TODO specify dtype
+        pos_sorting_arrays = self.__get_pos_sorting_array(X, positions)
+        data_write.append(['pos_sorting_arrays', pos_sorting_arrays, False, int])
 
-        return 
+
+        # write datasets to h5 files
+        self.__write_datasets_to_h5_X(X, data_write)
+
+
+        return
+
+
+    def __write_datasets_to_h5_X(self, X, data):
+        """
+        Writes datasets for population X to .h5.
+
+        Parameters
+        ----------
+        X
+            Population name.
+        data
+            List of lists, each of which is: [datatype, dataset, sparse, dtype].
+        """
+        for datatype, dataset, sparse, dtype in data:
+            fn = os.path.join(self.sim_dict['path_processed_data'],
+                              datatype + '_' + X + '.h5')
+            f = h5py.File(fn, 'w')
+
+            if sparse:
+                print('Sparse writing not implemented, yet.')
+            else:
+                f.create_dataset(X,
+                                 data=dataset,
+                                 dtype=dtype,
+                                 compression='gzip',
+                                 compression_opts=2,
+                                 chunks=True,
+                                 shape=dataset.shape)
+            f.flush()
+            f.close()
+        return
 
 
     def __compute_time_binned_sptrains(self, X, spikes, time_bins, dtype):
@@ -218,7 +261,7 @@ class SpikeAnalysis:
         return sptrains.tocsr()
 
 
-    def __get_pos_sorting_array(self, X, positions_X):
+    def __get_pos_sorting_array(self, X, positions):
         """
         Get an array with indices for sorting node ids according to the given
         sorting axis.
@@ -227,7 +270,7 @@ class SpikeAnalysis:
         ----------
         X
             Population name.
-        positions_X
+        positions
             Positions of population X.
 
         Returns
@@ -236,11 +279,11 @@ class SpikeAnalysis:
             Sorting array.
         """
         if self.ana_dict['sorting_axis'] == 'x':
-            argsort = np.argsort(positions_X['x_position_mm'])
+            argsort = np.argsort(positions['x-position_mm'])
         elif self.ana_dict['sorting_axis'] == 'y':
-            argsort = np.argsort(positions_X['y_position_mm'])
+            argsort = np.argsort(positions['y-position_mm'])
         elif self.ana_dict['sorting_axis'] == None:
-            argsort = np.arange(positions_X.size) 
+            argsort = np.arange(positions.size) 
         else:
             raise Exception ("Sorting axis is not 'x', 'y' or None.")
         return argsort
