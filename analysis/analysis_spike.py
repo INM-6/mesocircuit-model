@@ -9,6 +9,7 @@ build and simulate the network.
 import os
 import glob
 import numpy as np
+import scipy.sparse as sp
 from mpi4py import MPI
 from prettytable import PrettyTable
 
@@ -24,8 +25,6 @@ class SpikeAnalysis:
     Instantiating a SpikeAnalysis object sets class attributes,
     merges spike and position files, changes node ids, and rescales spike times.
     The processed node ids start at 1 and are continguous.
-    The processed spike times start at 0 ms as the pre-simulation time is
-    subtracted.    
 
     Parameters
     ---------
@@ -53,6 +52,13 @@ class SpikeAnalysis:
         self.stim_dict = stim_dict
         self.ana_dict = ana_dict
 
+        # dtypes
+        self.dtypes = {
+            'spike_detector': {'names': ('nodeid', 'time_ms'),
+                               'formats': ('i4', 'f8')},
+            'positions': {'names': ('nodeid', 'x-position_mm', 'y-position_mm'),
+                          'formats': ('i4', 'f8', 'f8')}}
+
         # thalamic population 'TC' is treated as the cortical populations
         # presynaptic population names
         # TODO add TC properly
@@ -65,14 +71,17 @@ class SpikeAnalysis:
         #self.N_X = np.append(self.net_dict['num_neurons', self.net_dict['num_neurons_th'])
 
 
+        # TODO when merging raw files, better not subtract the transient!!!
 
         # temporal bins for raw and resampled spike trains
-        self.time_bins = np.arange(self.sim_dict['t_presim'],
-                                   self.sim_dict['t_sim'],
-                                   self.sim_dict['sim_resolution'])
-        self.time_bins_rs = np.arange(self.sim_dict['t_presim'],
-                                      self.sim_dict['t_sim'],
-                                      self.ana_dict['binsize_time'])
+        self.time_bins = np.arange(
+            self.sim_dict['t_presim'],
+            self.sim_dict['t_presim'] + self.sim_dict['t_sim'],
+            self.sim_dict['sim_resolution'])
+        self.time_bins_rs = np.arange(
+            self.sim_dict['t_presim'],
+            self.sim_dict['t_presim'] + self.sim_dict['t_sim'],
+            self.ana_dict['binsize_time'])
 
         # spatial bins
         # TODO check in later functions, old version used linspace
@@ -99,20 +108,14 @@ class SpikeAnalysis:
     def preprocess_data(self):
         """
         """
-        # preprocess data of each population separately
-        #self.__parallelize(self.X,
-        #                   self.__preprocess_data_X,
-        #                   int)
+        # preprocess data of each population in parallel
+        self.__parallelize(self.X,
+                           self.__preprocess_data_X,
+                           None)
 
 
         # combine population results
         self.__merge_preprocessed_data()
-
-
-    
-
-
-
 
 
         # spike trains of each neuron
@@ -122,13 +125,6 @@ class SpikeAnalysis:
         #   compute spike trains
         #   write one file per population
         # combine population files
-        
-
-
-
-
-
-
 
 
         # option 1: population parallel
@@ -138,17 +134,81 @@ class SpikeAnalysis:
         # pos_sorting_arrays
         # sptrains
         ### above also for subsampled 1mm
-
-
         return
+    
 
-    def __preprocess_data_X(self):
+    def __preprocess_data_X(self, i, X):
         """
+        Inner function for to be used as argument of self.__parallelize()
+        with array=self.X.
+        Corresponding outer function: self.preprocess_data()
+
+        Parameters
+        ----------
+        i
+            Iterator of populations
+            (to be set by outer parallel function).
+        X
+            Population names
+            (to be set by outer parralel function).
+
+        Returns
+        -------
         """
-        return
+        
+        # TODO maybe return tuples of filenames and datasets
+                
+
+        # get plain spike data
+        fn = os.path.join(self.sim_dict['path_processed_data'],
+                         'spike_detector_' + X + '.dat')
+        spikes = np.loadtxt(fn, dtype=self.dtypes['spike_detector'])
+
+        # get time binned spike trains
+        sptrains = self.__compute_time_binned_sptrains(
+            X, spikes, self.time_bins, dtype=np.uint8)
+
+        return 
 
 
+    def __compute_time_binned_sptrains(self, X, spikes, time_bins, dtype=np.uint8):
+        """
+        Computes a histogram with ones for each spike.
 
+        Parameters
+        ----------
+        X
+            Population name.
+        spikes
+            Array of node ids and spike times.
+        time_bins
+            Time bins.
+        dtype
+            An integer dtype that fits the data.
+
+        Returns
+        -------
+        sptrains
+            Spike trains as Compressed Sparse Row matrix.
+        """
+        # if no spikes were recorded, return an empty sparse matrix
+        if spikes.size == 0:
+            num_neurons_X = self.N_X[np.where(self.X==X)[0]]
+            shape = (num_neurons_X, time_bins)
+            return sp.csr_matrix(shape, dtype=dtype)
+        
+        # time bins shifted by one bin as needed by np.digitize()
+        dt = time_bins[1] - time_bins[0]
+        time_bins_digi = np.r_[time_bins[1:], [time_bins[-1] + dt]]
+        # indices of time bins to which each spike time belongs
+        time_indices = np.digitize(spikes['time_ms'], time_bins_digi)
+
+        # create COO matrix
+        data = np.ones(spikes.size, dtype=dtype)
+        sptrains = sp.coo_matrix(
+            (data, (spikes['nodeid'], time_indices)))
+            #shape=shape, dtype=dtype) # TODO is this shape and dtype needed?
+        return sptrains.tocsr()
 
 
     def __merge_preprocessed_data(self):
@@ -262,8 +322,6 @@ class SpikeAnalysis:
         datatype='positions').
         Node ids and, if applicable also, spike times are processed.
         The processed node ids start at 1 and are continguous.
-        The processed spike times start at 0 ms as the pre-simulation time is
-        subtracted.    
         The final processed data is written to file.
 
         Parameters
@@ -279,21 +337,6 @@ class SpikeAnalysis:
             datatype = 'positions': number of neurons per population.
 
         """
-        # specify datatype-dependent parameters
-        if datatype == 'spike_detector':
-            dtype = {'names': ('nodeid', 'time_ms'),
-                     'formats': ('i4', 'f8')}
-            skiprows = 3 # header
-            sortby = 'time_ms'
-            fmt = ['%d', '%.3f']
-
-        elif datatype == 'positions':
-            dtype = {'names': ('nodeid', 'x-position_mm', 'y-position_mm'),
-                     'formats': ('i4', 'f8', 'f8')}
-            skiprows = 0
-            sortby = 'nodeid'
-            fmt = ['%d', '%f', '%f']
-
         if RANK == 0:
             print('  Merging raw files: ' + datatype)
 
@@ -301,14 +344,15 @@ class SpikeAnalysis:
         num_rows = self.__parallelize(self.X,
                                       self.__merge_raw_files_X,
                                       int,
-                                      datatype, dtype, skiprows, sortby, fmt)
+                                      datatype)
         return num_rows
 
 
-    def __merge_raw_files_X(self, i, X, datatype, dtype, skiprows, sortby, fmt):
+    def __merge_raw_files_X(self, i, X, datatype):
         """
-        Inner function for self.__merge_raw_files() to be used as argument of
-        self.__parallelize() with array=self.X.
+        Inner function to be used as argument of self.__parallelize()
+        with array=self.X.
+        Corresponding outer function: self.__merge_raw_files()
 
         Parameters
         ----------
@@ -320,10 +364,6 @@ class SpikeAnalysis:
             (to be set by outer parralel function).
         datatype
             Options are 'spike_detector' and 'positions'.
-        dtype
-            Numpy dtype used for loading data.
-        skiprows
-            Number of rows to skip while loading due to header.
         sortby
             Name to sort the processed data by.
         fmt
@@ -334,15 +374,26 @@ class SpikeAnalysis:
         num_rows
             Number of rows.
         """
+        # datatype-dependent parameters
+        if datatype == 'spike_detector':
+            sortby = 'time_ms'
+            fmt = ['%d', '%.3f']
+        elif datatype == 'positions':
+            sortby = 'nodeid'
+            fmt = ['%d', '%f', '%f'] 
 
+        # gather names of single files
         single_files = glob.glob(os.path.join(
             self.sim_dict['path_raw_data'],
             datatype + '_' + X + '*.dat'))
 
         # load data from single files and combine them
-        comb_data = np.array([[]], dtype=dtype)
+        comb_data = np.array([[]], dtype=self.dtypes[datatype])
+        # skip three rows in raw nest output
+        skiprows = 3 if datatype == 'spike_detector' else 0
         for fn in single_files:
-            data = np.loadtxt(fn, skiprows=skiprows, dtype=dtype)
+            data = np.loadtxt(fn, dtype=self.dtypes[datatype],
+                              skiprows=skiprows)
             comb_data = np.append(comb_data, data)
 
         # change from raw to processed node ids,
@@ -352,10 +403,6 @@ class SpikeAnalysis:
             -self.nodeids_raw[i][0] + \
             self.nodeids_proc[i][0]
 
-        if 'time_ms' in comb_data.dtype.names:
-            # subtract the pre-simulation time
-            comb_data['time_ms'] -= self.sim_dict['t_presim']
-
         # sort the final data
         comb_data = np.sort(comb_data, order=sortby)
 
@@ -364,13 +411,13 @@ class SpikeAnalysis:
         # 'positions': number of neurons
         num_rows = np.shape(comb_data)[0]
 
-        # write to file
+        # write processed file
         fn = os.path.join(
             self.sim_dict['path_processed_data'],
             datatype + '_' + X + '.dat')
-        header = '\t '.join(dtype['names']) 
+        header = '\t '.join(self.dtypes[datatype]['names']) 
         np.savetxt(fn, comb_data, delimiter='\t',
-                    header=header, fmt=fmt)
+                   header=header, fmt=fmt)
         return num_rows
 
 
