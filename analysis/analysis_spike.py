@@ -45,6 +45,9 @@ class SpikeAnalysis:
     """
 
     def __init__(self, sim_dict, net_dict, stim_dict, ana_dict):
+        """
+        Initializes some class attributes.
+        """
         if RANK == 0:
             print('Instantiating a SpikeAnalysis object.')
 
@@ -53,6 +56,7 @@ class SpikeAnalysis:
         self.stim_dict = stim_dict
         self.ana_dict = ana_dict
 
+        # TODO improve
         # dtypes
         self.dtypes = {
             'spike_detector': {'names': ('nodeid', 'time_ms'),
@@ -71,9 +75,6 @@ class SpikeAnalysis:
         self.N_X = self.net_dict['num_neurons']
         #self.N_X = np.append(self.net_dict['num_neurons', self.net_dict['num_neurons_th'])
 
-
-        # TODO when merging raw files, better not subtract the transient!!!
-
         # temporal bins for raw and resampled spike trains
         self.time_bins = np.arange(
             self.sim_dict['t_presim'],
@@ -89,224 +90,62 @@ class SpikeAnalysis:
         self.pos_bins = np.arange(-self.net_dict['extent'] / 2.,
                                   self.net_dict['extent'] / 2.,
                                   self.ana_dict['binsize_space'])
-
-        # TODO consider to move the following block out of __init__()
-        # convert raw node ids to processed ones
-        self.nodeids_raw, self.nodeids_proc = self.__raw_to_processed_nodeids()
-
-        # merge spike and position files
-        num_spikes = self.__merge_raw_files('spike_detector')
-        num_neurons = self.__merge_raw_files('positions')
-        # TODO maybe move somewhere else
-        if not (num_neurons == self.N_X).all():
-            raise Exception ('Neuron numbers do not match.')
-
-        # minimal analysis as sanity check
-        self.__first_glance_on_data(num_spikes)
         return
 
 
     def preprocess_data(self):
         """
+        Converts raw node ids to processed ones, merges raw spike and position
+        files, prints a minimal sanity check of the data, performs basic
+        preprocessing operations.
+
+        New .dat files for plain spikes and positions are written and the main
+        preprocessed data is stored in .h5 files.
         """
+        if RANK == 0:
+            print('Preprocessing data.')
+
+        # convert raw node ids to processed ones
+        self.nodeids_raw, self.nodeids_proc = self.__raw_to_processed_nodeids()
+
+        # merge spike and position files generated on different threads or
+        # processes
+        num_spikes = self.__parallelize(self.X,
+                                        self.__merge_raw_files_X,
+                                        int,
+                                        'spike_detector')
+        num_neurons = self.__parallelize(self.X,
+                                        self.__merge_raw_files_X,
+                                        int,
+                                        'positions')
+        if not (num_neurons == self.N_X).all():
+            raise Exception ('Neuron numbers do not match.')
+
+        # minimal analysis as sanity check
+        self.__first_glance_on_data(num_spikes)
+
         # preprocess data of each population in parallel
         self.__parallelize(self.X,
-                           self.__preprocess_data_X,
-                           None)
+                           self.__preprocess_data_X)
 
-
-        # combine population results
-        self.__merge_preprocessed_data()
-
-
-        # spike trains of each neuron
-
-        # for each population
-        #   read data from dat file or get it somewhere else
-        #   compute spike trains
-        #   write one file per population
-        # combine population files
-
-
-        # option 1: population parallel
-        # option 2: parallel in quantities to be computed
-
-        # needed quantities:
-        # pos_sorting_arrays
-        # sptrains
-        ### above also for subsampled 1mm
+        # merge preprocessed data files for all populations
+        self.__merge_h5_files_populations()
         return
-    
-
-    def __preprocess_data_X(self, i, X):
-        """
-        Inner function for to be used as argument of self.__parallelize()
-        with array=self.X.
-        Corresponding outer function: self.preprocess_data()
-
-        Parameters
-        ----------
-        i
-            Iterator of populations
-            (to be set by outer parallel function).
-        X
-            Population names
-            (to be set by outer parralel function).
-
-        Returns
-        -------
-        """
-        
-        # TODO maybe return tuples of filenames and datasets
-                
-
-        # load plain spike data and positions
-        data_load = []
-        for datatype in ['spike_detector', 'positions']:
-            fn = os.path.join(self.sim_dict['path_processed_data'],
-                              datatype + '_' + X + '.dat')
-            data_load.append(np.loadtxt(fn, dtype=self.dtypes[datatype]))
-        spikes, positions = data_load
-
-        # append lists for each computed quantity
-        # [datatype, dataset, sparse, dtype]
-        # if sparse==True: dtype is ignored (set to None for convenience)
-        data_write = []
-        # time binned spike trains
-        sptrains = self.__compute_time_binned_sptrains(
-            X, spikes, self.time_bins, dtype=np.uint8)
-        data_write.append(['sptrains', sptrains, True, None])
-
-        # position sorting array
-        # TODO specify dtype
-        pos_sorting_arrays = self.__get_pos_sorting_array(X, positions)
-        data_write.append(['pos_sorting_arrays', pos_sorting_arrays, False, int])
-
-
-        # write datasets to h5 files
-        self.__write_datasets_to_h5_X(X, data_write)
-
-
-        return
-
-
-    def __write_datasets_to_h5_X(self, X, data):
-        """
-        Writes datasets for population X to .h5.
-
-        Parameters
-        ----------
-        X
-            Population name.
-        data
-            List of lists, each of which is: [datatype, dataset, sparse, dtype].
-        """
-        for datatype, dataset, sparse, dtype in data:
-            fn = os.path.join(self.sim_dict['path_processed_data'],
-                              datatype + '_' + X + '.h5')
-            f = h5py.File(fn, 'w')
-
-            if sparse:
-                print('Sparse writing not implemented, yet.')
-            else:
-                f.create_dataset(X,
-                                 data=dataset,
-                                 dtype=dtype,
-                                 compression='gzip',
-                                 compression_opts=2,
-                                 chunks=True,
-                                 shape=dataset.shape)
-            f.flush()
-            f.close()
-        return
-
-
-    def __compute_time_binned_sptrains(self, X, spikes, time_bins, dtype):
-        """
-        Computes a histogram with ones for each spike.
-
-        Parameters
-        ----------
-        X
-            Population name.
-        spikes
-            Array of node ids and spike times.
-        time_bins
-            Time bins.
-        dtype
-            An integer dtype that fits the data.
-
-        Returns
-        -------
-        sptrains
-            Spike trains as Compressed Sparse Row matrix.
-        """
-        # if no spikes were recorded, return an empty sparse matrix
-        if spikes.size == 0:
-            num_neurons_X = self.N_X[np.where(self.X==X)[0]]
-            shape = (num_neurons_X, time_bins)
-            return sp.csr_matrix(shape, dtype=dtype)
-        
-        # time bins shifted by one bin as needed by np.digitize()
-        dt = time_bins[1] - time_bins[0]
-        time_bins_digi = np.r_[time_bins[1:], [time_bins[-1] + dt]]
-        # indices of time bins to which each spike time belongs
-        time_indices = np.digitize(spikes['time_ms'], time_bins_digi)
-
-        # create COO matrix
-        data = np.ones(spikes.size, dtype=dtype)
-        sptrains = sp.coo_matrix(
-            (data, (spikes['nodeid'], time_indices)))
-            #shape=shape, dtype=dtype) # TODO is this shape and dtype needed?
-        return sptrains.tocsr()
-
-
-    def __get_pos_sorting_array(self, X, positions):
-        """
-        Get an array with indices for sorting node ids according to the given
-        sorting axis.
-        
-        Parameters
-        ----------
-        X
-            Population name.
-        positions
-            Positions of population X.
-
-        Returns
-        -------
-        argsort
-            Sorting array.
-        """
-        if self.ana_dict['sorting_axis'] == 'x':
-            argsort = np.argsort(positions['x-position_mm'])
-        elif self.ana_dict['sorting_axis'] == 'y':
-            argsort = np.argsort(positions['y-position_mm'])
-        elif self.ana_dict['sorting_axis'] == None:
-            argsort = np.arange(positions.size) 
-        else:
-            raise Exception ("Sorting axis is not 'x', 'y' or None.")
-        return argsort
-
-
-    def __merge_preprocessed_data(self):
-        """
-        TODO maybe parallelize here over quantities
-        """
-        return
-
-
-
-
 
 
     def compute_statistics(self):
         """
         """
+        if RANK == 0:
+            print('Computing statistics.')
+
+
+        self.__merge_h5_files_populations()
+
         return
 
 
-    def __parallelize(self, array, func, result_dtype, *args):
+    def __parallelize(self, array, func, result_dtype=None, *args):
         """
         Uses MPI to parallelize a loop over an array evaluating a function in
         every loop iteration and returning a result obtained with Allgather.
@@ -355,9 +194,16 @@ class SpikeAnalysis:
     def __raw_to_processed_nodeids(self):
         """
         Loads raw node ids from file, converts them, and writes out the
-        processed node ids (always the first and last id per population).
+        processed node ids.
 
         The processed node ids start at 1 and are contiguous.
+
+        Returns
+        -------
+        nodeids_raw
+            Raw node ids: first and last id per population.
+        nodeids_proc
+            Processed node ids: first and last id per population.
         """
         if RANK == 0:
             print('  Converting raw node ids to processed ones.')
@@ -388,10 +234,14 @@ class SpikeAnalysis:
                        fmt='%d')
         return nodeids_raw, nodeids_proc
 
-
-    def __merge_raw_files(self, datatype='spike_detector'):
+    
+    def __merge_raw_files_X(self, i, X, datatype):
         """
-        Processes raw NEST output files.
+        Inner function to be used as argument of self.__parallelize()
+        with array=self.X.
+        Corresponding outer function: self.__preprocess_data()
+
+        Processes raw NEST output files with file extention .dat.
 
         Raw NEST output files are loaded.
         Files are merged so that only one file per population exists, since
@@ -404,36 +254,6 @@ class SpikeAnalysis:
 
         Parameters
         ----------
-        datatype
-            Options are 'spike_detector' and 'positions'.
-
-        Returns
-        -------
-        num_rows
-            An array with the number of rows in the final files.
-            datatype = 'spike_detector': number of spikes per population.
-            datatype = 'positions': number of neurons per population.
-
-        """
-        if RANK == 0:
-            print('  Merging raw files: ' + datatype)
-
-        # merge raw files in parallel
-        num_rows = self.__parallelize(self.X,
-                                      self.__merge_raw_files_X,
-                                      int,
-                                      datatype)
-        return num_rows
-
-
-    def __merge_raw_files_X(self, i, X, datatype):
-        """
-        Inner function to be used as argument of self.__parallelize()
-        with array=self.X.
-        Corresponding outer function: self.__merge_raw_files()
-
-        Parameters
-        ----------
         i
             Iterator of populations
             (to be set by outer parallel function).
@@ -442,20 +262,22 @@ class SpikeAnalysis:
             (to be set by outer parralel function).
         datatype
             Options are 'spike_detector' and 'positions'.
-        sortby
-            Name to sort the processed data by.
-        fmt
-            Format used for writing processed data to file.
             
         Returns
         -------
         num_rows
-            Number of rows.
+            An array with the number of rows in the final files.
+            datatype = 'spike_detector': number of spikes per population.
+            datatype = 'positions': number of neurons per population
         """
+
+        if i == 0:
+            print('  Merging raw files:', datatype)
+
         # datatype-dependent parameters
         if datatype == 'spike_detector':
             sortby = 'time_ms'
-            fmt = ['%d', '%.3f']
+            fmt = ['%d', '%.3f'] # TODO could be combined with class attribute dtypes
         elif datatype == 'positions':
             sortby = 'nodeid'
             fmt = ['%d', '%f', '%f'] 
@@ -528,6 +350,241 @@ class SpikeAnalysis:
         overview.align = 'r'
 
         if RANK == 0:
-            print('First glance on data:')
+            print('  First glance on data:')
             print(overview)
         return
+
+
+    def __preprocess_data_X(self, i, X):
+        """
+        Inner function to be used as argument of self.__parallelize()
+        with array=self.X.
+        Corresponding outer function: self.preprocess_data()
+
+        Each function computing a dataset already writes it to .h5 file.
+
+        Parameters
+        ----------
+        i
+            Iterator of populations
+            (to be set by outer parallel function).
+        X
+            Population names
+            (to be set by outer parralel function).
+        """
+        if i == 0:
+            print('  Processing data individually for each population.')
+        
+        # load plain spike data and positions
+        data_load = []
+        for datatype in ['spike_detector', 'positions']:
+            fn = os.path.join(self.sim_dict['path_processed_data'],
+                              datatype + '_' + X + '.dat')
+            data_load.append(np.loadtxt(fn, dtype=self.dtypes[datatype]))
+        spikes, positions = data_load
+
+        # time binned spike trains
+        sptrains = self.__time_binned_sptrains_X(
+            X, spikes, self.time_bins, dtype=np.uint8)
+
+        # position sorting arrays
+        pos_sorting_arrays = self.__pos_sorting_array_X(
+            X, positions)
+        return
+
+
+    def __write_dataset_to_h5_X(self, X, datatype, dataset, sparse, dtype=None):
+        """
+        Writes sparse and non-sparse datasets for population X to .h5.
+
+        Parameters
+        ----------
+         X
+            Population name.
+        datatype
+            Name of the dataset.
+        dataset
+            The data itself.
+        sparse
+            Whether the data shall be written in sparse format.
+        dtype
+            dtype only needed for non-sparse datasets.
+        """
+        fn = os.path.join(self.sim_dict['path_processed_data'],
+                          datatype + '_' + X + '.h5')
+        f = h5py.File(fn, 'w')
+
+        if sparse:
+            # TODO why not everything in COO format?
+            if type(dataset) == sp.coo_matrix:
+                d = dataset
+            else:
+                d = dataset.tocoo()
+
+            group = f.create_group(X)
+            dset = group.create_dataset('data_row_col',
+                                        data=np.c_[d.data, d.row, d.col],
+                                        compression='gzip',
+                                        compression_opts=2,
+                                        maxshape = (None, None))
+            dset = group.create_dataset('shape',
+                                        data=d.shape,
+                                        maxshape= (None,))            
+        else:
+            f.create_dataset(X,
+                                data=dataset,
+                                dtype=dtype,
+                                compression='gzip',
+                                compression_opts=2,
+                                chunks=True,
+                                shape=dataset.shape)
+        f.flush()
+        f.close()
+        return
+
+
+    def __time_binned_sptrains_X(self, X, spikes, time_bins, dtype):
+        """
+        Computes a histogram with ones for each spike.
+
+        Parameters
+        ----------
+        X
+            Population name.
+        spikes
+            Array of node ids and spike times.
+        time_bins
+            Time bins.
+        dtype
+            An integer dtype that fits the data.
+
+        Returns
+        -------
+        sptrains
+            Spike trains as Compressed Sparse Row matrix.
+        """
+        # if no spikes were recorded, return an empty sparse matrix
+        if spikes.size == 0:
+            num_neurons_X = self.N_X[np.where(self.X==X)[0]]
+            shape = (num_neurons_X, time_bins)
+            return sp.csr_matrix(shape, dtype=dtype)
+        
+        # time bins shifted by one bin as needed by np.digitize()
+        dt = time_bins[1] - time_bins[0]
+        time_bins_digi = np.r_[time_bins[1:], [time_bins[-1] + dt]]
+        # indices of time bins to which each spike time belongs
+        time_indices = np.digitize(spikes['time_ms'], time_bins_digi)
+
+        # create COO matrix
+        data = np.ones(spikes.size, dtype=dtype)
+        sptrains = sp.coo_matrix(
+            (data, (spikes['nodeid'], time_indices)))
+            #shape=shape, dtype=dtype) # TODO is this shape and dtype needed?
+
+        self.__write_dataset_to_h5_X(X, 'sptrains', sptrains, True)
+        return sptrains.tocsr() # TODO unsure if tocsr() is needed
+
+
+    def __pos_sorting_array_X(self, X, positions):
+        """
+        Computes an array with indices for sorting node ids according to the
+        given sorting axis.
+        
+        Parameters
+        ----------
+        X
+            Population name.
+        positions
+            Positions of population X.
+
+        Returns
+        -------
+        argsort
+            Sorting array.
+        """
+        if self.ana_dict['sorting_axis'] == 'x':
+            pos_sorting_arrays = np.argsort(positions['x-position_mm'])
+        elif self.ana_dict['sorting_axis'] == 'y':
+            pos_sorting_arrays = np.argsort(positions['y-position_mm'])
+        elif self.ana_dict['sorting_axis'] == None:
+            pos_sorting_arrays = np.arange(positions.size) 
+        else:
+            raise Exception ("Sorting axis is not 'x', 'y' or None.")
+
+        self.__write_dataset_to_h5_X(
+            X, 'pos_sorting_arrays', pos_sorting_arrays, False, int)
+        return pos_sorting_arrays
+
+
+    def __merge_h5_files_populations(self):
+        """
+        Merges all .h5 files across populations, that is, all files not
+        starting with 'all_'.
+        """
+        # glob all .h5 files which do not start with 'all'
+        single_files = glob.glob(os.path.join(
+            self.sim_dict['path_processed_data'], '[!all_]*.h5'))
+
+        # extract unique datatypes
+        datatypes = []
+        for fn in single_files:
+            # split off only once at last '_'
+            datatypes.append(os.path.basename(fn).rsplit('_',1)[0])
+        datatypes = np.sort(np.unique(datatypes))
+        
+        # parallelize merging across datatypes
+        if datatypes.size == 0:
+            return
+        else:
+            self.__parallelize(datatypes,
+                               self.__merge_h5_files_populations_datatype)
+            return
+
+
+    def __merge_h5_files_populations_datatype(self, i, datatype):
+        """
+        Inner function to be used as argument of self.__parallelize()
+        with array=datatypes.
+        Corresponding outer function: self.__merge_h5_files_populations()
+
+        Parameters
+        ----------
+        i
+            Iterator of datatypes
+            (to be set by outer parallel function).
+        datatype
+            Datatype to merge file across populations
+            (to be set by outer parralel function).
+        """
+        print('  Writing results: ' + datatype)
+
+        fn = os.path.join(self.sim_dict['path_processed_data'],
+                         'all_' + datatype + '.h5')
+
+        f = h5py.File(fn, 'w')
+        for X in self.X:
+            fn_X = os.path.join(self.sim_dict['path_processed_data'],
+                                datatype + '_' + X + '.h5')
+            f_X = h5py.File(fn_X, 'r')
+            f.copy(f_X[X], X)
+            f_X.close()
+            os.system('rm ' + fn_X)
+        f.close()
+        return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
