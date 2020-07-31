@@ -1,8 +1,8 @@
-"""PyNEST Mesocircuit: Network Class
-------------------------------------
+"""PyNEST Mesocircuit: SpikeAnalysis Class
+------------------------------------------
 
-Main file of the mesocircuit defining the ``Network`` class with functions to
-build and simulate the network.
+The SpikeAnalysis Class defines functions to preprocess spike activity and
+compute statistics.
 
 """
 
@@ -55,14 +55,6 @@ class SpikeAnalysis:
         self.net_dict = net_dict
         self.stim_dict = stim_dict
         self.ana_dict = ana_dict
-
-        # TODO improve
-        # dtypes
-        self.dtypes = {
-            'spike_detector': {'names': ('nodeid', 'time_ms'),
-                               'formats': ('i4', 'f8')},
-            'positions': {'names': ('nodeid', 'x-position_mm', 'y-position_mm'),
-                          'formats': ('i4', 'f8', 'f8')}}
 
         # thalamic population 'TC' is treated as the cortical populations
         # presynaptic population names
@@ -129,7 +121,8 @@ class SpikeAnalysis:
                            self.__preprocess_data_X)
 
         # merge preprocessed data files for all populations
-        self.__merge_h5_files_populations()
+        self.__parallelize(self.ana_dict['datatypes_preprocess'],
+                           self.__merge_h5_files_populations_datatype)
         return
 
 
@@ -140,7 +133,8 @@ class SpikeAnalysis:
             print('Computing statistics.')
 
 
-        self.__merge_h5_files_populations()
+        self.__parallelize(self.ana_dict['datatypes_statistics'],
+                           self.__merge_h5_files_populations_datatype)
 
         return
 
@@ -168,6 +162,8 @@ class SpikeAnalysis:
         """
         # total number of iterations
         num_its = len(array)
+        if num_its == 0:
+            return None
         # at most as many MPI processes needed as iterations have to be done
         num_procs = np.min([SIZE, num_its]).astype(int)
         # number of iterations assigned to each rank;
@@ -274,26 +270,18 @@ class SpikeAnalysis:
         if i == 0:
             print('  Merging raw files:', datatype)
 
-        # datatype-dependent parameters
-        if datatype == 'spike_detector':
-            sortby = 'time_ms'
-            fmt = ['%d', '%.3f'] # TODO could be combined with class attribute dtypes
-        elif datatype == 'positions':
-            sortby = 'nodeid'
-            fmt = ['%d', '%f', '%f'] 
-
         # gather names of single files
         single_files = glob.glob(os.path.join(
             self.sim_dict['path_raw_data'],
             datatype + '_' + X + '*.dat'))
 
         # load data from single files and combine them
-        comb_data = np.array([[]], dtype=self.dtypes[datatype])
+        read_dtype = self.ana_dict['read_nest_ascii_dtypes'][datatype]
+        comb_data = np.array([[]], dtype=read_dtype)
         # skip three rows in raw nest output
         skiprows = 3 if datatype == 'spike_detector' else 0
         for fn in single_files:
-            data = np.loadtxt(fn, dtype=self.dtypes[datatype],
-                              skiprows=skiprows)
+            data = np.loadtxt(fn, dtype=read_dtype, skiprows=skiprows)
             comb_data = np.append(comb_data, data)
 
         # change from raw to processed node ids,
@@ -304,7 +292,8 @@ class SpikeAnalysis:
             self.nodeids_proc[i][0]
 
         # sort the final data
-        comb_data = np.sort(comb_data, order=sortby)
+        comb_data = np.sort(
+            comb_data, order=self.ana_dict['write_ascii'][datatype]['sortby'])
 
         # number of rows corresponds to
         # 'spike_detector': number of spikes
@@ -315,9 +304,9 @@ class SpikeAnalysis:
         fn = os.path.join(
             self.sim_dict['path_processed_data'],
             datatype + '_' + X + '.dat')
-        header = '\t '.join(self.dtypes[datatype]['names']) 
         np.savetxt(fn, comb_data, delimiter='\t',
-                   header=header, fmt=fmt)
+                   header='\t '.join(read_dtype['names']),
+                   fmt=self.ana_dict['write_ascii'][datatype]['fmt'])
         return num_rows
 
 
@@ -380,16 +369,22 @@ class SpikeAnalysis:
         for datatype in ['spike_detector', 'positions']:
             fn = os.path.join(self.sim_dict['path_processed_data'],
                               datatype + '_' + X + '.dat')
-            data_load.append(np.loadtxt(fn, dtype=self.dtypes[datatype]))
+            data_load.append(
+                np.loadtxt(fn,
+                    dtype=self.ana_dict['read_nest_ascii_dtypes'][datatype]))
         spikes, positions = data_load
 
-        # time binned spike trains
-        sptrains = self.__time_binned_sptrains_X(
-            X, spikes, self.time_bins, dtype=np.uint8)
+        # order is important! # TODO improve
+        for datatype in self.ana_dict['datatypes_preprocess']:
+            # time binned spike trains
+            if datatype == 'sptrains':
+                sptrains = self.__time_binned_sptrains_X(
+                    X, spikes, self.time_bins, dtype=np.uint8)
 
-        # position sorting arrays
-        pos_sorting_arrays = self.__pos_sorting_array_X(
-            X, positions)
+            # position sorting arrays
+            elif datatype == 'pos_sorting_arrays':
+                pos_sorting_arrays = self.__pos_sorting_array_X(
+                    X, positions)
         return
 
 
@@ -516,36 +511,11 @@ class SpikeAnalysis:
         return pos_sorting_arrays
 
 
-    def __merge_h5_files_populations(self):
-        """
-        Merges all .h5 files across populations, that is, all files not
-        starting with 'all_'.
-        """
-        # glob all .h5 files which do not start with 'all'
-        single_files = glob.glob(os.path.join(
-            self.sim_dict['path_processed_data'], '[!all_]*.h5'))
-
-        # extract unique datatypes
-        datatypes = []
-        for fn in single_files:
-            # split off only once at last '_'
-            datatypes.append(os.path.basename(fn).rsplit('_',1)[0])
-        datatypes = np.sort(np.unique(datatypes))
-        
-        # parallelize merging across datatypes
-        if datatypes.size == 0:
-            return
-        else:
-            self.__parallelize(datatypes,
-                               self.__merge_h5_files_populations_datatype)
-            return
-
-
     def __merge_h5_files_populations_datatype(self, i, datatype):
         """
         Inner function to be used as argument of self.__parallelize()
         with array=datatypes.
-        Corresponding outer function: self.__merge_h5_files_populations()
+        Corresponding outer function: self.__preprocess_data()
 
         Parameters
         ----------
