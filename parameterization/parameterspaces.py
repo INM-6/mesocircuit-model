@@ -17,6 +17,9 @@ net_dict_microcircuit = {
 local_ana_dict = {
     'computer': 'local'}
 
+local_plot_dict = {
+    'computer': 'local'}
+
 # main dictionary as used by evaluate_parameterspaces() in helpers.py
 ps_dicts = {
 
@@ -30,7 +33,9 @@ ps_dicts = {
                'K_scaling': 0.1}},
         'ana_dict': {
             **local_ana_dict},
-    },
+        'plot_dict': {
+            **local_plot_dict},
+        },
 
     'local_mesocircuit': {
         'sim_dict': {
@@ -41,6 +46,8 @@ ps_dicts = {
             'K_scaling': 0.1},
             #'beta_scaling': ps.ParameterRange([3., 5.])},
         'ana_dict': {
-            **local_ana_dict}
+            **local_ana_dict},
+        'plot_dict': {
+            **local_plot_dict},
     }
 }

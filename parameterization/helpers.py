@@ -20,6 +20,7 @@ from .base_sim_params import sim_dict
 from .base_network_params import net_dict
 from .base_stimulus_params import stim_dict
 from .base_analysis_params import ana_dict
+from .base_plotting_params import plot_dict
 
 
 def evaluate_parameterspaces(
@@ -58,6 +59,8 @@ def evaluate_parameterspaces(
         ps_dicts.update(f.ps_dicts)
     except:
         print('No parameterspaces read from file.')
+        if filename != '':
+            print('  Check for syntax error in ' + filename + '.py.') 
     if with_base_params:
         ps_dicts.update({'base': {}})
 
@@ -79,17 +82,18 @@ def evaluate_parameterspaces(
             parameterspaces[paramspace_key] = ps.ParameterSpace({})
             # start with default parameters and update
             for dic,vdic in zip(
-                ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict'],
-                [sim_dict, net_dict, stim_dict, ana_dict]):
+                ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict', 'plot_dict'],
+                [sim_dict, net_dict, stim_dict, ana_dict, plot_dict]):
                 parameterspaces[paramspace_key][dic] = dict(vdic) # copy is needed
                 if dic in ps_dicts[paramspace_key]:
                     parameterspaces[paramspace_key][dic].update(
                     ps_dicts[paramspace_key][dic])
 
             for paramset in parameterspaces[paramspace_key].iter_inner():
-                # TODO consider to only include network and stimulus parameters
-                # into unique id
-                ps_id = get_unique_id(paramset)
+                # include only sim_dict, net_dict and stim_dict into unique id
+                ps_id = get_unique_id(
+                    {key: paramset[key] for key in \
+                        ['sim_dict', 'net_dict', 'stim_dict']})
                 if ps_id in sorted(parametersets):
                     print('Skipping {0}, already in job list.'.format(ps_id))
                     pass
@@ -119,7 +123,8 @@ def evaluate_parameterset(ps_id, paramset):
                 
     # set paths and create directories for parameters, jobscripts and
     # raw and processed output data
-    for dname in ['parameters', 'jobscripts', 'raw_data', 'processed_data']:
+    for dname in \
+        ['parameters', 'jobscripts', 'raw_data', 'processed_data', 'plots']:
         path = os.path.join(paramset['sim_dict']['data_path'], dname, ps_id)
         if not os.path.isdir(path):
             os.makedirs(path) # also creates sub directories
@@ -131,7 +136,7 @@ def evaluate_parameterset(ps_id, paramset):
             paramset['net_dict'], paramset['stim_dict'])
 
     # write final parameters to file (TODO consider human-readable .json)
-    for dic in ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict']:
+    for dic in ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict', 'plot_dict']:
         with open(os.path.join(paramset['sim_dict']['path_parameters'],
             dic + '.pkl'), 'wb') as f:
             pickle.dump(paramset[dic], f)
@@ -147,7 +152,8 @@ def evaluate_parameterset(ps_id, paramset):
     # write jobscripts
     write_jobscript('network.sh', paramset)
     write_jobscript('analysis.sh', paramset)
-
+    write_jobscript('plotting.sh', paramset)
+    #write_jobscript('analysis_and_plotting.sh', paramset) TODO
     return
 
 
@@ -169,6 +175,9 @@ def write_jobscript(jsname, paramset):
     elif jsname == 'analysis.sh':
         executable = 'analysis/run_analysis.py'
         dic = paramset['ana_dict']
+    elif jsname == 'plotting.sh':
+        executable = 'plotting/run_plotting.py'
+        dic = paramset['plot_dict']
 
     run_cmd = \
         'python3 ' + executable + ' ' + paramset['sim_dict']['path_parameters']

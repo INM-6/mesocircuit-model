@@ -5,7 +5,7 @@ import parameterization.helpers as helpers
 import analysis.prelim_analysis as ana
 
 parameterview = helpers.evaluate_parameterspaces(filename='parameterspaces',
-paramspace_keys = [])
+paramspace_keys = ['local_microcircuit'])
 
 # local test run
 data_path, ps_id = parameterview['local_microcircuit'][0]
@@ -24,6 +24,10 @@ if 0:
     param_path = os.path.join(data_path, 'parameters', ps_id)
     ana.evaluate(param_path, raster_plot_interval, firing_rates_interval)
 
-if 1:
+if 0:
     jobscript = os.path.join(data_path, 'jobscripts', ps_id, 'analysis.sh')
+    os.system('sh ' + jobscript)
+
+if 1:
+    jobscript = os.path.join(data_path, 'jobscripts', ps_id, 'plotting.sh')
     os.system('sh ' + jobscript)
