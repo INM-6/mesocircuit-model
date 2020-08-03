@@ -25,7 +25,8 @@ class SpikeAnalysis:
 
     Instantiating a SpikeAnalysis object sets class attributes,
     merges spike and position files, changes node ids, and rescales spike times.
-    The processed node ids start at 1 and are continguous.
+    The processed node ids start at 0 for each population.
+    The pre-simulation is subtracted from all spike times.
 
     Parameters
     ---------
@@ -67,14 +68,14 @@ class SpikeAnalysis:
         self.N_X = self.net_dict['num_neurons']
         #self.N_X = np.append(self.net_dict['num_neurons', self.net_dict['num_neurons_th'])
 
-        # temporal bins for raw and resampled spike trains
+        # temporal bins for pure and resampled spike trains
         self.time_bins = np.arange(
-            self.sim_dict['t_presim'],
-            self.sim_dict['t_presim'] + self.sim_dict['t_sim'],
+            0.,
+            self.sim_dict['t_sim'],
             self.sim_dict['sim_resolution'])
         self.time_bins_rs = np.arange(
-            self.sim_dict['t_presim'],
-            self.sim_dict['t_presim'] + self.sim_dict['t_sim'],
+            0.,
+            self.sim_dict['t_sim'],
             self.ana_dict['binsize_time'])
 
         # spatial bins
@@ -97,8 +98,8 @@ class SpikeAnalysis:
         if RANK == 0:
             print('Preprocessing data.')
 
-        # convert raw node ids to processed ones
-        self.nodeids_raw, self.nodeids_proc = self.__raw_to_processed_nodeids()
+        # load raw nodeids
+        self.nodeids_raw = self.__load_raw_nodeids()
 
         # merge spike and position files generated on different threads or
         # processes
@@ -114,7 +115,7 @@ class SpikeAnalysis:
             raise Exception ('Neuron numbers do not match.')
 
         # minimal analysis as sanity check
-        self.__first_glance_on_data(num_spikes)
+        self.__first_glance_at_data(num_spikes)
 
         # preprocess data of each population in parallel
         self.__parallelize(self.X,
@@ -187,22 +188,17 @@ class SpikeAnalysis:
         return result   
 
 
-    def __raw_to_processed_nodeids(self):
+    def __load_raw_nodeids(self):
         """
-        Loads raw node ids from file, converts them, and writes out the
-        processed node ids.
-
-        The processed node ids start at 1 and are contiguous.
+        Loads raw node ids from file.
 
         Returns
         -------
         nodeids_raw
             Raw node ids: first and last id per population.
-        nodeids_proc
-            Processed node ids: first and last id per population.
         """
         if RANK == 0:
-            print('  Converting raw node ids to processed ones.')
+            print('  Loading raw node ids.')
 
         # raw node ids: tuples of first and last id of each population;
         # only rank 0 reads from file and broadcasts the data
@@ -213,22 +209,7 @@ class SpikeAnalysis:
         else:
             nodeids_raw = None
         nodeids_raw = COMM.bcast(nodeids_raw, root=0)
-
-        # processed node ids: tuples of new first and last id of each population
-        # new ids start at 1 and are contiguous
-        first_nodeids_proc = np.array(
-            [1 + np.sum(self.net_dict['num_neurons'][:i]) \
-                for i in np.arange(self.net_dict['num_pops'])]).astype(int)
-        nodeids_proc = np.c_[first_nodeids_proc,
-                             np.add(first_nodeids_proc,
-                                    self.net_dict['num_neurons']) - 1]
-
-        if RANK == 0:
-            np.savetxt(os.path.join(self.sim_dict['path_processed_data'],
-                                    self.sim_dict['fname_nodeids']),
-                       nodeids_proc,
-                       fmt='%d')
-        return nodeids_raw, nodeids_proc
+        return nodeids_raw
 
     
     def __merge_raw_files_X(self, i, X, datatype):
@@ -245,7 +226,8 @@ class SpikeAnalysis:
         datatype='spike_detector') or per MPI process (as for position files,
         datatype='positions').
         Node ids and, if applicable also, spike times are processed.
-        The processed node ids start at 1 and are continguous.
+        The processed node ids start at 0 for each population.
+        The pre-simulation time is subtracted.
         The final processed data is written to file.
 
         Parameters
@@ -284,12 +266,13 @@ class SpikeAnalysis:
             data = np.loadtxt(fn, dtype=read_dtype, skiprows=skiprows)
             comb_data = np.append(comb_data, data)
 
-        # change from raw to processed node ids,
-        # subtract the first one of the raw ids and add the first one
-        # of the processed ids per population 
-        comb_data['nodeid'] += \
-            -self.nodeids_raw[i][0] + \
-            self.nodeids_proc[i][0]
+        # change from raw to processed node ids:
+        # subtract the first one of the raw ids in each population
+        comb_data['nodeid'] -= self.nodeids_raw[i][0]
+
+        if 'time_ms' in comb_data.dtype.names:
+            # subtract the pre-simulation time
+            comb_data['time_ms'] -= self.sim_dict['t_presim']
 
         # sort the final data
         comb_data = np.sort(
@@ -310,7 +293,7 @@ class SpikeAnalysis:
         return num_rows
 
 
-    def __first_glance_on_data(self, num_spikes):
+    def __first_glance_at_data(self, num_spikes):
         """
         Prints a table offering a first glance on the data.
 
@@ -323,14 +306,12 @@ class SpikeAnalysis:
         rates = np.divide(num_spikes, self.N_X)
 
         # collect overview data
-        dtype = {'names': ('population', 'num_neurons', 'rate_s-1', 'first id', 'last id'),
-                 'formats': ('U4', 'i4', 'f4', 'i4', 'i4')}
+        dtype = {'names': ('population', 'num_neurons', 'rate_s-1'),
+                 'formats': ('U4', 'i4', 'f4')}
         ov = np.zeros(shape=(len(self.X)), dtype=dtype)
         ov['population'] = self.X
         ov['num_neurons'] = self.N_X
         ov['rate_s-1'] = rates
-        ov['first id'] = self.nodeids_proc[:,0]
-        ov['last id'] = self.nodeids_proc[:,1]
 
         # convert to pretty table for printing
         overview = PrettyTable(ov.dtype.names)
@@ -339,7 +320,7 @@ class SpikeAnalysis:
         overview.align = 'r'
 
         if RANK == 0:
-            print('  First glance on data:')
+            print('  First glance at data:')
             print(overview)
         return
 
@@ -459,9 +440,10 @@ class SpikeAnalysis:
             Spike trains as Compressed Sparse Row matrix.
         """
         # if no spikes were recorded, return an empty sparse matrix
+        i = np.where(self.X==X)[0][0] # TODO
+        shape = (self.N_X[i], time_bins.size)
+
         if spikes.size == 0:
-            num_neurons_X = self.N_X[np.where(self.X==X)[0]]
-            shape = (num_neurons_X, time_bins)
             return sp.csr_matrix(shape, dtype=dtype)
         
         # time bins shifted by one bin as needed by np.digitize()
@@ -473,8 +455,8 @@ class SpikeAnalysis:
         # create COO matrix
         data = np.ones(spikes.size, dtype=dtype)
         sptrains = sp.coo_matrix(
-            (data, (spikes['nodeid'], time_indices)))
-            #shape=shape, dtype=dtype) # TODO is this shape and dtype needed?
+            (data, (spikes['nodeid'], time_indices)),
+            shape=shape, dtype=dtype) 
 
         self.__write_dataset_to_h5_X(X, 'sptrains', sptrains, True)
         return sptrains.tocsr() # TODO unsure if tocsr() is needed
