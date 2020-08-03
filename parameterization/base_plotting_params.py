@@ -52,4 +52,7 @@ plot_dict = {
                              '#AF143C',   # I, red pastel
                              '#696969']), # other, dimgrey
 
+    # time interval for short raster plots (in ms)
+    'time_interval_short': np.array([0., 1000.]),
+
 }

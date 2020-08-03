@@ -37,7 +37,8 @@ sim_dict, net_dict, stim_dict, ana_dict, plot_dict = dics
 pl = plotting.Plotting(sim_dict, net_dict, stim_dict, ana_dict, plot_dict)
 time_init = time.time()
 
-pl.fig_raster()
+if RANK == 0:
+    pl.fig_raster()
 
 
 
