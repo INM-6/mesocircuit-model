@@ -9,6 +9,7 @@ Create plots of the network activity of the mesocircuit.
 import os
 import sys
 import pickle
+import numpy as np
 from mpi4py import MPI
 import plotting
 import time
@@ -33,12 +34,22 @@ sim_dict, net_dict, stim_dict, ana_dict, plot_dict = dics
 
 ################################################################################
 # Instantiate a Plotting object.
+# Load preprocessed data and pre-computed statistics.
 
 pl = plotting.Plotting(sim_dict, net_dict, stim_dict, ana_dict, plot_dict)
+
+for datatype in np.append(ana_dict['datatypes_preprocess'],
+                          ana_dict['datatypes_statistics']):
+    all_datatype = 'all_' + datatype
+    data = pl.load_h5(all_datatype)
+    globals().update({all_datatype: data})
 time_init = time.time()
 
+################################################################################
+# Plot figures.
+
 if RANK == 0:
-    pl.fig_raster()
+    pl.fig_raster(all_sptrains, all_pos_sorting_arrays)
 
 
 
@@ -51,11 +62,9 @@ time_stop = time.time()
 print(
     '\nTimes of Rank {}:\n'.format(RANK) +
     '  Total plotting time:  {:.3f} s\n'.format(
-        time_stop - time_start) #+
-    #'  Time init: {:.3f} s\n'.format(
-    #    time_init - time_start) +
-    #'  Time preprocess: {:.3f} s\n'.format(
-    #    time_preprocess - time_init) +
-    #'  Time statistics: {:.3f} s\n'.format(
-    #    time_stop - time_preprocess)
+        time_stop - time_start) +
+    '  Time init: {:.3f} s\n'.format(
+        time_init - time_start) +
+    '  Time plotting: {:.3f} s\n'.format(
+        time_stop - time_init)
     )

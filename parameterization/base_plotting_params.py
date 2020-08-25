@@ -23,6 +23,10 @@ plot_dict = {
         # dpi for typical journal printing
         'figure.dpi': 300,
     },
+
+    # plot format (use '.eps' for final figures)
+    'extension': '.pdf',
+
     # figure width for the J Neurosci (in inch):
     # 1 column, 1.5 columns and 2 columns
     'fig_width_1col': 8.5 * cm2inch,
