@@ -79,34 +79,9 @@ class Plotting:
         return
 
 
-    def load_h5(self, all_datatype):
-        """
-        TODO consider to move this fct. out to a helper file
-        Loads the data of a given datatype from .h5.
-
-        Returned file needs to be closed manually.
-
-        Parameters
-        ----------
-        datatype
-            Options for the all_datatype are 'all_' combined with entries in
-            ana_dict['datatypes_preprocess'] and in
-            ana_dict['datatypes_statistics'].
-
-        Returns
-        -------
-        data
-            Open .h5 file.
-        """
-        fn = os.path.join(self.sim_dict['path_processed_data'],
-                          all_datatype + '.h5')
-        data = h5py.File(fn, 'r')
-        return data
-
-
     def __load_h5_to_sparse_X(self, X, h5data):
         """
-        TODO consider to move this fct. out to a helper file
+        TODO currently fct variants duplicated in plotting and analysis
         Loads sparse matrix stored in COOrdinate format in HDF5.
 
         Parameters
@@ -132,9 +107,8 @@ class Plotting:
         Creates a figure with a raster plot.
         """
         fig = plt.figure(figsize=(self.plot_dict['fig_width_1col'], 5.))
-
-        fig.subplots_adjust(top=0.98, bottom=0.1, left=0.17, right=0.92)
         gs = gridspec.GridSpec(1, 1)
+        gs.update(top=0.98, bottom=0.1, left=0.17, right=0.92)
         ax = self.plot_raster(
             gs[0,0],
             self.X,
@@ -150,8 +124,8 @@ class Plotting:
     def plot_raster(self,
         gs,
         populations,
-        all_sptrains_h5,
-        all_pos_sorting_arrays_h5,
+        all_sptrains,
+        all_pos_sorting_arrays,
         time_step,
         time_interval,
         sample_step=1,
@@ -170,9 +144,9 @@ class Plotting:
             A gridspec cell to plot into.
         populations
             List of population names.
-        all_sptrains_h5
+        all_sptrains
             Open h5 file with all spike trains.
-        all_pos_sorting_arrays_h5
+        all_pos_sorting_arrays
             Open h5 file with position sorting arrays.
         time_step
             Time step corresponding to spike trains.
@@ -197,7 +171,7 @@ class Plotting:
         yticks = []
         ax = plt.subplot(gs)   
         for i,X in enumerate(populations):
-            data = self.__load_h5_to_sparse_X(X, all_sptrains_h5)
+            data = self.__load_h5_to_sparse_X(X, all_sptrains)
 
             # slice according to time interval
             time_indices = np.arange(
@@ -206,7 +180,7 @@ class Plotting:
             data = data[:, time_indices]
 
             # sort according to spatial axis
-            space_indices = all_pos_sorting_arrays_h5[X][()]
+            space_indices = all_pos_sorting_arrays[X][()]
             data = data[space_indices, :]
 
             # subsample if specified
@@ -231,7 +205,7 @@ class Plotting:
             nums_shown.append(num_neurons)
             yticks.append(-np.sum(nums_shown) + 0.5 * nums_shown[-1])
 
-        # draw lines to separate poppulations on top
+        # draw lines to separate populations on top
         for i,X in enumerate(populations[:-1]):
             ax.plot(time_interval, [-np.sum(nums_shown[:i+1])]*2,
                     'k',
@@ -252,9 +226,76 @@ class Plotting:
             ax.set_yticklabels([])
         return ax
 
+
+    def fig_statistics_overview(self, all_sptrains):
+        """
+        """
+        fig = plt.figure(figsize=(self.plot_dict['fig_width_2col'], 4))
+        gs = gridspec.GridSpec(1, 1)
+        #gs.update(left=0.09, right=0.98, bottom=0.18, top=0.92)#, wspace=10., hspace=1.)
+        axes = self.plot_statistics_overview(gs[0], all_sptrains)
+
+        labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
+        for i,label in enumerate(labels):
+            self.add_label(axes[i], label)
+
+        self.savefig('statistics_overview')
+        return
+
+
+    def plot_statistics_overview(self, gs, all_sptrains):
+        """
+        """
+        axes = [0] * 7
+        gs_cols = gridspec.GridSpecFromSubplotSpec(1, 5, subplot_spec=gs, wspace=0.8)
+
+        ### column 0: boxcharts
+        gs_c0 = gridspec.GridSpecFromSubplotSpec(3, 1, subplot_spec=gs_cols[0,0])#, hspace=0.5)
+        
+        # top: rates
+        axes[0] = self.plot_boxcharts(gs_c0[0,0])
+        
+        # middle: LVs
+        axes[1] = self.plot_boxcharts(gs_c0[1,0])
+
+        # bottom: CCs
+        axes[2] = self.plot_boxcharts(gs_c0[2,0])
+
+        ### columns 1, 2, 3: distributions
+
+        # left: rates
+        axes[3] = self.plot_distributions(gs_cols[0,1])
+
+        # middle: LVs
+        axes[4] = self.plot_distributions(gs_cols[0,2])
+
+        # right: CCs
+        axes[5] = self.plot_distributions(gs_cols[0,3])
+
+        ### column 4: PSDs
+        axes[6] = self.plot_distributions(gs_cols[0,4])
+
+        return axes
+
+
+    def plot_boxcharts(self, gs):
+        """
+        """
+        ax = plt.subplot(gs)
+        ax.plot(1,1)
+        return ax
+
+
+    def plot_distributions(self, gs):
+        """
+        """
+        ax = plt.subplot(gs)
+        ax.plot(1,1)
+        return ax
+
     
     def add_label(self, ax, label, offset=[0,0],
-                  weight='bold', fontsize_scale=1.5):
+                  weight='bold', fontsize_scale=1.2):
         """
         Adds label to axis with given offset.
 

@@ -35,7 +35,9 @@ ana_dict = {
                                       'pos_sorting_arrays']),
 
     # quantities to be computed during the statistics phase
-    'datatypes_statistics': np.array([]),
+    'datatypes_statistics': np.array(['rates',
+                                      'LVs']),
+                                      #'CCs']),
 
     # temporal bin size (in ms)
     'binsize_time': 0.5,

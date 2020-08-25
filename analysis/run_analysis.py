@@ -42,7 +42,9 @@ sana.preprocess_data()
 time_preprocess = time.time()
 
 sana.compute_statistics()
+time_statistics = time.time()
 
+sana.merge_h5_files_populations()
 time_stop = time.time()
 
 ################################################################################
@@ -57,5 +59,7 @@ print(
     '  Time preprocess: {:.3f} s\n'.format(
         time_preprocess - time_init) +
     '  Time statistics: {:.3f} s\n'.format(
-        time_stop - time_preprocess)
+        time_statistics - time_preprocess) +
+    '  Time h5 merging: {:.3f} s\n'.format(
+        time_stop - time_statistics)
     )

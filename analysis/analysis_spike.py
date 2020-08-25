@@ -80,9 +80,9 @@ class SpikeAnalysis:
 
         # spatial bins
         # TODO check in later functions, old version used linspace
-        self.pos_bins = np.arange(-self.net_dict['extent'] / 2.,
-                                  self.net_dict['extent'] / 2.,
-                                  self.ana_dict['binsize_space'])
+        self.space_bins = np.arange(-self.net_dict['extent'] / 2.,
+                                    self.net_dict['extent'] / 2.,
+                                    self.ana_dict['binsize_space'])
         return
 
 
@@ -121,23 +121,57 @@ class SpikeAnalysis:
         self.__parallelize(self.X,
                            self.__preprocess_data_X)
 
-        # merge preprocessed data files for all populations
-        self.__parallelize(self.ana_dict['datatypes_preprocess'],
-                           self.__merge_h5_files_populations_datatype)
         return
 
 
     def compute_statistics(self):
         """
+        Computes statistics in parallel for each population.
         """
         if RANK == 0:
             print('Computing statistics.')
 
+        self.__parallelize(self.X,
+                           self.__compute_statistics_X)
+        return
+
+
+    def merge_h5_files_populations(self):
+        """
+        Merges preprocessed data files and computed statistics for all
+        populations.
+        """
+        if RANK == 0:
+            print('Merging .h5 files for all populations.')
+
+        self.__parallelize(self.ana_dict['datatypes_preprocess'],
+                           self.__merge_h5_files_populations_datatype)
 
         self.__parallelize(self.ana_dict['datatypes_statistics'],
                            self.__merge_h5_files_populations_datatype)
-
         return
+
+
+    def __load_h5_to_sparse_X(self, X, h5data):
+        """
+        TODO currently fct variants duplicated in plotting and analysis
+        Loads sparse matrix stored in COOrdinate format in HDF5.
+
+        Parameters
+        ----------
+        X
+            Group name for datasets
+            'data', 'row', 'col' vectors of equal length
+            'shape' : shape of array tuple
+        h5data
+            Open .h5 file.
+        """
+        data_X = sp.coo_matrix((h5data[X]['data_row_col'][()][:, 0],
+                               (h5data[X]['data_row_col'][()][:, 1],
+                                h5data[X]['data_row_col'][()][:, 2])),
+                               shape=h5data[X]['shape'][()])
+        return data_X.tocsr()
+ 
 
 
     def __parallelize(self, array, func, result_dtype=None, *args):
@@ -342,8 +376,6 @@ class SpikeAnalysis:
             Population names
             (to be set by outer parralel function).
         """
-        if i == 0:
-            print('  Processing data individually for each population.')
         
         # load plain spike data and positions
         data_load = []
@@ -357,6 +389,8 @@ class SpikeAnalysis:
 
         # order is important! # TODO improve
         for datatype in self.ana_dict['datatypes_preprocess']:
+            if i==0:
+                print('  Processing: ' + datatype)
             # time binned spike trains
             if datatype == 'sptrains':
                 sptrains = self.__time_binned_sptrains_X(
@@ -493,6 +527,103 @@ class SpikeAnalysis:
         return pos_sorting_arrays
 
 
+    def __compute_statistics_X(self, i, X):
+        """
+        Inner function to be used as argument of self.__parallelize()
+        with array=self.X.
+        Corresponding outer function: self.compute_statistics()
+
+        Each function computing a dataset already writes it to .h5 file.
+
+        Parameters
+        ----------
+        i
+            Iterator of populations
+            (to be set by outer parallel function).
+        X
+            Population names
+            (to be set by outer parralel function).
+        """
+
+        # load preprocessed data
+        data_X = {}
+        for datatype in self.ana_dict['datatypes_preprocess']:
+            datatype_X = datatype + '_' + X
+            fn = os.path.join(self.sim_dict['path_processed_data'], datatype_X + '.h5')
+            data = h5py.File(fn, 'r')
+            globals().update({datatype + '_X': data}) # TODO improve
+
+
+        # order is important! # TODO improve
+        for datatype in self.ana_dict['datatypes_statistics']:
+            if i==0:
+                print('  Computing: ' + datatype)
+
+            # per-neuron firing rates
+            if datatype == 'rates':
+                rates = self.__compute_rates(X, sptrains_X) 
+
+            # local coefficients of variation
+            elif datatype == 'LVs':
+                lvs = self.__compute_lvs(
+                    X, sptrains_X, self.sim_dict['sim_resolution'])
+
+            # correlation coefficients
+            elif datatype == 'CCs':
+                #ccs = 
+                pass
+
+            elif datatype == 'PSDs':
+                #psds =
+                pass
+
+        # TODO close files
+
+        return
+
+
+    def __compute_rates(self, X, sptrains_X):
+        """
+        Computes the firing rate of each neuron by dividing the spike count by
+        the simulation time.
+        
+        Parameters
+        ----------
+        X
+            Population name.
+        sptrains_X
+            Open .h5 file sptrains of population X.
+
+        """
+        data = self.__load_h5_to_sparse_X(X, sptrains_X)
+        count = np.array(data.sum(axis=1)).flatten()
+        #count[count==0] = np.nan # set dtype=int
+        rates = count * 1.E3 / self.sim_dict['t_sim'] # in 1/s
+        self.__write_dataset_to_h5_X(X, 'rates', rates, False)
+        return
+
+
+    def __compute_lvs(self, X, sptrains_X, dt):
+        """
+        Computes local coefficients of variation.
+        TODO
+        """
+        data = self.__load_h5_to_sparse_X(X, sptrains_X)
+        lvs = np.zeros(data.shape[0])
+        for i,sptrain in enumerate(data):
+            # inter-spike intervals of spike trains of individual neurons
+            isi = np.diff(np.where(sptrain.toarray())[1]) * dt
+        
+            if isi.size < 2:
+                lvs[i] = np.nan
+            else:
+                lvs[i] = 3.*(np.power(np.diff(isi)/(isi[:-1] + isi[1:]), 2)).mean()
+        self.__write_dataset_to_h5_X(X, 'LVs', lvs, False)
+        return
+
+
+
+
     def __merge_h5_files_populations_datatype(self, i, datatype):
         """
         Inner function to be used as argument of self.__parallelize()
@@ -508,7 +639,7 @@ class SpikeAnalysis:
             Datatype to merge file across populations
             (to be set by outer parralel function).
         """
-        print('  Writing results: ' + datatype)
+        print('  Merging .h5 files: ' + datatype)
 
         fn = os.path.join(self.sim_dict['path_processed_data'],
                          'all_' + datatype + '.h5')

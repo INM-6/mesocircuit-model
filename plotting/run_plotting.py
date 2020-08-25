@@ -41,8 +41,9 @@ pl = plotting.Plotting(sim_dict, net_dict, stim_dict, ana_dict, plot_dict)
 for datatype in np.append(ana_dict['datatypes_preprocess'],
                           ana_dict['datatypes_statistics']):
     all_datatype = 'all_' + datatype
-    data = pl.load_h5(all_datatype)
-    globals().update({all_datatype: data})
+    fn = os.path.join(sim_dict['path_processed_data'], all_datatype + '.h5')
+    data = h5py.File(fn, 'r')
+    globals().update({all_datatype: data}) # TODO improve?
 time_init = time.time()
 
 ################################################################################
@@ -50,10 +51,12 @@ time_init = time.time()
 
 if RANK == 0:
     pl.fig_raster(all_sptrains, all_pos_sorting_arrays)
+if RANK == 1:
+    pl.fig_statistics_overview(all_sptrains)
 
 
 
-
+# TODO close files
 time_stop = time.time()
 
 ################################################################################
