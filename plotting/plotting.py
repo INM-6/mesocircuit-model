@@ -16,6 +16,7 @@ if not 'DISPLAY' in list(os.environ.keys()):
     mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+from matplotlib.ticker import MultipleLocator, MaxNLocator
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
@@ -227,14 +228,14 @@ class Plotting:
         return ax
 
 
-    def fig_statistics_overview(self, all_sptrains):
+    def fig_statistics_overview(self, all_rates, all_LVs):
         """
+        TODO
         """
         fig = plt.figure(figsize=(self.plot_dict['fig_width_2col'], 4))
         gs = gridspec.GridSpec(1, 1)
-        #gs.update(left=0.09, right=0.98, bottom=0.18, top=0.92)#, wspace=10., hspace=1.)
-        axes = self.plot_statistics_overview(gs[0], all_sptrains)
-
+        gs.update(left=0.08, right=0.98, bottom=0.15, top=0.95, wspace=0.3)
+        axes = self.plot_statistics_overview(gs[0], all_rates, all_LVs)
         labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
         for i,label in enumerate(labels):
             self.add_label(axes[i], label)
@@ -243,55 +244,134 @@ class Plotting:
         return
 
 
-    def plot_statistics_overview(self, gs, all_sptrains):
+    def plot_statistics_overview(self, gs, all_rates, all_LVs):
         """
+        TODO
         """
         axes = [0] * 7
-        gs_cols = gridspec.GridSpecFromSubplotSpec(1, 5, subplot_spec=gs, wspace=0.8)
+        gs_cols = gridspec.GridSpecFromSubplotSpec(1, 6, subplot_spec=gs)
 
         ### column 0: boxcharts
-        gs_c0 = gridspec.GridSpecFromSubplotSpec(3, 1, subplot_spec=gs_cols[0,0])#, hspace=0.5)
+        gs_c0 = gridspec.GridSpecFromSubplotSpec(3, 1, subplot_spec=gs_cols[0,0],
+                                                 hspace=0.7)
         
         # top: rates
-        axes[0] = self.plot_boxcharts(gs_c0[0,0])
+        axes[0] = self.plot_boxcharts(gs_c0[0,0],
+            all_rates, xlabel='', ylabel=r'$\nu$ (s$^{-1}$)',
+            xticklabels=False)
         
         # middle: LVs
-        axes[1] = self.plot_boxcharts(gs_c0[1,0])
+        axes[1] = self.plot_boxcharts(gs_c0[1,0],
+            all_LVs, xlabel='', ylabel='LV',
+            xticklabels=False)
 
-        # bottom: CCs
-        axes[2] = self.plot_boxcharts(gs_c0[2,0])
+        # bottom: CCs TODO
+        axes[2] = plt.subplot(gs_c0[2,0])
+        #axes[2] = self.plot_boxcharts(gs_c0[2,0],
+        #    all_rates, xlabel='', ylabel='CC')
 
         ### columns 1, 2, 3: distributions
 
         # left: rates
-        axes[3] = self.plot_distributions(gs_cols[0,1])
+        axes[3] = self.plot_distributions(gs_cols[0,1],
+            all_rates, bins=np.arange(30.),
+            xlabel=r'$\nu$ (s$^{-1}$)')
 
         # middle: LVs
-        axes[4] = self.plot_distributions(gs_cols[0,2])
+        axes[4] = self.plot_distributions(gs_cols[0,2],
+            all_LVs, bins=np.arange(0., 3., 3./30.),
+            xlabel='LV')
 
-        # right: CCs
-        axes[5] = self.plot_distributions(gs_cols[0,3])
+        # right: CCs TODO
+        axes[5] = plt.subplot(gs_cols[0,3])
+        #axes[5] = self.plot_distributions(gs_cols[0,3],
+        #    all_rates, bins=np.arange(30.),
+        #    xlabel='CC')
 
-        ### column 4: PSDs
-        axes[6] = self.plot_distributions(gs_cols[0,4])
-
+        ### column 4: PSDs TODO
+        axes[6] = plt.subplot(gs_cols[0,5])
+        #axes[6] = self.plot_distributions(gs_cols[0,5],
+        #    all_rates, bins=np.arange(30.),
+        #    xlabel='f (Hz)')
         return axes
 
 
-    def plot_boxcharts(self, gs):
+    def plot_boxcharts(self, gs, data, xlabel='', ylabel='',
+        xticklabels=True):
         """
+        TODO
         """
         ax = plt.subplot(gs)
-        ax.plot(1,1)
+        for loc in ['top', 'right']:
+            ax.spines[loc].set_color('none')
+
+        data_plot = []
+        for X,label in zip(self.net_dict['populations'],
+                           self.plot_dict['pop_labels']):
+            # remove potential NANs
+            # TODO deprecation warning
+            data_plot.append(data[X][~np.isnan(data[X])])
+
+        boxes = ax.boxplot(data_plot,
+            labels=self.plot_dict['pop_labels'][:-1],
+            sym='', showmeans=True, patch_artist=True,
+            meanprops={'mec' : 'white',
+                       'marker' : '_',
+                       'markersize' : mpl.rcParams['lines.markersize']*0.5},
+            medianprops={'color' : 'k'},
+            whiskerprops={'color' : 'k', 'linestyle' : '-'})
+
+        for i,box in enumerate(boxes['boxes']):
+            box.set_color(self.plot_dict['pop_colors'][i])
+
+        plt.xticks(rotation=90)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        if not xticklabels:
+            ax.set_xticklabels([])
+        
+        ax.yaxis.set_major_locator(MaxNLocator(3))
         return ax
 
 
-    def plot_distributions(self, gs):
+    def plot_distributions(self, gs, data, bins, xlabel='', xticklabels=True):
         """
         """
-        ax = plt.subplot(gs)
-        ax.plot(1,1)
-        return ax
+        gs_c = gridspec.GridSpecFromSubplotSpec(4, 1, subplot_spec=gs)#, hspace=0.5)
+
+        layer_count = 0
+        for i,X in enumerate(self.net_dict['populations']):
+            # select subplot
+            if i > 0 and i % 2 == 0:
+                layer_count += 1
+            if i % 2 == 0:
+                ax = plt.subplot(gs_c[layer_count])
+                for loc in ['top', 'right']:
+                    ax.spines[loc].set_color('none')
+
+            ax.hist(data[X], bins=bins, density=True,
+                    histtype='step', linewidth=mpl.rcParams['lines.linewidth'],
+                    color=self.plot_dict['pop_colors'][i])
+
+            ax.set_xlim(bins[0], bins[-1])
+            ax.xaxis.set_major_locator(MaxNLocator(nbins=3))
+            if i % 2 == 0:
+                ymin, ymax = ax.get_ylim()
+            if i % 2 == 1:
+                ymin1, ymax1 = ax.get_ylim()
+                if ymax1 < ymax:
+                    ax.set_ylim(0, ymax*1.1)
+                else:
+                    ax.set_ylim(0, ymax1*1.1)
+            if layer_count == len(self.plot_dict['layer_labels']) - 1:
+                ax.set_xlabel(xlabel)
+            else:
+                ax.set_xticklabels([])
+            ax.set_yticks([])
+
+            if i == 0:
+                ax_label = ax
+        return ax_label
 
     
     def add_label(self, ax, label, offset=[0,0],

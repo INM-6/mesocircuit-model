@@ -9,6 +9,7 @@ Create plots of the network activity of the mesocircuit.
 import os
 import sys
 import pickle
+import h5py
 import numpy as np
 from mpi4py import MPI
 import plotting
@@ -38,21 +39,22 @@ sim_dict, net_dict, stim_dict, ana_dict, plot_dict = dics
 
 pl = plotting.Plotting(sim_dict, net_dict, stim_dict, ana_dict, plot_dict)
 
+d = {}
 for datatype in np.append(ana_dict['datatypes_preprocess'],
                           ana_dict['datatypes_statistics']):
     all_datatype = 'all_' + datatype
     fn = os.path.join(sim_dict['path_processed_data'], all_datatype + '.h5')
     data = h5py.File(fn, 'r')
-    globals().update({all_datatype: data}) # TODO improve?
+    d.update({all_datatype: data})
 time_init = time.time()
 
 ################################################################################
 # Plot figures.
 
 if RANK == 0:
-    pl.fig_raster(all_sptrains, all_pos_sorting_arrays)
+    pl.fig_raster(d['all_sptrains'], d['all_pos_sorting_arrays'])
 if RANK == 1:
-    pl.fig_statistics_overview(all_sptrains)
+    pl.fig_statistics_overview(d['all_rates'], d['all_LVs'])
 
 
 

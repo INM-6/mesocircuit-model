@@ -22,6 +22,8 @@ plot_dict = {
     'rcParams': {
         # dpi for typical journal printing
         'figure.dpi': 300,
+        # labels close to ticklabels
+        'axes.labelpad': 0.1,
     },
 
     # plot format (use '.eps' for final figures)
