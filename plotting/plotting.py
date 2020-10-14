@@ -401,7 +401,7 @@ class Plotting:
         return
 
 
-    def savefig(self, filename, eps_conv=False):
+    def savefig(self, filename, eps_conv=False, eps_conv_via='.svg'):
         """
         Saves the current figure to format given in the plotting parameters.
         
@@ -414,15 +414,30 @@ class Plotting:
             to .pdf and back to .eps to properly compress rasterized parts of
             the figure.
             This is slow but gives a good result with small file size.
+        eps_conv_via
+            Options are '.svg' (using inkskape) and '.pdf' (using epstopdf and
+            pdftops).
         """
 
         path_fn = os.path.join(self.sim_dict['path_plots'], filename)
-        plt.savefig(path_fn + self.plot_dict['extension'])
 
         if self.plot_dict['extension'] == '.eps' and eps_conv:
-            os.system('epstopdf ' + path_fn + '.eps')
-            os.system('pdftops -eps ' + path_fn + '.pdf')
-            os.system('rm ' + path_fn + '.pdf')
+
+            if eps_conv_via=='.svg':
+                plt.savefig(path_fn + '.svg')
+                os.system('inkscape ' + path_fn + '.svg ' +
+                          '-E ' + path_fn + '.eps ' +
+                          '--export-ignore-filters --export-ps-level=3')
+                os.system('rm ' + path_fn + '.svg')
+
+            elif eps_conv_via=='.pdf':
+                plt.savefig(path_fn + '.eps')
+                os.system('epstopdf ' + path_fn + '.eps')
+                os.system('pdftops -eps ' + path_fn + '.pdf')
+                os.system('rm ' + path_fn + '.pdf')
+
+        else:
+            plt.savefig(path_fn + self.plot_dict['extension'])
 
         plt.close()
         return

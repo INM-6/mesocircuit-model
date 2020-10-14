@@ -24,10 +24,13 @@ plot_dict = {
         'figure.dpi': 300,
         # labels close to ticklabels
         'axes.labelpad': 0.1,
+        # handling of .svg fonts:
+        # 'path' (embed characters as paths) or 'none'
+        'svg.fonttype': 'none',
     },
 
     # plot format (use '.eps' for final figures)
-    'extension': '.pdf',
+    'extension': '.eps',
 
     # figure width for the J Neurosci (in inch):
     # 1 column, 1.5 columns and 2 columns
