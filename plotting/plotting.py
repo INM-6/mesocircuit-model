@@ -228,14 +228,14 @@ class Plotting:
         return ax
 
 
-    def fig_statistics_overview(self, all_rates, all_LVs):
+    def fig_statistics_overview(self, all_rates, all_LVs, all_PSDs):
         """
         TODO
         """
         fig = plt.figure(figsize=(self.plot_dict['fig_width_2col'], 4))
         gs = gridspec.GridSpec(1, 1)
         gs.update(left=0.08, right=0.98, bottom=0.15, top=0.95, wspace=0.3)
-        axes = self.plot_statistics_overview(gs[0], all_rates, all_LVs)
+        axes = self.plot_statistics_overview(gs[0], all_rates, all_LVs, all_PSDs)
         labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
         for i,label in enumerate(labels):
             self.add_label(axes[i], label)
@@ -244,7 +244,7 @@ class Plotting:
         return
 
 
-    def plot_statistics_overview(self, gs, all_rates, all_LVs):
+    def plot_statistics_overview(self, gs, all_rates, all_LVs, all_PSDs):
         """
         TODO
         """
@@ -273,14 +273,16 @@ class Plotting:
         ### columns 1, 2, 3: distributions
 
         # left: rates
-        axes[3] = self.plot_distributions(gs_cols[0,1],
-            all_rates, bins=np.arange(30.),
-            xlabel=r'$\nu$ (s$^{-1}$)')
+        axes[3] = self.plot_layer_panels(gs_cols[0,1],
+            xlabel=r'$\nu$ ($^{-1}$)',
+            plotfunc=self.__plotfunc_distributions,
+            bins=np.arange(30.), data=all_rates)
 
         # middle: LVs
-        axes[4] = self.plot_distributions(gs_cols[0,2],
-            all_LVs, bins=np.arange(0., 3., 3./30.),
-            xlabel='LV')
+        axes[4] = self.plot_layer_panels(gs_cols[0,2],
+            xlabel='LV',
+            plotfunc=self.__plotfunc_distributions,
+            bins=np.arange(0., 3., 3./30.), data=all_LVs)
 
         # right: CCs TODO
         axes[5] = plt.subplot(gs_cols[0,3])
@@ -290,9 +292,10 @@ class Plotting:
 
         ### column 4: PSDs TODO
         axes[6] = plt.subplot(gs_cols[0,5])
-        #axes[6] = self.plot_distributions(gs_cols[0,5],
-        #    all_rates, bins=np.arange(30.),
-        #    xlabel='f (Hz)')
+        axes[6] = self.plot_layer_panels(gs_cols[0,5],
+            xlabel='f (Hz)', ylabel='PSD (s$^{-2}$/Hz)',
+            plotfunc=self.__plotfunc_PSDs,
+            data=all_PSDs)
         return axes
 
 
@@ -334,8 +337,12 @@ class Plotting:
         return ax
 
 
-    def plot_distributions(self, gs, data, bins, xlabel='', xticklabels=True):
+    def plot_layer_panels(self, gs, plotfunc, xlabel='', ylabel='', **kwargs):
         """
+        Generic function to plot four vertically arranged panels, one for each
+        layer, iterating over populations.
+
+        TODO
         """
         gs_c = gridspec.GridSpecFromSubplotSpec(4, 1, subplot_spec=gs)#, hspace=0.5)
 
@@ -349,29 +356,62 @@ class Plotting:
                 for loc in ['top', 'right']:
                     ax.spines[loc].set_color('none')
 
-            ax.hist(data[X], bins=bins, density=True,
-                    histtype='step', linewidth=mpl.rcParams['lines.linewidth'],
-                    color=self.plot_dict['pop_colors'][i])
+            # specific plot
+            plotfunc(ax, X, i, **kwargs)
 
-            ax.set_xlim(bins[0], bins[-1])
-            ax.xaxis.set_major_locator(MaxNLocator(nbins=3))
+            # ylim
             if i % 2 == 0:
                 ymin, ymax = ax.get_ylim()
             if i % 2 == 1:
                 ymin1, ymax1 = ax.get_ylim()
-                if ymax1 < ymax:
-                    ax.set_ylim(0, ymax*1.1)
+
+                if ax.get_yscale()=='log':
+                    y0 = np.min([ymin, ymin1])
                 else:
-                    ax.set_ylim(0, ymax1*1.1)
+                    y0 = 0
+
+                ax.set_ylim(y0, np.max([ymax, ymax1]) * 1.1)
+                    
             if layer_count == len(self.plot_dict['layer_labels']) - 1:
                 ax.set_xlabel(xlabel)
             else:
                 ax.set_xticklabels([])
-            ax.set_yticks([])
 
             if i == 0:
+                ax.set_ylabel(ylabel)
                 ax_label = ax
         return ax_label
+
+
+    def __plotfunc_distributions(self, ax, X, i, bins, data):
+        """
+        """
+        ax.hist(data[X], bins=bins, density=True,
+                histtype='step', linewidth=mpl.rcParams['lines.linewidth'],
+                color=self.plot_dict['pop_colors'][i])
+
+        ax.set_xlim(bins[0], bins[-1])
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=3))
+        ax.set_yticks([])
+        return
+
+    
+    def __plotfunc_PSDs(self, ax, X, i, data):
+        """
+        TODO ax limits and ticklabels
+        """
+        # skip frequency of 0 Hz in loglog plot
+        freq, Pxx = data[X]
+        freq = freq[1:]
+        Pxx = Pxx[1:]
+        ax.loglog(freq, Pxx,
+                  linewidth=mpl.rcParams['lines.linewidth'],
+                  color=self.plot_dict['pop_colors'][i])
+        #ax.set_ylim(0.001, 100.)
+        #ax.set_yticklabels([0.001, 0.1, 10])
+
+        ax.set_xlim([freq[0], 500])
+        return
 
     
     def add_label(self, ax, label, offset=[0,0],

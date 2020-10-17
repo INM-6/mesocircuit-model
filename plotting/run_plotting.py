@@ -51,10 +51,12 @@ time_init = time.time()
 ################################################################################
 # Plot figures.
 
+# TODO parallelize
 if RANK == 0:
     pl.fig_raster(d['all_sptrains'], d['all_pos_sorting_arrays'])
 if RANK == 1:
-    pl.fig_statistics_overview(d['all_rates'], d['all_LVs'])
+    pl.fig_statistics_overview(d['all_rates'], d['all_LVs'], d['all_PSDs'])
+
 
 
 
