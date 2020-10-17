@@ -11,6 +11,7 @@ import glob
 import h5py
 import numpy as np
 import scipy.sparse as sp
+import matplotlib.pyplot as plt
 from mpi4py import MPI
 from prettytable import PrettyTable
 
@@ -205,7 +206,7 @@ class SpikeAnalysis:
         # Allgather requires equally sized chunks.
         # if not evenly divisible, num_its_rank * num_procs > num_its such that
         # the highest rank (= num_procs - 1) has less iterations to perform
-        num_its_rank = int(np.ceil(num_its) / num_procs)
+        num_its_rank = np.ceil(num_its / num_procs).astype(int)
 
         res_local = np.zeros(num_its_rank, dtype=result_dtype)
         res_global = np.zeros(num_its_rank * num_procs, dtype=result_dtype)
@@ -576,8 +577,8 @@ class SpikeAnalysis:
                 pass
 
             elif datatype == 'PSDs':
-                #psds =
-                pass
+                psds = self.__compute_psds(
+                    X, d['sptrains_X'], self.sim_dict['sim_resolution'])
 
         # TODO close files
 
@@ -650,6 +651,37 @@ class SpikeAnalysis:
         return
 
 
+    def __compute_psds(self, X, sptrains_X, binsize_time):
+        """
+        Computes population-rate power spectral densities.
+
+        Parameters
+        ----------
+        X
+            Population name.
+        sptrains_X
+            Sptrains of population X in sparse csr format.
+        binsize_time
+            Temporal resolution of sptrains_X (in ms).
+        """
+        # sampling frequency
+        Fs = 1000. / binsize_time
+        print(Fs)
+        # number of data points used in each block for the FFT
+        NFFT = 2048 #256
+        # number of points of overlap between segments
+        noverlap = int(NFFT * 3/4)
+
+        # detrend data
+        x = np.array(sptrains_X.sum(axis=0), dtype=float).flatten()
+        x -= x.mean()
+
+        Pxx, freq = plt.psd(x, NFFT=NFFT, Fs=Fs, noverlap=noverlap)
+        # frequencies (in 1/s), PSDs (in s^{-2} / Hz)
+        psds = np.array([freq, Pxx])
+
+        self.__write_dataset_to_h5_X(X, 'PSDs', psds, False)
+        return
 
 
     def __merge_h5_files_populations_datatype(self, i, datatype):
