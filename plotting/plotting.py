@@ -272,17 +272,21 @@ class Plotting:
 
         ### columns 1, 2, 3: distributions
 
+        bins_unscaled = np.arange(0, 1, 1./self.plot_dict['distr_num_bins'])
+        
         # left: rates
         axes[3] = self.plot_layer_panels(gs_cols[0,1],
             xlabel=r'$\nu$ ($^{-1}$)',
             plotfunc=self.__plotfunc_distributions,
-            bins=np.arange(30.), data=all_rates)
+            bins=bins_unscaled * self.plot_dict['distr_max_rate'],
+            data=all_rates)
 
         # middle: LVs
         axes[4] = self.plot_layer_panels(gs_cols[0,2],
             xlabel='LV',
             plotfunc=self.__plotfunc_distributions,
-            bins=np.arange(0., 3., 3./30.), data=all_LVs)
+            bins=bins_unscaled * self.plot_dict['distr_max_lv'],
+            data=all_LVs)
 
         # right: CCs TODO
         axes[5] = plt.subplot(gs_cols[0,3])
@@ -410,7 +414,7 @@ class Plotting:
         #ax.set_ylim(0.001, 100.)
         #ax.set_yticklabels([0.001, 0.1, 10])
 
-        ax.set_xlim([freq[0], 500])
+        ax.set_xlim(self.plot_dict['psd_freqs_interval'])
         return
 
     

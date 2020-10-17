@@ -64,4 +64,14 @@ plot_dict = {
     # time interval for short raster plots (in ms)
     'time_interval_short': np.array([0., 1000.]),
 
+    # number of bins for distributions
+    'distr_num_bins': 30,
+    # maximum bin for rate distributions (in Hz)
+    'distr_max_rate': 30.,
+    # maximum bin for LV distributions
+    'distr_max_lv': 3.,
+
+    # frequency interval to show for PSDs (in Hz)
+    'psd_freqs_interval': np.array([0., 500]),
+
 }

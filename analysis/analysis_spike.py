@@ -666,17 +666,15 @@ class SpikeAnalysis:
         """
         # sampling frequency
         Fs = 1000. / binsize_time
-        print(Fs)
-        # number of data points used in each block for the FFT
-        NFFT = 2048 #256
         # number of points of overlap between segments
-        noverlap = int(NFFT * 3/4)
+        noverlap = int(self.ana_dict['psd_NFFT'] * 3/4)
 
         # detrend data
         x = np.array(sptrains_X.sum(axis=0), dtype=float).flatten()
         x -= x.mean()
 
-        Pxx, freq = plt.psd(x, NFFT=NFFT, Fs=Fs, noverlap=noverlap)
+        Pxx, freq = plt.psd(x, NFFT=self.ana_dict['psd_NFFT'],
+                            Fs=Fs, noverlap=noverlap)
         # frequencies (in 1/s), PSDs (in s^{-2} / Hz)
         psds = np.array([freq, Pxx])
 

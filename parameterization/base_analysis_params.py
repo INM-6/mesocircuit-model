@@ -47,4 +47,7 @@ ana_dict = {
 
     # sorting axis for raster plot. Options are 'x', 'y' and None.
     'sorting_axis': 'x',
+
+    # number of data points used in each block for the FFT
+    'psd_NFFT': 2048,
 }
