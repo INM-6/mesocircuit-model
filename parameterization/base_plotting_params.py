@@ -22,6 +22,8 @@ plot_dict = {
     'rcParams': {
         # dpi for typical journal printing
         'figure.dpi': 300,
+        # line width
+        'lines.linewidth': 1.,
         # labels close to ticklabels
         'axes.labelpad': 0.1,
         # handling of .svg fonts:
@@ -66,12 +68,14 @@ plot_dict = {
 
     # number of bins for distributions
     'distr_num_bins': 30,
-    # maximum bin for rate distributions (in Hz)
-    'distr_max_rate': 30.,
-    # maximum bin for LV distributions
-    'distr_max_lv': 3.,
+    # maximum bin for rate distributions (in Hz), first is at 0
+    'distr_max_rate': 28.,
+    # maximum bin for LV distributions, first is at 0
+    'distr_max_lv': 2.8,
+    # maximum bin for CC distributions, symmetrically around 0)
+    'distr_max_cc': 0.08,
 
-    # frequency interval to show for PSDs (in Hz)
-    'psd_freqs_interval': np.array([0., 500]),
+    # maximum frequency to show for PSDs (in Hz)
+    'psd_max_freq': 500,
 
 }
