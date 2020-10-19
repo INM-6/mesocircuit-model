@@ -209,7 +209,7 @@ class SpikeAnalysis:
         num_its_rank = np.ceil(num_its / num_procs).astype(int)
 
         res_local = np.zeros(num_its_rank, dtype=result_dtype)
-        res_global = np.zeros(num_its_rank * num_procs, dtype=result_dtype)
+        res_global = np.zeros(num_its_rank * SIZE, dtype=result_dtype)
         if RANK < num_procs:
             for i,val in enumerate(array):
                 if RANK == int(i / num_its_rank):
