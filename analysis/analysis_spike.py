@@ -573,8 +573,8 @@ class SpikeAnalysis:
 
             # correlation coefficients
             elif datatype == 'CCs':
-                #ccs = 
-                pass
+                ccs = self.__compute_ccs(
+                    X, d['sptrains_X'], self.sim_dict['sim_resolution'])
 
             elif datatype == 'PSDs':
                 psds = self.__compute_psds(
@@ -648,6 +648,45 @@ class SpikeAnalysis:
                 lvs[i] = 3. * (
                     np.power(np.diff(isi) / (isi[:-1] + isi[1:]), 2)).mean()
         self.__write_dataset_to_h5_X(X, 'LVs', lvs, False)
+        return
+
+
+    def __compute_ccs(self, X, sptrains_X, binsize_time):
+        """
+        Computes Pearson correlation coefficients, excluding auto-correlations.
+
+        Parameters
+        ----------
+        X
+            Population name.
+        sptrains_X
+            Sptrains of population X in sparse csr format.
+        binsize_time
+            Temporal resolution of sptrains_X (in ms).
+        """
+        # TODO update when TC is added
+        if self.ana_dict['ccs_num_neurons'] == None:
+            num_neurons = np.min(self.net_dict['num_neurons'])
+        else:
+            num_neurons = self.ana_dict['ccs_num_neurons']
+        spt = sptrains_X[:num_neurons]
+        spt = spt.toarray()
+        if X=='L23E':
+            print('     Using ' + str(num_neurons) + 
+                  ' neurons of each population.')
+        
+        # bin spike data according to given interval
+        ntbin = int(self.ana_dict['ccs_time_interval'] / binsize_time)
+        spt = spt.reshape(num_neurons, -1, ntbin).sum(axis=-1)
+
+        ccs = np.corrcoef(spt)
+
+        # mask lower triangle
+        # (k=0 excludes auto-correlations, k=1 would include them)
+        mask = np.triu(np.ones(ccs.shape), k=0).astype(bool)
+        ccs = ccs[mask]       
+
+        self.__write_dataset_to_h5_X(X, 'CCs', ccs, False)
         return
 
 

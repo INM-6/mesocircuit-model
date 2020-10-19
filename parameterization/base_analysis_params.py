@@ -37,8 +37,8 @@ ana_dict = {
     # quantities to be computed during the statistics phase
     'datatypes_statistics': np.array(['rates',
                                       'LVs',
+                                      'CCs',
                                       'PSDs']),
-                                      #'CCs']),
 
     # temporal bin size (in ms)
     'binsize_time': 0.5,
@@ -47,6 +47,12 @@ ana_dict = {
 
     # sorting axis for raster plot. Options are 'x', 'y' and None.
     'sorting_axis': 'x',
+
+    # number of neurons to compute correlation coefficients from.
+    # if None: the population size of the smallest population is taken
+    'ccs_num_neurons': None,
+    # time interval for computing correlation coefficients (in ms)
+    'ccs_time_interval': 5.,
 
     # number of data points used in each block for the FFT
     'psd_NFFT': 2048,
