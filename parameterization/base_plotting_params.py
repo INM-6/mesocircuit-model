@@ -64,7 +64,9 @@ plot_dict = {
                              '#696969']), # other, dimgrey
 
     # time interval for short raster plots (in ms)
-    'time_interval_short': np.array([0., 1000.]),
+    'raster_time_interval': np.array([0., 1000.]),
+    # sample step of raster plot (1 means all neurons are shown)
+    'raster_sample_step': 1,
 
     # number of bins for distributions
     'distr_num_bins': 30,
@@ -76,6 +78,6 @@ plot_dict = {
     'distr_max_cc': 0.08,
 
     # maximum frequency to show for PSDs (in Hz)
-    'psd_max_freq': 500,
+    'psd_max_freq': 1000,
 
 }

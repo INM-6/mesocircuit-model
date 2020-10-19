@@ -116,7 +116,8 @@ class Plotting:
             all_sptrains,
             all_pos_sorting_arrays,
             self.sim_dict['sim_resolution'],
-            self.plot_dict['time_interval_short'])
+            self.plot_dict['raster_time_interval'],
+            self.plot_dict['raster_sample_step'])
 
         self.savefig('raster', eps_conv=True)
         return
@@ -129,7 +130,7 @@ class Plotting:
         all_pos_sorting_arrays,
         time_step,
         time_interval,
-        sample_step=1,
+        sample_step,
         xlabels=True,
         ylabels=True,
         markersize_scale=0.25):
@@ -234,7 +235,7 @@ class Plotting:
         """
         fig = plt.figure(figsize=(self.plot_dict['fig_width_2col'], 4))
         gs = gridspec.GridSpec(1, 1)
-        gs.update(left=0.09, right=0.99, bottom=0.15, top=0.95)
+        gs.update(left=0.09, right=0.98, bottom=0.15, top=0.95)
         axes = self.plot_statistics_overview(
             gs[0], all_rates, all_LVs, all_CCs, all_PSDs)
         labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
