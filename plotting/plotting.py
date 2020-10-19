@@ -282,11 +282,12 @@ class Plotting:
         
         # left: rates
         axes[3] = self.plot_layer_panels(gs_cols[0,3:5],
-            xlabel=r'$\nu$ ($^{-1}$)',
+            xlabel=r'$\nu$ (s$^{-1}$)',
             plotfunc=self.__plotfunc_distributions,
             bins=bins_unscaled * self.plot_dict['distr_max_rate'],
             data=all_rates,
-            MaxNLocatorNBins=3)
+            MaxNLocatorNBins=3,
+            ylabel='p (a.u.)')
 
         # middle: LVs
         axes[4] = self.plot_layer_panels(gs_cols[0,5:7],
@@ -399,6 +400,7 @@ class Plotting:
 
     def __plotfunc_distributions(self, ax, X, i, bins, data, MaxNLocatorNBins):
         """
+        TODO
         """
         ax.hist(data[X], bins=bins, density=True,
                 histtype='step', linewidth=mpl.rcParams['lines.linewidth'],
