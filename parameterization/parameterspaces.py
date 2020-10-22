@@ -1,18 +1,14 @@
 import os
 import parameters as ps
 
-local_sim_dict = {
-    'computer': 'local',
-    'print_time': True}
-
+# definitions for local simulations
 local_data_path = os.path.join(os.getcwd(), 'data')
 
-jureca_sim_dict = {} # TODO
-
-net_dict_microcircuit = {
-    'delay_type': 'normal',
-    'connect_method': 'fixedtotalnumber',
-    'extent': 1.}
+local_sim_dict = {
+    'computer': 'local',
+    'print_time': True,
+    'num_mpi_per_node': 2,
+    'local_num_threads': 4}
 
 local_ana_dict = {
     'computer': 'local'}
@@ -20,8 +16,24 @@ local_ana_dict = {
 local_plot_dict = {
     'computer': 'local'}
 
+# model-specific definitions
+net_dict_microcircuit = {
+    'delay_type': 'normal',
+    'connect_method': 'fixedtotalnumber',
+    'extent': 1.}
+
+################################################################################
+
 # main dictionary as used by evaluate_parameterspaces() in helpers.py
 ps_dicts = {
+    'microcircuit': {
+        'sim_dict': {
+            'num_nodes': 2,
+        },
+        'net_dict': {
+            **net_dict_microcircuit,
+        },
+    },
 
     'local_microcircuit': {
         'sim_dict': {

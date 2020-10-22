@@ -16,7 +16,8 @@ plot_dict = {
     # number of compute nodes (ignored if computer is 'local')
     'num_nodes': 1,
     # number of MPI processes per compute node
-    'num_mpi_per_node': 2,
+    # TODO adjust when analysis is differently parallelized
+    'num_mpi_per_node': 9,
 
     # rcParams to overwrite the default ones
     'rcParams': {

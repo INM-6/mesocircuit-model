@@ -27,12 +27,12 @@ sim_dict = {
     # recording interval of the membrane potential (in ms)
     'rec_V_int': 1.0,
 
-    # machine to run the simulation on. Options are 'local' and 'jureca'.
+    # machine to run the simulation on. Options are 'jureca' and 'local'.
     'computer': 'jureca',
     # print the time progress. This should only be used when the simulation
     # is run on a local machine.
     'print_time': False,
-    # path to save the output data
+    # path to save the output data TODO replace by JURECA project folder
     'data_path': os.path.join(os.getcwd(), 'data'),
     # file name for node ids
     'fname_nodeids': 'population_nodeids.dat',
@@ -41,9 +41,9 @@ sim_dict = {
     'overwrite_files': True,
 
     # number of compute nodes (ignored if computer is 'local')
-    'num_nodes': 1,
+    'num_nodes': 24,
     # number of MPI processes per compute node
-    'num_mpi_per_node': 2,
+    'num_mpi_per_node': 1,
     # number of threads per MPI process
-    'local_num_threads': 4,
+    'local_num_threads': 24,
 }

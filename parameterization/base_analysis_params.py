@@ -14,7 +14,8 @@ ana_dict = {
     # number of compute nodes (ignored if computer is 'local')
     'num_nodes': 1,
     # number of MPI processes per compute node
-    'num_mpi_per_node': 2,
+    # (parallelization across populations suggests 9 TODO with TC)
+    'num_mpi_per_node': 9,
 
     # dtypes for reading ASCII files from NEST, file extension: .dat
     'read_nest_ascii_dtypes': {
