@@ -178,15 +178,17 @@ def write_jobscript(jsname, paramset):
     elif jsname == 'plotting.sh':
         executable = 'plotting/run_plotting.py'
         dic = paramset['plot_dict']
+    executable = os.path.join(os.getcwd(), executable) # full path
 
     run_cmd = \
         'python3 ' + executable + ' ' + paramset['sim_dict']['path_parameters']
 
     if dic['computer'] == 'local':
-        jobscript = (
-            '#!/bin/bash -x' + '\n' +
-            'mpirun -n ' + str(dic['num_mpi_per_node']) + ' ' +
-            run_cmd)
+        jobscript = ('#!/bin/bash -x' + '\n')
+        # use mpirun only for more than 1 MPI processes
+        if dic['num_mpi_per_node'] > 1:
+            jobscript += ('mpirun -n ' + str(dic['num_mpi_per_node']) + ' ')
+        jobscript += run_cmd
     elif dic['computer'] == 'jureca':
         raise Exception # TODO add juerca
 

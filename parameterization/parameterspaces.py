@@ -11,10 +11,14 @@ local_sim_dict = {
     'local_num_threads': 4}
 
 local_ana_dict = {
-    'computer': 'local'}
+    'computer': 'local',
+    #'num_mpi_per_node': 1
+    }
 
 local_plot_dict = {
-    'computer': 'local'}
+    'computer': 'local',
+    #'num_mpi_per_node': 1,
+    }
 
 # model-specific definitions
 net_dict_microcircuit = {

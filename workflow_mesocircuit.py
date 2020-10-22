@@ -6,7 +6,7 @@ key = 'local_microcircuit'
 #key = 'local_mesocircuit'
 
 parameterview = helpers.evaluate_parameterspaces(filename='parameterspaces',
-paramspace_keys = [key])
+    paramspace_keys = [key])
 
 # local test run
 data_path, ps_id = parameterview[key][0]
