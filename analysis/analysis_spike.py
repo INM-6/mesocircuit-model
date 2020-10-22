@@ -121,7 +121,6 @@ class SpikeAnalysis:
         # preprocess data of each population in parallel
         self.__parallelize(self.X,
                            self.__preprocess_data_X)
-
         return
 
 
@@ -669,15 +668,25 @@ class SpikeAnalysis:
             num_neurons = np.min(self.net_dict['num_neurons'])
         else:
             num_neurons = self.ana_dict['ccs_num_neurons']
-        spt = sptrains_X[:num_neurons]
-        spt = spt.toarray()
+
+        # convert to array, remove non-spiking neurons, and extract at most
+        # num_neurons neurons for computing CCs
+        spt = sptrains_X.toarray()
+        spt = spt[~np.all(spt==0, axis=1)]
+        spt = spt[:num_neurons, :]
+        num_neurons_spk = np.shape(spt)[0]
+
         if X=='L23E':
-            print('     Using ' + str(num_neurons) + 
-                  ' neurons of each population.')
+            print('    Using ' + str(num_neurons) + ' neurons in each ' +
+                  'population for computing CCs (if no exception given).')
+        if num_neurons != num_neurons_spk:
+            print('    Exception: Computing CCs of ' + X + ' from ' + 
+                  str(num_neurons_spk) + ' neurons because not all selected ' +
+                  str(num_neurons) + ' neurons spiked.')
         
         # bin spike data according to given interval
         ntbin = int(self.ana_dict['ccs_time_interval'] / binsize_time)
-        spt = spt.reshape(num_neurons, -1, ntbin).sum(axis=-1)
+        spt = spt.reshape(num_neurons_spk, -1, ntbin).sum(axis=-1)
 
         ccs = np.corrcoef(spt)
 
