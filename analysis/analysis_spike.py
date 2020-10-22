@@ -107,7 +107,7 @@ class SpikeAnalysis:
         num_spikes = self.__parallelize(self.X,
                                         self.__merge_raw_files_X,
                                         int,
-                                        'spike_detector')
+                                        'spike_recorder')
         num_neurons = self.__parallelize(self.X,
                                         self.__merge_raw_files_X,
                                         int,
@@ -258,7 +258,7 @@ class SpikeAnalysis:
         Raw NEST output files are loaded.
         Files are merged so that only one file per population exists, since
         there is typically one file per virtual process (as for spike files,
-        datatype='spike_detector') or per MPI process (as for position files,
+        datatype='spike_recorder') or per MPI process (as for position files,
         datatype='positions').
         Node ids and, if applicable also, spike times are processed.
         The processed node ids start at 0 for each population.
@@ -274,13 +274,13 @@ class SpikeAnalysis:
             Population names
             (to be set by outer parralel function).
         datatype
-            Options are 'spike_detector' and 'positions'.
+            Options are 'spike_recorder' and 'positions'.
             
         Returns
         -------
         num_rows
             An array with the number of rows in the final files.
-            datatype = 'spike_detector': number of spikes per population.
+            datatype = 'spike_recorder': number of spikes per population.
             datatype = 'positions': number of neurons per population
         """
 
@@ -296,7 +296,7 @@ class SpikeAnalysis:
         read_dtype = self.ana_dict['read_nest_ascii_dtypes'][datatype]
         comb_data = np.array([[]], dtype=read_dtype)
         # skip three rows in raw nest output
-        skiprows = 3 if datatype == 'spike_detector' else 0
+        skiprows = 3 if datatype == 'spike_recorder' else 0
         for fn in single_files:
             data = np.loadtxt(fn, dtype=read_dtype, skiprows=skiprows)
             comb_data = np.append(comb_data, data)
@@ -314,7 +314,7 @@ class SpikeAnalysis:
             comb_data, order=self.ana_dict['write_ascii'][datatype]['sortby'])
 
         # number of rows corresponds to
-        # 'spike_detector': number of spikes
+        # 'spike_recorder': number of spikes
         # 'positions': number of neurons
         num_rows = np.shape(comb_data)[0]
 
@@ -380,7 +380,7 @@ class SpikeAnalysis:
         
         # load plain spike data and positions
         data_load = []
-        for datatype in ['spike_detector', 'positions']:
+        for datatype in ['spike_recorder', 'positions']:
             fn = os.path.join(self.sim_dict['path_processed_data'],
                               datatype + '_' + X + '.dat')
             data_load.append(

@@ -20,10 +20,10 @@ sim_dict = {
     # resolution of the simulation (in ms)
     'sim_resolution': 0.1,
 
-    # list of recording devices, default is 'spike_detector'. A 'voltmeter' can
+    # list of recording devices, default is 'spike_recorder'. A 'voltmeter' can
     # be added to record membrane voltages of the neurons. Nothing will be
     # recorded if an empty list is given.
-    'rec_dev': ['spike_detector'],
+    'rec_dev': ['spike_recorder'],
     # recording interval of the membrane potential (in ms)
     'rec_V_int': 1.0,
 

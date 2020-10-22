@@ -19,13 +19,13 @@ ana_dict = {
 
     # dtypes for reading ASCII files from NEST, file extension: .dat
     'read_nest_ascii_dtypes': {
-        'spike_detector': {'names': ('nodeid', 'time_ms'),
+        'spike_recorder': {'names': ('nodeid', 'time_ms'),
                            'formats': ('i4', 'f8')},
         'positions': {'names': ('nodeid', 'x-position_mm', 'y-position_mm'),
                       'formats': ('i4', 'f8', 'f8')}},
     # settings for writing .dat files similar to ASCII files from NEST
     'write_ascii': {
-        'spike_detector': {'sortby': 'time_ms',
+        'spike_recorder': {'sortby': 'time_ms',
                            'fmt' : ['%d', '%.3f']},
         'positions': {'sortby': 'nodeid',
                       'fmt': ['%d', '%f', '%f']}},

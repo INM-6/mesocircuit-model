@@ -34,7 +34,7 @@ def evaluate(param_path, raster_plot_interval, firing_rates_interval):
     plot_raster(
         sim_dict['path_raw_data'],
         sim_dict['path_processed_data'],
-        'spike_detector',
+        'spike_recorder',
         raster_plot_interval[0],
         raster_plot_interval[1],
         net_dict['N_scaling'])
@@ -43,7 +43,7 @@ def evaluate(param_path, raster_plot_interval, firing_rates_interval):
     firing_rates(
         sim_dict['path_raw_data'],
         sim_dict['path_processed_data'],
-        'spike_detector',
+        'spike_recorder',
         firing_rates_interval[0],
         firing_rates_interval[1])
     boxplot(sim_dict['path_processed_data'],
@@ -60,7 +60,7 @@ def plot_raster(path_raw_data, path_processed_data, name, begin, end, N_scaling)
     path_processed_data
         Path where the raster plot should be saved.
     name
-        Name of the spike detector.
+        Name of the spike recorder.
     begin
         Time point (in ms) to start plotting spikes (included).
     end
@@ -104,7 +104,7 @@ def firing_rates(path_raw_data, path_processed_data, name, begin, end):
     """ Computes mean and standard deviation of firing rates per population.
 
     The firing rate of each neuron in each population is computed and stored
-    in a .dat file in the directory of the spike detectors. The mean firing
+    in a .dat file in the directory of the spike recorders. The mean firing
     rate and its standard deviation are printed out for each population.
 
     Parameters
@@ -114,7 +114,7 @@ def firing_rates(path_raw_data, path_processed_data, name, begin, end):
     path_processed_data
         Path where the firing rates should be saved.
     name
-        Name of the spike detector.
+        Name of the spike recorder.
     begin
         Time point (in ms) to start calculating the firing rates (included).
     end
@@ -201,25 +201,25 @@ def boxplot(path_processed_data, populations):
 
 
 def __gather_metadata(path_raw_data, name):
-    """ Reads names and ids of spike detectors and first and last ids of
+    """ Reads names and ids of spike recorders and first and last ids of
     neurons in each population.
 
     If the simulation was run on several threads or MPI-processes, one name per
-    spike detector per MPI-process/thread is extracted.
+    spike recorder per MPI-process/thread is extracted.
 
     Parameters
     ------------
     path_raw_data
-        Path where the spike detector files are stored.
+        Path where the spike recorder files are stored.
     name
-        Name of the spike detector, typically ``spike_detector``.
+        Name of the spike recorder, typically ``spike_recorder``.
 
     Returns
     -------
     sd_files
-        Names of all files written by spike detectors.
+        Names of all files written by spike recorders.
     sd_names
-        Names of all spike detectors.
+        Names of all spike recorders.
     node_ids
         Lowest and highest id of nodes in each population.
 
@@ -230,7 +230,7 @@ def __gather_metadata(path_raw_data, name):
     for fn in sorted(os.listdir(path_raw_data)):
         if fn.startswith(name):
             sd_files.append(fn)
-            # spike detector name and its ID
+            # spike recorder name and its ID
             fnsplit = '-'.join(fn.split('-')[:-1])
             if fnsplit not in sd_names:
                 sd_names.append(fnsplit)
@@ -245,14 +245,14 @@ def __gather_metadata(path_raw_data, name):
 
 
 def __load_spike_times(path_raw_data, name, begin, end):
-    """ Loads spike times of each spike detector.
+    """ Loads spike times of each spike recorder.
 
     Parameters
     ----------
     path_raw_data
         Path where the files with the spike times are stored.
     name
-        Name of the spike detector.
+        Name of the spike recorder.
     begin
         Time point (in ms) to start loading spike times (included).
     end

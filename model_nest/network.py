@@ -231,27 +231,27 @@ class Network:
         """ Creates one recording device of each kind per population.
 
         Only devices which are given in ``sim_dict['rec_dev']`` are created.
-        The detector label is equal to the respective name of the recording
+        The recorder label is equal to the respective name of the recording
         device.
 
         """
         if nest.Rank() == 0:
             print('Creating recording devices.')
 
-        if 'spike_detector' in self.sim_dict['rec_dev']:
+        if 'spike_recorder' in self.sim_dict['rec_dev']:
             if nest.Rank() == 0:
-                print('  Creating spike detectors.')
+                print('  Creating spike recorders.')
 
             sd_dict = {'record_to': 'ascii'}
-            self.spike_detectors = nest.Create('spike_detector',
+            self.spike_recorders = nest.Create('spike_recorder',
                                                n=self.net_dict['num_pops'],
                                                params=sd_dict)
 
             # cannot provide list of labels with params
             sd_labels = [os.path.join(self.sim_dict['path_raw_data'],
-                                      'spike_detector_' + pop) \
+                                      'spike_recorder_' + pop) \
                          for pop in self.net_dict['populations']]
-            for i,sd in enumerate(self.spike_detectors):
+            for i,sd in enumerate(self.spike_recorders):
                 sd.label = sd_labels[i]
 
         if 'voltmeter' in self.sim_dict['rec_dev']:
@@ -411,8 +411,8 @@ class Network:
             print('Connecting recording devices.')
 
         for i, target_pop in enumerate(self.pops):
-            if 'spike_detector' in self.sim_dict['rec_dev']:
-                nest.Connect(target_pop, self.spike_detectors[i])
+            if 'spike_recorder' in self.sim_dict['rec_dev']:
+                nest.Connect(target_pop, self.spike_recorders[i])
             if 'voltmeter' in self.sim_dict['rec_dev']:
                 nest.Connect(self.voltmeters[i], target_pop)
 
