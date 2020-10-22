@@ -269,8 +269,7 @@ class Plotting:
             all_LVs, xlabel='', ylabel='LV',
             xticklabels=False)
 
-        # bottom: CCs TODO
-        axes[2] = plt.subplot(gs_c0[2,0])
+        # bottom: CCs
         axes[2] = self.plot_boxcharts(gs_c0[2,0],
             all_CCs, xlabel='', ylabel='CC')
 
@@ -326,10 +325,9 @@ class Plotting:
         for X,label in zip(self.net_dict['populations'],
                            self.plot_dict['pop_labels']):
             # remove potential NANs
-            # TODO deprecation warning
             data_plot.append(data[X][~np.isnan(data[X])])
 
-        boxes = ax.boxplot(data_plot,
+        boxes = ax.boxplot(np.array(data_plot, dtype=object),
             labels=self.plot_dict['pop_labels'][:-1],
             sym='', showmeans=True, patch_artist=True,
             meanprops={'mec' : 'white',
