@@ -10,12 +10,13 @@ ana_dict = {
 
     # machine to run the analysis on. Options are 'local' and 'jureca'.
     'computer': 'jureca',
-
     # number of compute nodes (ignored if computer is 'local')
     'num_nodes': 1,
     # number of MPI processes per compute node
     # (parallelization across populations suggests 9 TODO with TC)
     'num_mpi_per_node': 9,
+    # wall clock time (ignored if computer is 'local')
+    'wallclock_time': '00:15:00',
 
     # dtypes for reading ASCII files from NEST, file extension: .dat
     'read_nest_ascii_dtypes': {

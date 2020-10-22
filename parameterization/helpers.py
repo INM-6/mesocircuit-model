@@ -124,7 +124,8 @@ def evaluate_parameterset(ps_id, paramset):
     # set paths and create directories for parameters, jobscripts and
     # raw and processed output data
     for dname in \
-        ['parameters', 'jobscripts', 'raw_data', 'processed_data', 'plots']:
+        ['parameters', 'jobscripts', 'raw_data', 'processed_data', 'plots',
+         'stdout']:
         path = os.path.join(paramset['sim_dict']['data_path'], dname, ps_id)
         if not os.path.isdir(path):
             os.makedirs(path) # also creates sub directories
@@ -183,14 +184,39 @@ def write_jobscript(jsname, paramset):
     run_cmd = \
         'python3 ' + executable + ' ' + paramset['sim_dict']['path_parameters']
 
+
+    jobscript = ('#!/bin/bash -x' + '\n')
+
     if dic['computer'] == 'local':
-        jobscript = ('#!/bin/bash -x' + '\n')
         # use mpirun only for more than 1 MPI processes
         if dic['num_mpi_per_node'] > 1:
             jobscript += ('mpirun -n ' + str(dic['num_mpi_per_node']) + ' ')
         jobscript += run_cmd
+
     elif dic['computer'] == 'jureca':
-        raise Exception # TODO add juerca
+        cores = 24
+        # local_num_threads is only defined in sim_dict
+        if 'local_num_threads' not in dic:
+            threads = int(24 / dic['num_mpi_per_node'])
+        else:
+            threads = dic['local_num_threads']
+        
+        stdout = os.path.join(paramset['sim_dict']['path_stdout'],
+                              jsname.split('.')[0] + '.txt')
+
+        sbatch = (
+            '#SBATCH --account=jinb33\n' +
+            '#SBATCH --nodes={}\n'.format(dic['num_nodes']) +
+            '#SBATCH --ntasks-per-node={}\n'.format(dic['num_mpi_per_node']) +
+            '#SBATCH --cpus-per-task={}\n'.format(threads) +
+            '#SBATCH --output={}\n'.format(stdout) +
+            '#SBATCH --error={}\n'.format(stdout) +
+            '#SBATCH --time={}\n'.format(dic['wallclock_time']) +
+            '#SBATCH --partition=batch\n\n' +
+            'export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}\n\n')
+
+        jobscript += sbatch
+        jobscript += 'srun ' + run_cmd 
 
     with open(os.path.join(paramset['sim_dict']['path_jobscripts'],
         jsname), 'w') as f:

@@ -8,6 +8,28 @@ A dictionary with parameters defining the simulation.
 import os
 
 sim_dict = {
+    # machine to run the simulation on. Options are 'jureca' and 'local'.
+    'computer': 'jureca',
+    # number of compute nodes (ignored if computer is 'local')
+    'num_nodes': 24,
+    # number of MPI processes per compute node
+    'num_mpi_per_node': 1,
+    # number of threads per MPI process
+    'local_num_threads': 24,
+    # wall clock time (ignored if computer is 'local')
+    'wallclock_time': '00:15:00',
+
+    # print the time progress. This should only be used when the simulation
+    # is run on a local machine.
+    'print_time': False,
+    # path to save the output data TODO replace by JURECA project folder
+    'data_path': os.path.join(os.getcwd(), 'data'),
+    # file name for node ids
+    'fname_nodeids': 'population_nodeids.dat',
+    # if True, data will be overwritten,
+    # if False, a NESTError is raised if the files already exist
+    'overwrite_files': True,
+
     # master seed for NEST and NumPy
     'master_seed': 55,
 
@@ -26,24 +48,4 @@ sim_dict = {
     'rec_dev': ['spike_recorder'],
     # recording interval of the membrane potential (in ms)
     'rec_V_int': 1.0,
-
-    # machine to run the simulation on. Options are 'jureca' and 'local'.
-    'computer': 'jureca',
-    # print the time progress. This should only be used when the simulation
-    # is run on a local machine.
-    'print_time': False,
-    # path to save the output data TODO replace by JURECA project folder
-    'data_path': os.path.join(os.getcwd(), 'data'),
-    # file name for node ids
-    'fname_nodeids': 'population_nodeids.dat',
-    # if True, data will be overwritten,
-    # if False, a NESTError is raised if the files already exist
-    'overwrite_files': True,
-
-    # number of compute nodes (ignored if computer is 'local')
-    'num_nodes': 24,
-    # number of MPI processes per compute node
-    'num_mpi_per_node': 1,
-    # number of threads per MPI process
-    'local_num_threads': 24,
 }
