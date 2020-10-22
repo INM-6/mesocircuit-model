@@ -7,6 +7,7 @@ Functions starting with 'plot_' plot to a gridspec cell and are used in figures.
 """
 
 import os
+import subprocess
 import h5py
 import numpy as np
 import scipy.sparse as sp
@@ -101,12 +102,11 @@ class Plotting:
         return data_X.tocsr()
 
 
-    def fig_raster(self,
-        all_sptrains,
-        all_pos_sorting_arrays):
+    def fig_raster(self, all_sptrains, all_pos_sorting_arrays):
         """
         Creates a figure with a raster plot.
         """
+        print('Plotting spike raster.')
         fig = plt.figure(figsize=(self.plot_dict['fig_width_1col'], 5.))
         gs = gridspec.GridSpec(1, 1)
         gs.update(top=0.98, bottom=0.1, left=0.17, right=0.92)
@@ -233,6 +233,8 @@ class Plotting:
         """
         TODO
         """
+        print('Plotting statistics overview.')
+
         fig = plt.figure(figsize=(self.plot_dict['fig_width_2col'], 4))
         gs = gridspec.GridSpec(1, 1)
         gs.update(left=0.09, right=0.98, bottom=0.15, top=0.95)
@@ -457,6 +459,8 @@ class Plotting:
     def savefig(self, filename, eps_conv=False, eps_conv_via='.svg'):
         """
         Saves the current figure to format given in the plotting parameters.
+
+        TODO: note that inkscape etc. for conversion are not available on JURECA
         
         Parameters
         ----------
@@ -477,17 +481,21 @@ class Plotting:
         if self.plot_dict['extension'] == '.eps' and eps_conv:
 
             if eps_conv_via=='.svg':
-                plt.savefig(path_fn + '.svg')
-                os.system('inkscape ' + path_fn + '.svg ' +
-                          '-E ' + path_fn + '.eps ' +
-                          '--export-ignore-filters --export-ps-level=3')
-                os.system('rm ' + path_fn + '.svg')
+                prior_ext = '.svg'
+                plt.savefig(path_fn + prior_ext)
+                cmd = ('inkscape ' + path_fn + '.svg ' +
+                       '-E ' + path_fn + '.eps ' +
+                       '--export-ignore-filters --export-ps-level=3' + '\n' +  
+                       'rm ' + path_fn + '.svg')
+                os.system(cmd)
 
             elif eps_conv_via=='.pdf':
-                plt.savefig(path_fn + '.eps')
-                os.system('epstopdf ' + path_fn + '.eps')
-                os.system('pdftops -eps ' + path_fn + '.pdf')
-                os.system('rm ' + path_fn + '.pdf')
+                prior_ext = '.eps'
+                plt.savefig(path_fn + prior_ext)
+                cmd = ('epstopdf ' + path_fn + '.eps' + '\n' +
+                       'pdftops -eps ' + path_fn + '.pdf' + '\n' +
+                       'rm ' + path_fn + '.pdf')
+                os.system(cmd)
 
         else:
             plt.savefig(path_fn + self.plot_dict['extension'])

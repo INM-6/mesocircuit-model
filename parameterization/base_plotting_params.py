@@ -33,7 +33,8 @@ plot_dict = {
     },
 
     # plot format (use '.eps' for final figures)
-    'extension': '.eps',
+    # TODO: inkscape etc. for eps conversion not available on JURECA
+    'extension': '.pdf',
 
     # figure width for the J Neurosci (in inch):
     # 1 column, 1.5 columns and 2 columns
