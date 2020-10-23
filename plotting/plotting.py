@@ -12,9 +12,10 @@ import h5py
 import numpy as np
 import scipy.sparse as sp
 from mpi4py import MPI
-import matplotlib as mpl
 if not 'DISPLAY' in list(os.environ.keys()):
-    mpl.use('Agg')
+    import matplotlib
+    matplotlib.use('Agg')
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.ticker import MultipleLocator, MaxNLocator
@@ -64,7 +65,7 @@ class Plotting:
         self.plot_dict = plot_dict
 
         # update the matplotlib.rcParams
-        mpl.rcParams.update(self.plot_dict['rcParams'])
+        matplotlib.rcParams.update(self.plot_dict['rcParams'])
 
         # TODO this is currently the same as in the __init__ of analysis
         # thalamic population 'TC' is treated as the cortical populations
@@ -108,7 +109,7 @@ class Plotting:
         """
         print('Plotting spike raster.')
 
-        # automatically compute a sample step for this figure
+        # automatically compute a samatplotlib. step for this figure
         if self.plot_dict['raster_sample_step'] == 'auto':
             target_num_dots = 40000
             # assume an average firing rate of 4 Hz to estimate the number of
@@ -214,7 +215,7 @@ class Plotting:
             ax.plot(x * time_step + time_interval[0],
                     -(np.sum(nums_shown) + y),
                     marker='$.$',
-                    markersize=mpl.rcParams['lines.markersize'] * markersize_scale,
+                    markersize=matplotlib.rcParams['lines.markersize'] * markersize_scale,
                     color=self.plot_dict['pop_colors'][i],
                     markeredgecolor='none',
                     linestyle='',
@@ -226,7 +227,7 @@ class Plotting:
         for i,X in enumerate(populations[:-1]):
             ax.plot(time_interval, [-np.sum(nums_shown[:i+1])]*2,
                     'k',
-                    linewidth=mpl.rcParams['axes.linewidth'])
+                    linewidth=matplotlib.rcParams['axes.linewidth'])
 
         ax.set_xlim(time_interval[0], time_interval[1])
         ax.set_ylim(-np.sum(nums_shown), 0)
@@ -349,7 +350,7 @@ class Plotting:
             sym='', showmeans=True, patch_artist=True,
             meanprops={'mec' : 'white',
                        'marker' : '_',
-                       'markersize' : mpl.rcParams['lines.markersize']*0.5},
+                       'markersize' : matplotlib.rcParams['lines.markersize']*0.5},
             medianprops={'color' : 'k'},
             whiskerprops={'color' : 'k', 'linestyle' : '-'})
 
@@ -418,7 +419,7 @@ class Plotting:
         TODO
         """
         ax.hist(data[X], bins=bins, density=True,
-                histtype='step', linewidth=mpl.rcParams['lines.linewidth'],
+                histtype='step', linewidth=matplotlib.rcParams['lines.linewidth'],
                 color=self.plot_dict['pop_colors'][i])
 
         ax.set_xlim(bins[0], bins[-1])
@@ -436,7 +437,7 @@ class Plotting:
         freq = freq[1:]
         Pxx = Pxx[1:]
         ax.loglog(freq, Pxx,
-                  linewidth=mpl.rcParams['lines.linewidth'],
+                  linewidth=matplotlib.rcParams['lines.linewidth'],
                   color=self.plot_dict['pop_colors'][i])
 
         ax.set_xticks([10**x for x in np.arange(1, 6)])
@@ -467,7 +468,7 @@ class Plotting:
                 ha='left', va='bottom',
                 transform=ax.transAxes,
                 weight=weight,
-                fontsize=mpl.rcParams['font.size'] * fontsize_scale)
+                fontsize=matplotlib.rcParams['font.size'] * fontsize_scale)
         return
 
 
