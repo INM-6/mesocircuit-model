@@ -196,7 +196,7 @@ def write_jobscript(jsname, paramset):
     # define executable
     executable = [run_cmd + 'python3 ' + os.path.join(os.getcwd(), py) + ' ' +
                   paramset['sim_dict']['path_parameters'] for py in run_py]
-    executable = '\n\n wait \n\n'.join(executable)
+    executable = '\n\n' + 'wait' + '\n\n'.join(executable)
 
     # start jobscript
     jobscript = ('#!/bin/bash -x' + '\n')
@@ -323,7 +323,7 @@ def run_jobs(parameterview, jobscripts, run_type='run_locally',
                     # submit jobs to jureca
                     elif run_type == 'submit_jureca':
                         # submit first job
-                        print('Submitting ' + jobscripts[1] + job_spec)
+                        print('Submitting ' + jobscripts[0] + job_spec)
                         jobid = subprocess.getoutput('sbatch {}'.format(jobs[0]))
                         # submit potential following jobs with dependency
                         if len(jobs) > 1:
