@@ -9,6 +9,7 @@ import numpy as np
 import parameters as ps
 import os
 import sys
+import subprocess
 import operator
 import pickle
 import hashlib
@@ -77,7 +78,7 @@ def evaluate_parameterspaces(
             paramspace_key in paramspace_keys or # selected key(s)
             paramspace_key=='base'): # base parameters if with_base_params
             print(paramspace_key)
-            parameterview[paramspace_key]= []
+            parameterview[paramspace_key] = []
 
             parameterspaces[paramspace_key] = ps.ParameterSpace({})
             # start with default parameters and update
@@ -154,7 +155,7 @@ def evaluate_parameterset(ps_id, paramset):
     write_jobscript('network.sh', paramset)
     write_jobscript('analysis.sh', paramset)
     write_jobscript('plotting.sh', paramset)
-    #write_jobscript('analysis_and_plotting.sh', paramset) TODO
+    write_jobscript('analysis_and_plotting.sh', paramset)
     return
 
 
@@ -170,34 +171,46 @@ def write_jobscript(jsname, paramset):
     paramset
         A parameter set.
     """
+    
     if jsname == 'network.sh':
-        executable = 'model_nest/run_mesocircuit.py'
+        run_py = ['model_nest/run_mesocircuit.py']
         dic = paramset['sim_dict']
     elif jsname == 'analysis.sh':
-        executable = 'analysis/run_analysis.py'
+        run_py = ['analysis/run_analysis.py']
         dic = paramset['ana_dict']
     elif jsname == 'plotting.sh':
-        executable = 'plotting/run_plotting.py'
+        run_py = ['plotting/run_plotting.py']
         dic = paramset['plot_dict']
-    executable = os.path.join(os.getcwd(), executable) # full path
+    elif jsname == 'analysis_and_plotting.sh':
+        run_py = ['analysis/run_analysis.py', 'plotting/run_plotting.py']
+        dic = paramset['ana_dict'] # use configuration from analysis
 
-    run_cmd = \
-        'python3 ' + executable + ' ' + paramset['sim_dict']['path_parameters']
-
-
-    jobscript = ('#!/bin/bash -x' + '\n')
-
+    # computer-dependent run command
     if dic['computer'] == 'local':
         # use mpirun only for more than 1 MPI processes
         if dic['num_mpi_per_node'] > 1:
-            jobscript += ('mpirun -n ' + str(dic['num_mpi_per_node']) + ' ')
-        jobscript += run_cmd
+            run_cmd = 'mpirun -n {} '.format(dic['num_mpi_per_node'])
+        else:
+            run_cmd = ''
+    elif dic['computer'] == 'jureca':
+        run_cmd = 'srun '
+
+    # define executable
+    executable = [run_cmd + 'python3 ' + os.path.join(os.getcwd(), py) + ' ' +
+                  paramset['sim_dict']['path_parameters'] for py in run_py]
+    executable = '\n\n wait \n\n'.join(executable)
+
+    # start jobscript
+    jobscript = ('#!/bin/bash -x' + '\n')
+
+    if dic['computer'] == 'local':
+        jobscript += executable
 
     elif dic['computer'] == 'jureca':
         cores = 24
         # local_num_threads is only defined in sim_dict
         if 'local_num_threads' not in dic:
-            threads = int(24 / dic['num_mpi_per_node'])
+            threads = int(cores / dic['num_mpi_per_node'])
         else:
             threads = dic['local_num_threads']
         
@@ -216,12 +229,11 @@ def write_jobscript(jsname, paramset):
             'export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}\n\n')
 
         jobscript += sbatch
-        jobscript += 'srun ' + run_cmd 
+        jobscript += executable
 
     with open(os.path.join(paramset['sim_dict']['path_jobscripts'],
         jsname), 'w') as f:
         f.write(jobscript)
-
     return
 
 
@@ -266,3 +278,61 @@ def sort_deep_dict(d):
                 if type(v) == dict or type(v) == ps.ParameterSet:
                     y[j] = (k, sort_deep_dict(v))
     return x
+
+
+def run_jobs(parameterview, jobscripts, run_type='run_locally',
+             paramspace_keys=[]):
+    """
+    Submits given jobscripts of all parameter combinations in parameterview to
+    JURECA.
+    
+    Parameters
+    ----------
+    parameterview
+        returned by evaluate_parameterspaces()
+    jobscripts
+        list of jobscripts to be submitted,
+        e.g., ['network.sh', 'analysis_plotting.sh'].
+        If multiple scripts are given, they will be executed in the given order,
+        (on JURECA combined as job arrays).
+    run_type
+        'run_locally' executes all jobscripts one after the other.
+        'submit_jureca' submits all jobscripts to jureca.
+    paramspace_keys
+        List of keys of parameter spaces to run jobs of. Providing an
+        empty list means that all keys are evaluated (default=[])
+    """
+    submitted_jobs = []
+    for paramspace_key in parameterview.keys():
+        if paramspace_keys != [] and paramspace_key not in paramspace_keys:
+            pass
+        else:
+            for data_path, ps_id in parameterview[paramspace_key]:
+                if ps_id in submitted_jobs:
+                    pass
+                else:
+                    jobs = [os.path.join(
+                        data_path, 'jobscripts', ps_id, js) for js in jobscripts]
+
+                    job_spec = ' for ' + paramspace_key + ' - ' + ps_id + '.' 
+
+                    # run locally one job after the other
+                    if run_type == 'run_locally':
+                        for i,js in enumerate(jobs):
+                            print('Running ' + jobscripts[i] + job_spec)
+                            os.system('sh ' +  js)
+
+                    # submit jobs to jureca
+                    elif run_type == 'submit_jureca':
+                        # submit first job
+                        print('Submitting ' + jobscripts[1] + job_spec)
+                        jobid = subprocess.getoutput('sbatch {}'.format(jobs[0]))
+                        # submit potential following jobs with dependency
+                        if len(jobs) > 1:
+                            for i,js in enumerate(jobs[1:]):
+                                print('Submitting ' + jobscripts[i+1] + job_spec)
+                                jobid = subprocess.getoutput(
+                                    'sbatch --dependency=afterok:{} {}'.format(
+                                        jobid, js))
+                    submitted_jobs.append(ps_id)
+    return

@@ -12,7 +12,7 @@ local_sim_dict = {
 
 local_ana_dict = {
     'computer': 'local',
-    #'num_mpi_per_node': 1
+    #'num_mpi_per_node': 1,
     }
 
 local_plot_dict = {
