@@ -34,7 +34,7 @@ def evaluate_parameterspaces(
     ----------
     filename
         Name of the file <filename>.py defining the parameter spaces to be
-        evaluated (without file extension). The parameters paces need to be in a
+        evaluated (without file extension). The parameter spaces need to be in a
         dictionary named 'ps_dicts'.
         If no filename is given, i.e., filename='', parameters are evaluated
         according to the base parameters (default='').

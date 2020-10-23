@@ -107,6 +107,21 @@ class Plotting:
         Creates a figure with a raster plot.
         """
         print('Plotting spike raster.')
+
+        # automatically compute a sample step for this figure
+        if self.plot_dict['raster_sample_step'] == 'auto':
+            target_num_dots = 40000
+            # assume an average firing rate of 4 Hz to estimate the number of
+            # dots if all neurons were shown
+            rate_estim = 4.
+            full_num_dots_estim = \
+                np.diff(self.plot_dict['raster_time_interval']) * 1e-3 * \
+                rate_estim * \
+                np.sum(self.net_dict['num_neurons'])
+            raster_sample_step = 1 + int(full_num_dots_estim / target_num_dots)
+            print('  Automatically set raster_sample_step to ' + 
+                  str(raster_sample_step) + '.')
+
         fig = plt.figure(figsize=(self.plot_dict['fig_width_1col'], 5.))
         gs = gridspec.GridSpec(1, 1)
         gs.update(top=0.98, bottom=0.1, left=0.17, right=0.92)
@@ -117,7 +132,7 @@ class Plotting:
             all_pos_sorting_arrays,
             self.sim_dict['sim_resolution'],
             self.plot_dict['raster_time_interval'],
-            self.plot_dict['raster_sample_step'])
+            raster_sample_step)
 
         self.savefig('raster', eps_conv=True)
         return
