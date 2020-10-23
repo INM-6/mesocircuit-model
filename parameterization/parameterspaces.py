@@ -32,7 +32,7 @@ net_dict_microcircuit = {
 ps_dicts = {
     'microcircuit': {
         'sim_dict': {
-            'num_nodes': 2,
+            'num_nodes': 1,
         },
         'net_dict': {
             **net_dict_microcircuit,

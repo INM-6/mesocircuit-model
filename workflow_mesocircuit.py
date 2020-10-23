@@ -2,7 +2,8 @@ import os
 import numpy as np
 import parameterization.helpers as helpers
 
-key = 'local_microcircuit'
+key = 'microcircuit'
+#key = 'local_microcircuit'
 #key = 'local_mesocircuit'
 
 parameterview = helpers.evaluate_parameterspaces(filename='parameterspaces',
