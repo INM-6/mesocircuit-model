@@ -196,7 +196,8 @@ def write_jobscript(jsname, paramset):
     # define executable
     executable = [run_cmd + 'python3 ' + os.path.join(os.getcwd(), py) + ' ' +
                   paramset['sim_dict']['path_parameters'] for py in run_py]
-    executable = '\n\n' + 'wait' + '\n\n'.join(executable)
+    sep = '\n\n' + 'wait' + '\n\n'
+    executable = sep.join(executable)
 
     # start jobscript
     jobscript = ('#!/bin/bash -x' + '\n')
@@ -324,13 +325,17 @@ def run_jobs(parameterview, jobscripts, run_type='run_locally',
                     elif run_type == 'submit_jureca':
                         # submit first job
                         print('Submitting ' + jobscripts[0] + job_spec)
-                        jobid = subprocess.getoutput('sbatch {}'.format(jobs[0]))
+                        submit = 'sbatch ' + jobs[0] 
+                        output = subprocess.getoutput(submit)
+                        print(output)
+                        jobid = output.split(' ')[-1]
                         # submit potential following jobs with dependency
                         if len(jobs) > 1:
                             for i,js in enumerate(jobs[1:]):
                                 print('Submitting ' + jobscripts[i+1] + job_spec)
-                                jobid = subprocess.getoutput(
-                                    'sbatch --dependency=afterok:{} {}'.format(
-                                        jobid, js))
+                                submit = 'sbatch --dependency=afterok:' + jobid + ' ' +  js
+                                output = subprocess.getoutput(submit)
+                                print(output)
+                                jobid = output.split(' ')[-1]
                     submitted_jobs.append(ps_id)
     return
