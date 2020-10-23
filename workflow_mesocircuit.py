@@ -17,8 +17,8 @@ helpers.run_jobs(
 #        'analysis.sh',
 #        'plotting.sh',
         ],
-    run_type='run_locally',
-    #run_type='submit_jureca',
+#    run_type='run_locally',
+    run_type='submit_jureca',
     )
 
 

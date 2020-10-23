@@ -68,8 +68,6 @@ def evaluate_parameterspaces(
     # parameterspaces built with the parameters module and indexed by
     # paramspace_key
     parameterspaces = {}
-    # collection of unique parametersets indexed by ps_id
-    parametersets = {}
     # overview of parameterspaces and corresponding ps_ids
     parameterview = {}
 
@@ -95,16 +93,16 @@ def evaluate_parameterspaces(
                 ps_id = get_unique_id(
                     {key: paramset[key] for key in \
                         ['sim_dict', 'net_dict', 'stim_dict']})
-                if ps_id in sorted(parametersets):
-                    print('Skipping {0}, already in job list.'.format(ps_id))
-                    pass
-                else:
-                    print(ps_id)
-                    parametersets[ps_id] = paramset
-                    parameterview[paramspace_key].append([
-                        paramset['sim_dict']['data_path'], ps_id])
+                print(ps_id)
 
-                    evaluate_parameterset(ps_id, paramset)
+                # add paramspace_key to data_path
+                paramset['sim_dict']['data_path'] = os.path.join(
+                    paramset['sim_dict']['data_path'], paramspace_key)
+
+                evaluate_parameterset(ps_id, paramset)
+
+                parameterview[paramspace_key].append([
+                    paramset['sim_dict']['data_path'], ps_id])
 
     return parameterview
 

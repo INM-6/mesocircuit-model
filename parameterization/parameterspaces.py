@@ -42,7 +42,7 @@ ps_dicts = {
     'local_microcircuit': {
         'sim_dict': {
             **local_sim_dict,
-            **{'data_path': local_data_path + '/local_microcircuit'}},
+        },
         'net_dict': {
             **net_dict_microcircuit,
             **{'N_scaling': 0.1,
@@ -56,7 +56,7 @@ ps_dicts = {
     'local_mesocircuit': {
         'sim_dict': {
             **local_sim_dict,
-            **{'data_path': local_data_path + '/local_mesocircuit'}},
+        },
         'net_dict': {
             'N_scaling': 0.008,
             'K_scaling': 0.1},
