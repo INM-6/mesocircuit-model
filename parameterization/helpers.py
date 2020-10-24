@@ -75,7 +75,6 @@ def evaluate_parameterspaces(
         if (len(paramspace_keys)==0 or # all keys
             paramspace_key in paramspace_keys or # selected key(s)
             paramspace_key=='base'): # base parameters if with_base_params
-            print(paramspace_key)
             parameterview[paramspace_key] = []
 
             parameterspaces[paramspace_key] = ps.ParameterSpace({})
@@ -93,7 +92,8 @@ def evaluate_parameterspaces(
                 ps_id = get_unique_id(
                     {key: paramset[key] for key in \
                         ['sim_dict', 'net_dict', 'stim_dict']})
-                print(ps_id)
+                print('Evaluating parameters for ' + str(paramspace_key) +
+                      ' - ' + str(ps_id) + '.')
 
                 # add paramspace_key to data_path
                 paramset['sim_dict']['data_path'] = os.path.join(

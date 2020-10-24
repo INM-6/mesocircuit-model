@@ -11,10 +11,8 @@ import glob
 import h5py
 import numpy as np
 import scipy.sparse as sp
-if not 'DISPLAY' in list(os.environ.keys()):
-    import matplotlib
-    matplotlib.use('Agg')
 import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpi4py import MPI
 from prettytable import PrettyTable
