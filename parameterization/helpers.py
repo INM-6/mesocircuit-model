@@ -61,8 +61,8 @@ def evaluate_parameterspaces(
     except:
         print('No parameterspaces read from file.')
         if filename != '':
-            print('  Check for syntax error in ' + filename + '.py.') 
-    if with_base_params:
+            print('  Check for syntax error in ' + filename + '.py.')
+    if with_base_params or filename=='':
         ps_dicts.update({'base': {}})
 
     # parameterspaces built with the parameters module and indexed by
