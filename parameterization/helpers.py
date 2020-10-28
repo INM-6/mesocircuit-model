@@ -12,6 +12,7 @@ import sys
 import subprocess
 import operator
 import pickle
+import json
 import hashlib
 
 from . import helpers_network_stimulus as helpnet
@@ -135,20 +136,18 @@ def evaluate_parameterset(ps_id, paramset):
         helpnet.derive_dependent_parameters(
             paramset['net_dict'], paramset['stim_dict'])
 
-    # write final parameters to file (TODO consider human-readable .json)
+    # write final parameters to file
     for dic in ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict', 'plot_dict']:
-        with open(os.path.join(paramset['sim_dict']['path_parameters'],
-            dic + '.pkl'), 'wb') as f:
+        filename = os.path.join(paramset['sim_dict']['path_parameters'], dic) 
+        # pickle for machine readability
+        with open(filename + '.pkl', 'wb') as f:
             pickle.dump(paramset[dic], f)
+        # text for human readability
+        with open(filename + '.txt', 'w') as f:
+            json_dump = json.dumps(
+                paramset[dic], cls=NumpyEncoder, indent=2, sort_keys=True)
+            f.write(json_dump)
 
-    # TODO just for testing
-    if 0:
-        for key in sorted(paramset['net_dict']):
-            print(key)
-            print(paramset['net_dict'][key])
-            print()
-
-    
     # write jobscripts
     write_jobscript('network.sh', paramset)
     write_jobscript('analysis.sh', paramset)
@@ -339,3 +338,18 @@ def run_jobs(parameterview, jobscripts, run_type='run_locally',
                                 jobid = output.split(' ')[-1]
                     submitted_jobs.append(ps_id)
     return
+
+
+class NumpyEncoder(json.JSONEncoder):
+    """
+    JSON encoder for numpy types.
+    """
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        
+        return json.JSONEncoder.default(self, obj)

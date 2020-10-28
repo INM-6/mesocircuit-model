@@ -136,10 +136,10 @@ net_dict = {
     # The final beta is beta_unscaled * beta_scaling.
     'beta_scaling': 1.,
 
-    # If beta_exh_inh is not None, it must be a list with excitatory and
+    # If beta_exh_inh is not False, it must be a list with excitatory and
     # inhibitory decay parameters [beta_exc, beta_inh] which will be used to
     # override the matrix beta above.
-    'beta_exc_inh': None,
+    'beta_exc_inh': False,
 
     # side length (in mm) of square sheets in which neurons are randomly
     # distributed

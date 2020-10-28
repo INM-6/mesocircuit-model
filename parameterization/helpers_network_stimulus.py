@@ -55,7 +55,7 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
             net_dict['num_pops'])
 
     # decay parameters of exponential profile
-    if net_dict['beta_exc_inh'] != None:
+    if net_dict['beta_exc_inh']:
         # matrix of decay parameters
         net_dict['beta'] = get_exc_inh_matrix(
             net_dict['beta_exc_inh'][0],

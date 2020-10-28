@@ -51,8 +51,8 @@ ana_dict = {
     'sorting_axis': 'x',
 
     # number of neurons to compute correlation coefficients from.
-    # if None: the population size of the smallest population is taken
-    'ccs_num_neurons': None,
+    # if 'auto': the population size of the smallest population is taken
+    'ccs_num_neurons': 'auto',
     # time interval for computing correlation coefficients (in ms)
     'ccs_time_interval': 5.,
 
