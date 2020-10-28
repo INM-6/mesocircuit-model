@@ -343,15 +343,11 @@ class Network:
                     if self.net_dict['connect_method'] == 'fixedtotalnumber':
                         conn_dict_rec = {
                             'rule': 'fixed_total_number',
-                            'N': self.net_dict['num_synapses'][i][j],
-                            'allow_autapses': False,
-                            'allow_multapses': True}
+                            'N': self.net_dict['num_synapses'][i][j]}
                     elif self.net_dict['connect_method'] == 'fixedindegree':
                         conn_dict_rec = {
                             'rule': 'fixed_indegree',
-                            'indegree': self.net_dict['indegrees'][i][j],
-                            'allow_autapses': False,
-                            'allow_multapses': True}
+                            'indegree': self.net_dict['indegrees'][i][j]}
                     elif self.net_dict['connect_method'] == 'fixedindegree_exp':
                         conn_dict_rec = {
                             'rule': 'fixed_indegree',
@@ -360,9 +356,12 @@ class Network:
                                 x=nest.spatial.distance,
                                 beta=self.net_dict['beta'][i][j]),
                             'mask': {'circular': {
-                                'radius': self.net_dict['extent'] / 2.}},
-                            'allow_autapses': False,
-                            'allow_multapses': True}
+                                'radius': self.net_dict['extent'] / 2.}}}
+                    else:
+                        raise Exception('connect_method is incorrect.')
+
+                    conn_dict_rec.update({'allow_autapses': False,
+                                          'allow_multapses': True})
 
                     # specify synapse parameters
                     if self.net_dict['weight_matrix_mean'][i][j] < 0:
@@ -404,6 +403,7 @@ class Network:
                         source_pop, target_pop,
                         conn_spec=conn_dict_rec,
                         syn_spec=syn_dict)
+
 
     def __connect_recording_devices(self):
         """ Connects the recording devices to the mesocircuit."""
