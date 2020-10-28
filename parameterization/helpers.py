@@ -14,6 +14,7 @@ import operator
 import pickle
 import json
 import hashlib
+import copy
 
 from . import helpers_network_stimulus as helpnet
 
@@ -100,8 +101,10 @@ def evaluate_parameterspaces(
                       ' - ' + str(ps_id) + '.')
 
                 # readd ana_dict and plot_dict to get full paramset
+                # (deep copy of sub_paramset is needed, otherwise changes to
+                # paramset['sim_dict']['data_path'] survive iterations) 
                 paramset = {
-                    **sub_paramset,
+                    **copy.deepcopy(sub_paramset),
                     'ana_dict': parameterspaces[paramspace_key]['ana_dict'],
                     'plot_dict': parameterspaces[paramspace_key]['plot_dict']}
 
