@@ -88,13 +88,22 @@ def evaluate_parameterspaces(
                     parameterspaces[paramspace_key][dic].update(
                     ps_dicts[paramspace_key][dic])
 
-            for paramset in parameterspaces[paramspace_key].iter_inner():
-                # include only sim_dict, net_dict and stim_dict into unique id
-                ps_id = get_unique_id(
-                    {key: paramset[key] for key in \
-                        ['sim_dict', 'net_dict', 'stim_dict']})
+            # only sim_dict, net_dict and stim_dict enable parameter spaces
+            # and are used to compute a unique id
+            dicts_unique = ['sim_dict', 'net_dict', 'stim_dict']
+            sub_paramspace = ps.ParameterSpace(
+                {k:parameterspaces[paramspace_key][k] for k in dicts_unique})
+
+            for sub_paramset in sub_paramspace.iter_inner():
+                ps_id = get_unique_id(sub_paramset)
                 print('Evaluating parameters for ' + str(paramspace_key) +
                       ' - ' + str(ps_id) + '.')
+
+                # readd ana_dict and plot_dict to get full paramset
+                paramset = {
+                    **sub_paramset,
+                    'ana_dict': parameterspaces[paramspace_key]['ana_dict'],
+                    'plot_dict': parameterspaces[paramspace_key]['plot_dict']}
 
                 # add paramspace_key to data_path
                 paramset['sim_dict']['data_path'] = os.path.join(
