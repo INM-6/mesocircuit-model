@@ -338,12 +338,17 @@ class Plotting:
             ax.spines[loc].set_color('none')
 
         data_plot = []
-        for X,label in zip(self.net_dict['populations'],
-                           self.plot_dict['pop_labels']):
+        for X in self.net_dict['populations']:
             # remove potential NANs
-            data_plot.append(data[X][~np.isnan(data[X])])
+            data_X = data[X][~np.isnan(data[X])]
+            data_plot.append(data_X)
 
-        boxes = ax.boxplot(np.array(data_plot, dtype=object),
+        # TODO warning can be removed with np.array(data_plot, dtype=object)
+        # but this causes data with same number of values in each population
+        # to fail
+
+        boxes = ax.boxplot(
+            data_plot,
             labels=self.plot_dict['pop_labels'][:-1],
             sym='', showmeans=True, patch_artist=True,
             meanprops={'mec' : 'white',
