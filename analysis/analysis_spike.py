@@ -692,10 +692,10 @@ class SpikeAnalysis:
 
         ccs = np.corrcoef(spt)
 
-        # mask lower triangle
-        # (k=0 excludes auto-correlations, k=1 would include them)
-        mask = np.triu(np.ones(ccs.shape), k=0).astype(bool)
-        ccs = ccs[mask]       
+        # mask lower triangle: elements below the k-th diagonal are zeroed
+        # (k=1 excludes auto-correlations, k=0 would include them)
+        mask = np.triu(np.ones(ccs.shape), k=1).astype(bool)
+        ccs = ccs[mask]
 
         self.__write_dataset_to_h5_X(X, 'CCs', ccs, False)
         return
