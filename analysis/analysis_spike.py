@@ -666,8 +666,11 @@ class SpikeAnalysis:
             Temporal resolution of sptrains_X (in ms).
         """
         # TODO update when TC is added
-        if self.ana_dict['ccs_num_neurons'] == 'auto':
-            num_neurons = np.min(self.net_dict['num_neurons'])
+
+        min_num_neurons = np.min(self.net_dict['num_neurons'])
+        if self.ana_dict['ccs_num_neurons'] == 'auto' or \
+            self.ana_dict['ccs_num_neurons'] > min_num_neurons:
+            num_neurons = min_num_neurons
         else:
             num_neurons = self.ana_dict['ccs_num_neurons']
 
