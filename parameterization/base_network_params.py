@@ -18,13 +18,21 @@ net_dict = {
     # names of the simulated neuronal populations
     'populations': np.array(
         ['L23E', 'L23I', 'L4E', 'L4I', 'L5E', 'L5I', 'L6E', 'L6I']),
+    # base model used for num_neurons_1mm2, conn_probs_1mm2 / indegrees_1mm2,
+    # mean_rates, and K_ext
+    # options are
+    # 'PD2014': Potjans & Diesmann (2014)
+    # 'SvA2018': Schmidt ... van Albada (2018)
+    'base_model': 'PD2014',
     # number of neurons in the different populations (same order as
     # 'populations') of network covering 1mm2
-    'num_neurons_1mm2':
+    'num_neurons_1mm2_PD2014':
         np.array([20683, 5834, 21915, 5479, 4850, 1065, 14395, 2948]),
+    'num_neurons_1mm2_SvA2018':
+        np.array([47386, 13366, 70387, 17597, 20740, 4554, 19839, 4063]),
     # connection probabilities (the first index corresponds to the targets
     # and the second to the sources) of network covering 1mm2
-    'conn_probs_1mm2':
+    'conn_probs_1mm2_PD2014':
         np.array(
             [[0.1009, 0.1689, 0.0437, 0.0818, 0.0323, 0., 0.0076, 0.],
              [0.1346, 0.1371, 0.0316, 0.0515, 0.0755, 0., 0.0042, 0.],
@@ -34,14 +42,28 @@ net_dict = {
              [0.0548, 0.0269, 0.0257, 0.0022, 0.06, 0.3158, 0.0086, 0.],
              [0.0156, 0.0066, 0.0211, 0.0166, 0.0572, 0.0197, 0.0396, 0.2252],
              [0.0364, 0.001, 0.0034, 0.0005, 0.0277, 0.008, 0.0658, 0.1443]]),
+    'indegrees_1mm2_SvA2018':
+        np.array(
+            [[1062.05780665956, 516.693556417054, 481.639619708102, 227.662598516076, 77.2223337087846, 2.58278612545931E-05, 56.9825572758422, 0.002547719312792],
+             [1441.22871932965, 413.650339113414, 348.511756043073, 142.765724065597, 183.906753011762, 2.8078192398913E-05, 28.4797152892552, 0.001724818102904],
+             [76.101553634937, 17.0532541730215, 548.050632633596, 382.50205031852, 16.7235740718305, 0.154558136653199, 324.103963496397, 0.002796270620683],
+             [718.027297810924, 8.54769496114012, 876.372124238087, 457.88686095073, 7.1585610485389, 2.55118224065622E-05, 780.639330341388, 0.000999471255078],
+             [1042.30016686051, 181.530391691357, 557.991338204657, 15.9348532849194, 204.095347075258, 227.182779372723, 143.127021832045, 0.006843860953766],
+             [568.214412020203, 78.1506995350578, 282.524967334319, 5.33709891502392, 146.307555909299, 187.593064274647, 64.0388656508819, 0.001459301922844],
+             [159.401948962628, 19.9785159873622, 227.441084484738, 46.0107686142342, 138.832688971888, 10.5525583810149, 287.535665222409, 355.683175924637],
+             [368.658922577975, 2.77868306292702, 31.990783610677, 2.64327372576867, 67.4774463423829, 4.20258522768281, 478.851911854799, 220.365998044097]]),
     # mean rates of the different populations in the non-scaled version of the
     # mesocircuit (in spikes/s; same order as in 'populations');
     # necessary for the scaling of the network.
     # The values were optained by running this PyNEST microcircuit with 12 MPI
     # processes and both 'N_scaling' and 'K_scaling' set to 1.
-    # TODO update with full-scale mesocircuit
-    'mean_rates':
+    # TODO update with full-scale mesocircuit, or distinguish between full mean
+    # rates or mean rates of full 1mm2
+    'mean_rates_PD2014':
         np.array([0.943, 3.026, 4.368, 5.882, 7.733, 8.664, 1.096, 7.851]),
+    # TODO recorded with 1mm2 macaqueV1, but probably not final
+    'mean_rates_SvA2018':
+        np.array([0.15709281, 1.6874907, 2.4200633, 2.8021822, 3.6009161, 4.2362757, 2.209184, 4.16761]),
     # mean amplitude of excitatory postsynaptic potential (in mV)
     'PSP_exc_mean': 0.15,
     # relative standard deviation of the weight
@@ -78,7 +100,8 @@ net_dict = {
     'poisson_input': True,
     # indegree of external connections to the different populations (same order
     # as in 'populations')
-    'K_ext': np.array([1600, 1500, 2100, 1900, 2000, 1900, 2900, 2100]),
+    'K_ext_PD2014': np.array([1600, 1500, 2100, 1900, 2000, 1900, 2900, 2100]),
+    'K_ext_SvA2018': 10./8. * np.array([1267, 1251, 1255, 1246, 1430, 1250, 1777, 1254]),
     # rate of the Poisson generator (in spikes/s)
     'bg_rate': 8.,
     # delay from the Poisson generator to the network (in ms)

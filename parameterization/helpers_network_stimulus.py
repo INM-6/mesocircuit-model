@@ -80,23 +80,33 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     PSC_matrix_mean = PSP_matrix_mean * PSC_over_PSP
     PSC_ext = net_dict['PSP_exc_mean'] * PSC_over_PSP
 
+    # 1mm2 neuron number dependent on the base model
+    num_neurons_1mm2 = net_dict['num_neurons_1mm2_' + net_dict['base_model']]
+    # 1mm2 external indegrees dependent on the base model
+    K_ext = net_dict['K_ext_' + net_dict['base_model']]
 
     # linear scaling of neuron numbers with square area
     area = net_dict['extent']**2
-    full_num_neurons = net_dict['num_neurons_1mm2'] * area
+    full_num_neurons = num_neurons_1mm2 * area
     net_dict['full_num_neurons'] = np.round(full_num_neurons).astype(int)
     net_dict['full_num_neurons_sum'] = \
         np.round(np.sum(full_num_neurons)).astype(int)
 
-    # number of synapses of a full-scale 1mm2 network
-    num_synapses_1mm2 = num_synapses_from_conn_probs(
-        net_dict['conn_probs_1mm2'],
-        net_dict['num_neurons_1mm2'],
-        net_dict['num_neurons_1mm2'])
+    # TODO adjust when parameters are final
+    if net_dict['base_model'] == 'PD2014':
+        # number of synapses of a full-scale 1mm2 network
+        num_synapses_1mm2 = num_synapses_from_conn_probs(
+            net_dict['conn_probs_1mm2_PD2014'],
+            num_neurons_1mm2,
+            num_neurons_1mm2)
 
-    # average indegrees in 1mm2 network
-    indegrees_1mm2 = (num_synapses_1mm2 /
-                      net_dict['num_neurons_1mm2'][:,np.newaxis])
+        # average indegrees in 1mm2 network
+        indegrees_1mm2 = (num_synapses_1mm2 /
+                          num_neurons_1mm2[:,np.newaxis])
+
+    elif net_dict['base_model'] == 'SvA2018':
+        indegrees_1mm2 = net_dict['indegrees_1mm2_SvA2018']
+
     net_dict['indegrees_1mm2'] = np.round(indegrees_1mm2).astype(int)
                       
     # indegrees are scaled only if connect_method is 'fixedindegree_exp';
@@ -124,7 +134,7 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     net_dict['num_synapses'] = np.round(full_num_synapses *
                                         net_dict['N_scaling'] *
                                         net_dict['K_scaling']).astype(int)
-    net_dict['ext_indegrees'] = np.round(net_dict['K_ext'] *
+    net_dict['ext_indegrees'] = np.round(K_ext *
                                          net_dict['K_scaling']).astype(int)
 
     # DC input compensates for potentially missing Poisson input
@@ -134,7 +144,7 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
         if nest.Rank() == 0:
             print('DC input compensates for missing Poisson input.\n')
         DC_amp = dc_input_compensating_poisson(
-            net_dict['bg_rate'], net_dict['K_ext'],
+            net_dict['bg_rate'], K_ext,
             net_dict['neuron_params']['tau_syn'],
             PSC_ext)
 
@@ -146,10 +156,10 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
                 net_dict['K_scaling'],
                 PSC_matrix_mean, PSC_ext,
                 net_dict['neuron_params']['tau_syn'],
-                net_dict['mean_rates'],
+                net_dict['mean_rates_' + net_dict['base_model']],
                 DC_amp,
                 net_dict['poisson_input'],
-                net_dict['bg_rate'], net_dict['K_ext'])
+                net_dict['bg_rate'], K_ext)
 
     # store final parameters in dictionary
     net_dict['weight_matrix_mean'] = PSC_matrix_mean
