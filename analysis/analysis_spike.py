@@ -7,6 +7,7 @@ compute statistics.
 """
 
 import os
+import warnings
 import glob
 import h5py
 import numpy as np
@@ -299,7 +300,11 @@ class SpikeAnalysis:
         # skip three rows in raw nest output
         skiprows = 3 if datatype == 'spike_recorder' else 0
         for fn in single_files:
-            data = np.loadtxt(fn, dtype=read_dtype, skiprows=skiprows)
+            # ignore all warnings of np.loadtxt(), target in particular
+            # 'Empty input file'
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                data = np.loadtxt(fn, dtype=read_dtype, skiprows=skiprows)
             comb_data = np.append(comb_data, data)
 
         # change from raw to processed node ids:
@@ -381,31 +386,43 @@ class SpikeAnalysis:
         
         # load plain spike data and positions
         data_load = []
-        for datatype in ['spike_recorder', 'positions']:
+        for datatype in self.ana_dict['read_nest_ascii_dtypes'].keys():
             fn = os.path.join(self.sim_dict['path_processed_data'],
                               datatype + '_' + X + '.dat')
-            data_load.append(
-                np.loadtxt(fn,
-                    dtype=self.ana_dict['read_nest_ascii_dtypes'][datatype]))
+            # ignore all warnings of np.loadtxt(), target in particular
+            # 'Empty input file'
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                data = np.loadtxt(fn,
+                    dtype=self.ana_dict['read_nest_ascii_dtypes'][datatype])
+            data_load.append(data)
         spikes, positions = data_load
 
         # order is important! # TODO improve
         for datatype in self.ana_dict['datatypes_preprocess']:
             if i==0:
                 print('  Processing: ' + datatype)
+
             # time binned spike trains
             if datatype == 'sptrains':
-                sptrains = self.__time_binned_sptrains_X(
+                dataset = self.__time_binned_sptrains_X(
                     X, spikes, self.time_bins, dtype=np.uint8)
+                is_sparse = True
+                dtype = None
 
             # position sorting arrays
             elif datatype == 'pos_sorting_arrays':
-                pos_sorting_arrays = self.__pos_sorting_array_X(
+                dataset = self.__pos_sorting_array_X(
                     X, positions)
+                is_sparse = False
+                dtype = int
+
+            self.__write_dataset_to_h5_X(X, datatype, dataset, is_sparse, dtype)
         return
 
 
-    def __write_dataset_to_h5_X(self, X, datatype, dataset, sparse, dtype=None):
+    def __write_dataset_to_h5_X(self,
+        X, datatype, dataset, is_sparse, dtype=None):
         """
         Writes sparse and non-sparse datasets for population X to .h5.
 
@@ -417,7 +434,7 @@ class SpikeAnalysis:
             Name of the dataset.
         dataset
             The data itself.
-        sparse
+        is_sparse
             Whether the data shall be written in sparse format.
         dtype
             dtype only needed for non-sparse datasets.
@@ -426,7 +443,7 @@ class SpikeAnalysis:
                           datatype + '_' + X + '.h5')
         f = h5py.File(fn, 'w')
 
-        if sparse:
+        if is_sparse:
             # TODO why not everything in COO format?
             if type(dataset) == sp.coo_matrix:
                 d = dataset
@@ -480,22 +497,20 @@ class SpikeAnalysis:
         shape = (self.N_X[i], time_bins.size)
 
         if spikes.size == 0:
-            return sp.csr_matrix(shape, dtype=dtype)
-        
-        # time bins shifted by one bin as needed by np.digitize()
-        dt = time_bins[1] - time_bins[0]
-        time_bins_digi = np.r_[time_bins[1:], [time_bins[-1] + dt]]
-        # indices of time bins to which each spike time belongs
-        time_indices = np.digitize(spikes['time_ms'], time_bins_digi)
+            sptrains = sp.coo_matrix(shape, dtype=dtype)
+        else: 
+            # time bins shifted by one bin as needed by np.digitize()
+            dt = time_bins[1] - time_bins[0]
+            time_bins_digi = np.r_[time_bins[1:], [time_bins[-1] + dt]]
+            # indices of time bins to which each spike time belongs
+            time_indices = np.digitize(spikes['time_ms'], time_bins_digi)
 
-        # create COO matrix
-        data = np.ones(spikes.size, dtype=dtype)
-        sptrains = sp.coo_matrix(
-            (data, (spikes['nodeid'], time_indices)),
-            shape=shape, dtype=dtype) 
-
-        self.__write_dataset_to_h5_X(X, 'sptrains', sptrains, True)
-        return sptrains.tocsr() # TODO unsure if tocsr() is needed
+            # create COO matrix
+            data = np.ones(spikes.size, dtype=dtype)
+            sptrains = sp.coo_matrix(
+                (data, (spikes['nodeid'], time_indices)),
+                shape=shape, dtype=dtype)
+        return sptrains
 
 
     def __pos_sorting_array_X(self, X, positions):
@@ -523,9 +538,6 @@ class SpikeAnalysis:
             pos_sorting_arrays = np.arange(positions.size) 
         else:
             raise Exception ("Sorting axis is not 'x', 'y' or None.")
-
-        self.__write_dataset_to_h5_X(
-            X, 'pos_sorting_arrays', pos_sorting_arrays, False, int)
         return pos_sorting_arrays
 
 
@@ -564,25 +576,28 @@ class SpikeAnalysis:
             if i==0:
                 print('  Computing: ' + datatype)
 
-            # per-neuron firing rates
-            if datatype == 'rates':
-                rates = self.__compute_rates(X, d['sptrains_X']) 
+            if d['sptrains_X'].size == 0:
+                dataset = np.array([])
+            else:
+                # per-neuron firing rates
+                if datatype == 'rates':
+                    dataset = self.__compute_rates(X, d['sptrains_X']) 
 
-            # local coefficients of variation
-            elif datatype == 'LVs':
-                lvs = self.__compute_lvs(X, d['sptrains_X'])
+                # local coefficients of variation
+                elif datatype == 'LVs':
+                    dataset = self.__compute_lvs(X, d['sptrains_X'])
 
-            # correlation coefficients
-            elif datatype == 'CCs':
-                ccs = self.__compute_ccs(
-                    X, d['sptrains_X'], self.sim_dict['sim_resolution'])
+                # correlation coefficients
+                elif datatype == 'CCs':
+                    dataset = self.__compute_ccs(
+                        X, d['sptrains_X'], self.sim_dict['sim_resolution'])
 
-            elif datatype == 'PSDs':
-                psds = self.__compute_psds(
-                    X, d['sptrains_X'], self.sim_dict['sim_resolution'])
+                # power spectral densities
+                elif datatype == 'PSDs':
+                    dataset = self.__compute_psds(
+                        X, d['sptrains_X'], self.sim_dict['sim_resolution'])
 
-        # TODO close files
-
+            self.__write_dataset_to_h5_X(X, datatype, dataset, is_sparse=False)
         return
 
 
@@ -601,8 +616,7 @@ class SpikeAnalysis:
         """
         count = np.array(sptrains_X.sum(axis=1)).flatten()
         rates = count * 1.E3 / self.sim_dict['t_sim'] # in 1/s
-        self.__write_dataset_to_h5_X(X, 'rates', rates, False)
-        return
+        return rates
 
 
     def __compute_lvs(self, X, sptrains_X):
@@ -648,8 +662,7 @@ class SpikeAnalysis:
             else:
                 lvs[i] = 3. * (
                     np.power(np.diff(isi) / (isi[:-1] + isi[1:]), 2)).mean()
-        self.__write_dataset_to_h5_X(X, 'LVs', lvs, False)
-        return
+        return lvs
 
 
     def __compute_ccs(self, X, sptrains_X, binsize_time):
@@ -699,9 +712,7 @@ class SpikeAnalysis:
         # (k=1 excludes auto-correlations, k=0 would include them)
         mask = np.triu(np.ones(ccs.shape), k=1).astype(bool)
         ccs = ccs[mask]
-
-        self.__write_dataset_to_h5_X(X, 'CCs', ccs, False)
-        return
+        return ccs
 
 
     def __compute_psds(self, X, sptrains_X, binsize_time):
@@ -730,9 +741,7 @@ class SpikeAnalysis:
                             Fs=Fs, noverlap=noverlap)
         # frequencies (in 1/s), PSDs (in s^{-2} / Hz)
         psds = np.array([freq, Pxx])
-
-        self.__write_dataset_to_h5_X(X, 'PSDs', psds, False)
-        return
+        return psds
 
 
     def __merge_h5_files_populations_datatype(self, i, datatype):
