@@ -251,7 +251,7 @@ class Plotting:
 
         fig = plt.figure(figsize=(self.plot_dict['fig_width_2col'], 4))
         gs = gridspec.GridSpec(1, 1)
-        gs.update(left=0.09, right=0.98, bottom=0.15, top=0.95)
+        gs.update(left=0.1, right=0.98, bottom=0.15, top=0.95)
         axes = self.plot_statistics_overview(
             gs[0], all_rates, all_LVs, all_CCs, all_PSDs)
         labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
@@ -276,16 +276,19 @@ class Plotting:
                                                  hspace=0.5)
         
         # top: rates
+        print('  Plotting boxcharts: rates')
         axes[0] = self.plot_boxcharts(gs_c0[0,0],
             all_rates, xlabel='', ylabel=r'$\nu$ (s$^{-1}$)',
             xticklabels=False)
         
         # middle: LVs
+        print('  Plotting boxcharts: LVs')
         axes[1] = self.plot_boxcharts(gs_c0[1,0],
             all_LVs, xlabel='', ylabel='LV',
             xticklabels=False)
 
         # bottom: CCs
+        print('  Plotting boxcharts: CCs')
         axes[2] = self.plot_boxcharts(gs_c0[2,0],
             all_CCs, xlabel='', ylabel='CC')
 
@@ -296,6 +299,7 @@ class Plotting:
             self.plot_dict['distr_num_bins'])
         
         # left: rates
+        print('  Plotting distributions: rates')
         axes[3] = self.plot_layer_panels(gs_cols[0,3:5],
             xlabel=r'$\nu$ (s$^{-1}$)',
             plotfunc=self.__plotfunc_distributions,
@@ -305,6 +309,7 @@ class Plotting:
             ylabel='p (a.u.)')
 
         # middle: LVs
+        print('  Plotting distributions: LVs') 
         axes[4] = self.plot_layer_panels(gs_cols[0,5:7],
             xlabel='LV',
             plotfunc=self.__plotfunc_distributions,
@@ -313,6 +318,7 @@ class Plotting:
             MaxNLocatorNBins=3)
 
         # right: CCs
+        print('  Plotting distributions: CCs')
         axes[5] = self.plot_layer_panels(gs_cols[0,7:9],
             xlabel='CC',
             plotfunc=self.__plotfunc_distributions,
@@ -321,6 +327,7 @@ class Plotting:
             MaxNLocatorNBins=2)
 
         ### column 4: PSDs
+        print('  Plotting PSDs.')
         axes[6] = self.plot_layer_panels(gs_cols[0,10:],
             xlabel='f (Hz)', ylabel='PSD (s$^{-2}$/Hz)',
             plotfunc=self.__plotfunc_PSDs,
@@ -435,8 +442,11 @@ class Plotting:
         """
         TODO ax limits and ticklabels
         """
-        # skip frequency of 0 Hz in loglog plot
+        if data[X].size == 0:
+            return
+
         freq, Pxx = data[X]
+        # skip frequency of 0 Hz in loglog plot
         freq = freq[1:]
         Pxx = Pxx[1:]
         ax.loglog(freq, Pxx,
