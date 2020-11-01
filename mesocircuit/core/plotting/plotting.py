@@ -7,7 +7,7 @@ Functions starting with 'plot_' plot to a gridspec cell and are used in figures.
 """
 
 import os
-import subprocess
+import warnings
 import h5py
 import numpy as np
 import scipy.sparse as sp
@@ -350,22 +350,23 @@ class Plotting:
             data_X = data[X][~np.isnan(data[X])]
             data_plot.append(data_X)
 
-        # TODO warning can be removed with np.array(data_plot, dtype=object)
-        # but this causes data with same number of values in each population
-        # to fail
+        # ignore all warnings, target in particular VisibleDeprecationWarning
+        # (could be removed in some cases with np.array(data_plot, dtype=object)) 
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            boxes = ax.boxplot(
+                data_plot,
+                labels=self.plot_dict['pop_labels'][:-1],
+                sym='', showmeans=True, patch_artist=True,
+                meanprops={'mec' : 'white',
+                        'marker' : '_',
+                        'markersize' : \
+                            matplotlib.rcParams['lines.markersize']*0.5},
+                medianprops={'color' : 'k'},
+                whiskerprops={'color' : 'k', 'linestyle' : '-'})
 
-        boxes = ax.boxplot(
-            data_plot,
-            labels=self.plot_dict['pop_labels'][:-1],
-            sym='', showmeans=True, patch_artist=True,
-            meanprops={'mec' : 'white',
-                       'marker' : '_',
-                       'markersize' : matplotlib.rcParams['lines.markersize']*0.5},
-            medianprops={'color' : 'k'},
-            whiskerprops={'color' : 'k', 'linestyle' : '-'})
-
-        for i,box in enumerate(boxes['boxes']):
-            box.set_color(self.plot_dict['pop_colors'][i])
+            for i,box in enumerate(boxes['boxes']):
+                box.set_color(self.plot_dict['pop_colors'][i])
 
         plt.xticks(rotation=90)
         ax.set_xlabel(xlabel)

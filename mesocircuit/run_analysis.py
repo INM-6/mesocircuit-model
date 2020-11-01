@@ -10,7 +10,7 @@ import os
 import sys
 import pickle
 from mpi4py import MPI
-import analysis_spike
+import core.analysis.spike_analysis as spike_analysis
 import time
 time_start = time.time()
 
@@ -35,7 +35,7 @@ sim_dict, net_dict, stim_dict, ana_dict = dics
 # Instantiate a SpikeAnalysis object, preprocess the data (spatial and temporal
 # binning), and compute statistics.
 
-sana = analysis_spike.SpikeAnalysis(sim_dict, net_dict, stim_dict, ana_dict)
+sana = spike_analysis.SpikeAnalysis(sim_dict, net_dict, stim_dict, ana_dict)
 time_init = time.time()
 
 sana.preprocess_data()

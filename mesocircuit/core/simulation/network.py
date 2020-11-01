@@ -10,6 +10,9 @@ import os
 import numpy as np
 import nest
 
+from ..helpers.time_measurement import timeit
+
+
 class Network:
     """ Provides functions to setup NEST, to create and connect all nodes of
     the network and to simulate.
@@ -42,7 +45,8 @@ class Network:
         # initialize the NEST kernel
         self.__setup_nest()
 
-    def create(self):
+    @timeit
+    def create(self, log_time):
         """ Creates all network nodes.
 
         Neuronal populations and recording and stimulating devices are created.

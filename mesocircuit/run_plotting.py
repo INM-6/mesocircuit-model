@@ -12,7 +12,7 @@ import pickle
 import h5py
 import numpy as np
 from mpi4py import MPI
-import plotting
+import core.plotting.plotting as plotting
 import time
 time_start = time.time()
 

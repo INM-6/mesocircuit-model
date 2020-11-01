@@ -11,7 +11,7 @@ import os
 import sys
 import pickle
 import nest
-import network
+import core.simulation.network as network
 import time
 time_start = time.time()
 
@@ -40,7 +40,8 @@ sim_dict, net_dict, stim_dict = dics
 net = network.Network(sim_dict, net_dict, stim_dict)
 time_network = time.time()
 
-net.create()
+logtime_data = {}
+net.create(log_time=logtime_data)
 time_create = time.time()
 
 net.connect()
@@ -77,3 +78,6 @@ print(
     '  Time to simulate:    {:.3f} s\n'.format(
         time_simulate -
         time_presimulate))
+
+
+print(logtime_data)

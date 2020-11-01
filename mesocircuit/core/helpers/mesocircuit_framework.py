@@ -16,30 +16,27 @@ import json
 import hashlib
 import copy
 
-from . import helpers_network_stimulus as helpnet
+from ..parameterization import helpers_network_stimulus as helpnet
 
 # default parameters
-from .base_sim_params import sim_dict
-from .base_network_params import net_dict
-from .base_stimulus_params import stim_dict
-from .base_analysis_params import ana_dict
-from .base_plotting_params import plot_dict
+from ..parameterization.base_sim_params import sim_dict
+from ..parameterization.base_network_params import net_dict
+from ..parameterization.base_stimulus_params import stim_dict
+from ..parameterization.base_analysis_params import ana_dict
+from ..parameterization.base_plotting_params import plot_dict
 
 
 def evaluate_parameterspaces(
-    filename='', paramspace_keys=[], with_base_params=False):
+    custom_ps_dicts='', paramspace_keys=[], with_base_params=False):
     """
     Evaluates the parameter spaces as specified by the arguments.
 
-
     Parameters
     ----------
-    filename
-        Name of the file <filename>.py defining the parameter spaces to be
-        evaluated (without file extension). The parameter spaces need to be in a
-        dictionary named 'ps_dicts'.
-        If no filename is given, i.e., filename='', parameters are evaluated
-        according to the base parameters (default='').
+    custom_ps_dicts
+        Dictonary defining custom parameter spaces to be evaluated.
+        If no dictionary is given, i.e., custom_ps_dicts='', parameters are
+        evaluated according to the base parameters (default='').
     paramspace_keys
         List of keys of parameter spaces defined in <filename>.py. Providing an
         empty list means that all keys are evaluated (default=[]).
@@ -56,15 +53,10 @@ def evaluate_parameterspaces(
     """
     
     ps_dicts = {}
-    try:
-        # TODO generalize folder name
-        f = __import__('parameterization.' + filename, fromlist=['ps_dicts'])
-        ps_dicts.update(f.ps_dicts)
-    except:
-        print('No parameterspaces read from file.')
-        if filename != '':
-            print('  Check for syntax error in ' + filename + '.py.')
-    if with_base_params or filename=='':
+
+    if custom_ps_dicts != '':
+        ps_dicts.update(custom_ps_dicts)
+    if with_base_params:
         ps_dicts.update({'base': {}})
 
     # parameterspaces built with the parameters module and indexed by
@@ -182,16 +174,16 @@ def write_jobscript(jsname, paramset):
     """
     
     if jsname == 'network.sh':
-        run_py = ['model_nest/run_mesocircuit.py']
+        run_py = ['run_network.py']
         dic = paramset['sim_dict']
     elif jsname == 'analysis.sh':
-        run_py = ['analysis/run_analysis.py']
+        run_py = ['run_analysis.py']
         dic = paramset['ana_dict']
     elif jsname == 'plotting.sh':
-        run_py = ['plotting/run_plotting.py']
+        run_py = ['run_plotting.py']
         dic = paramset['plot_dict']
     elif jsname == 'analysis_and_plotting.sh':
-        run_py = ['analysis/run_analysis.py', 'plotting/run_plotting.py']
+        run_py = ['run_analysis.py', 'run_plotting.py']
         dic = paramset['ana_dict'] # use configuration from analysis
 
     # computer-dependent run command
