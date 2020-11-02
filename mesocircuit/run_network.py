@@ -5,15 +5,14 @@ Run a simulation of the mesocircuit model.
 """
 
 ###############################################################################
-# Import the necessary modules and start the time measurements.
+# Import the necessary modules and setup the time measurements.
 
 import os
 import sys
 import pickle
 import nest
 import core.simulation.network as network
-import time
-time_start = time.time()
+import core.helpers.time_measurement as time_measurement
 
 ################################################################################
 # Load simulation, network and stimulation parameters from files located in the
@@ -38,46 +37,19 @@ sim_dict, net_dict, stim_dict = dics
 # transient has passed.
 
 net = network.Network(sim_dict, net_dict, stim_dict)
-time_network = time.time()
 
-logtime_data = {}
-net.create(log_time=logtime_data)
-time_create = time.time()
+logtime_data = [] # list for collecting time measurements
 
-net.connect()
-time_connect = time.time()
+net.create(logtime=logtime_data)
 
-net.simulate(sim_dict['t_presim'])
-time_presimulate = time.time()
+net.connect(logtime=logtime_data)
 
-net.simulate(sim_dict['t_sim'])
-time_simulate = time.time()
+net.presimulate(sim_dict['t_presim'], logtime=logtime_data)
+
+net.simulate(sim_dict['t_sim'], logtime=logtime_data)
 
 ###############################################################################
 # Summarize time measurements. Rank 0 usually takes longest because of the
 # data evaluation and print calls.
 
-print(
-    '\nTimes of Rank {}:\n'.format(
-        nest.Rank()) +
-    '  Total network time:  {:.3f} s\n'.format(
-        time_simulate -
-        time_start) +
-    '  Time to initialize:  {:.3f} s\n'.format(
-        time_network -
-        time_start) +
-    '  Time to create:      {:.3f} s\n'.format(
-        time_create -
-        time_network) +
-    '  Time to connect:     {:.3f} s\n'.format(
-        time_connect -
-        time_create) +
-    '  Time to presimulate: {:.3f} s\n'.format(
-        time_presimulate -
-        time_connect) +
-    '  Time to simulate:    {:.3f} s\n'.format(
-        time_simulate -
-        time_presimulate))
-
-
-print(logtime_data)
+time_measurement.print_times(os.path.basename(__file__), logtime_data)

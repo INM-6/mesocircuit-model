@@ -18,6 +18,8 @@ import matplotlib.pyplot as plt
 from mpi4py import MPI
 from prettytable import PrettyTable
 
+from ..helpers.time_measurement import timeit
+
 # initialize MPI
 COMM = MPI.COMM_WORLD
 SIZE = COMM.Get_size()
@@ -90,7 +92,8 @@ class SpikeAnalysis:
         return
 
 
-    def preprocess_data(self):
+    @timeit
+    def preprocess_data(self, **kwargs):
         """
         Converts raw node ids to processed ones, merges raw spike and position
         files, prints a minimal sanity check of the data, performs basic
@@ -127,7 +130,8 @@ class SpikeAnalysis:
         return
 
 
-    def compute_statistics(self):
+    @timeit
+    def compute_statistics(self, **kwargs):
         """
         Computes statistics in parallel for each population.
         """
@@ -139,7 +143,8 @@ class SpikeAnalysis:
         return
 
 
-    def merge_h5_files_populations(self):
+    @timeit
+    def merge_h5_files_populations(self, **kwargs):
         """
         Merges preprocessed data files and computed statistics for all
         populations.
@@ -352,7 +357,7 @@ class SpikeAnalysis:
         ov = np.zeros(shape=(len(self.X)), dtype=dtype)
         ov['population'] = self.X
         ov['num_neurons'] = self.N_X
-        ov['rate_s-1'] = rates
+        ov['rate_s-1'] = np.around(rates, decimals=3)
 
         # convert to pretty table for printing
         overview = PrettyTable(ov.dtype.names)
@@ -361,8 +366,8 @@ class SpikeAnalysis:
         overview.align = 'r'
 
         if RANK == 0:
-            print('  First glance at data:')
-            print(overview)
+            print('\n  First glance at data:')
+            print(overview, '\n')
         return
 
 

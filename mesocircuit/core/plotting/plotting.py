@@ -2,8 +2,7 @@
 -------------------------------------
 
 The Plotting Class defines plotting functions.
-Functions starting with 'fig_' create a figure.
-Functions starting with 'plot_' plot to a gridspec cell and are used in figures.
+Functions starting with 'plot_' plot to a gridspec cell and are used in figures.py.
 """
 
 import os
@@ -99,42 +98,6 @@ class Plotting:
                                 h5data[X]['data_row_col'][()][:, 2])),
                                shape=h5data[X]['shape'][()])
         return data_X.tocsr()
-
-
-    def fig_raster(self, all_sptrains, all_pos_sorting_arrays):
-        """
-        Creates a figure with a raster plot.
-        """
-        print('Plotting spike raster.')
-
-        # automatically compute a samatplotlib. step for this figure
-        if self.plot_dict['raster_sample_step'] == 'auto':
-            target_num_dots = 40000
-            # assume an average firing rate of 4 Hz to estimate the number of
-            # dots if all neurons were shown
-            rate_estim = 4.
-            full_num_dots_estim = \
-                np.diff(self.plot_dict['raster_time_interval']) * 1e-3 * \
-                rate_estim * \
-                np.sum(self.net_dict['num_neurons'])
-            raster_sample_step = 1 + int(full_num_dots_estim / target_num_dots)
-            print('  Automatically set raster_sample_step to ' + 
-                  str(raster_sample_step) + '.')
-
-        fig = plt.figure(figsize=(self.plot_dict['fig_width_1col'], 5.))
-        gs = gridspec.GridSpec(1, 1)
-        gs.update(top=0.98, bottom=0.1, left=0.17, right=0.92)
-        ax = self.plot_raster(
-            gs[0,0],
-            self.X,
-            all_sptrains,
-            all_pos_sorting_arrays,
-            self.sim_dict['sim_resolution'],
-            self.plot_dict['raster_time_interval'],
-            raster_sample_step)
-
-        self.savefig('raster', eps_conv=True)
-        return
 
 
     def plot_raster(self,
@@ -241,25 +204,6 @@ class Plotting:
         else:
             ax.set_yticklabels([])
         return ax
-
-
-    def fig_statistics_overview(self, all_rates, all_LVs, all_CCs, all_PSDs):
-        """
-        TODO
-        """
-        print('Plotting statistics overview.')
-
-        fig = plt.figure(figsize=(self.plot_dict['fig_width_2col'], 4))
-        gs = gridspec.GridSpec(1, 1)
-        gs.update(left=0.1, right=0.98, bottom=0.15, top=0.95)
-        axes = self.plot_statistics_overview(
-            gs[0], all_rates, all_LVs, all_CCs, all_PSDs)
-        labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
-        for i,label in enumerate(labels):
-            self.add_label(axes[i], label)
-
-        self.savefig('statistics_overview')
-        return
 
 
     def plot_statistics_overview(self,

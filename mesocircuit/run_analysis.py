@@ -5,19 +5,12 @@ Analyze the spiking network activity of the mesocircuit.
 """
 
 ###############################################################################
-# Import the necessary modules and start the time measurements.
+# Import the necessary modules and setup the time measurements.
 import os
 import sys
 import pickle
-from mpi4py import MPI
 import core.analysis.spike_analysis as spike_analysis
-import time
-time_start = time.time()
-
-# initialize MPI
-COMM = MPI.COMM_WORLD
-SIZE = COMM.Get_size()
-RANK = COMM.Get_rank()
+import core.helpers.time_measurement as time_measurement
 
 ################################################################################
 # Load simulation, network, stimulation and analysis parameters from files
@@ -36,30 +29,16 @@ sim_dict, net_dict, stim_dict, ana_dict = dics
 # binning), and compute statistics.
 
 sana = spike_analysis.SpikeAnalysis(sim_dict, net_dict, stim_dict, ana_dict)
-time_init = time.time()
 
-sana.preprocess_data()
-time_preprocess = time.time()
+logtime_data = [] # list for collecting time measurements
 
-sana.compute_statistics()
-time_statistics = time.time()
+sana.preprocess_data(logtime=logtime_data)
 
-sana.merge_h5_files_populations()
-time_stop = time.time()
+sana.compute_statistics(logtime=logtime_data)
+
+sana.merge_h5_files_populations(logtime=logtime_data)
 
 ################################################################################
-# Print times.
+# Summarize time measurements. 
 
-print(
-    '\nTimes of Rank {}:\n'.format(RANK) +
-    '  Total analysis time:  {:.3f} s\n'.format(
-        time_stop - time_start) +
-    '  Time init: {:.3f} s\n'.format(
-        time_init - time_start) +
-    '  Time preprocess: {:.3f} s\n'.format(
-        time_preprocess - time_init) +
-    '  Time statistics: {:.3f} s\n'.format(
-        time_statistics - time_preprocess) +
-    '  Time h5 merging: {:.3f} s\n'.format(
-        time_stop - time_statistics)
-    )
+time_measurement.print_times(os.path.basename(__file__), logtime_data)

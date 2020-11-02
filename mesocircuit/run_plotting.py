@@ -5,17 +5,19 @@ Create plots of the network activity of the mesocircuit.
 """
 
 ###############################################################################
-# Import the necessary modules and start the time measurements.
+# Import the necessary modules and setup the time measurements.
 import os
 import sys
 import pickle
 import h5py
 import numpy as np
-from mpi4py import MPI
 import core.plotting.plotting as plotting
-import time
-time_start = time.time()
+import core.plotting.figures as figures
 
+
+import core.helpers.time_measurement as time_measurement
+
+from mpi4py import MPI
 # initialize MPI
 COMM = MPI.COMM_WORLD
 SIZE = COMM.Get_size()
@@ -46,33 +48,34 @@ for datatype in np.append(ana_dict['datatypes_preprocess'],
     fn = os.path.join(sim_dict['path_processed_data'], all_datatype + '.h5')
     data = h5py.File(fn, 'r')
     d.update({all_datatype: data})
-time_init = time.time()
 
 ################################################################################
-# Plot figures.
+# Plot figures and measure times.
 
-# TODO parallelize
-if RANK == 0:
-    pl.fig_raster(d['all_sptrains'], d['all_pos_sorting_arrays'])
-if RANK == 1:
-    pl.fig_statistics_overview(
-        d['all_rates'], d['all_LVs'], d['all_CCs'],d['all_PSDs'])
+# TODO parallelize properly
 
+logtime_data = [] # list for collecting time measurements
+figcounter = 0 #  
 
+figures.raster(
+    pl,
+    d['all_sptrains'], d['all_pos_sorting_arrays'],
+    logtime=logtime_data,
+    counter=figcounter)
+time_measurement.print_times(os.path.basename(__file__), logtime_data, rank=figcounter)
+figcounter += 1
+
+figures.statistics_overview(
+    pl,
+    d['all_rates'], d['all_LVs'], d['all_CCs'],d['all_PSDs'],
+    logtime=logtime_data,
+    counter=figcounter)
+time_measurement.print_times(os.path.basename(__file__), logtime_data, rank=figcounter)
+figcounter += 1
 
 
 # TODO close files
-time_stop = time.time()
 
 ################################################################################
-# Print times.
-
-print(
-    '\nTimes of Rank {}:\n'.format(RANK) +
-    '  Total plotting time:  {:.3f} s\n'.format(
-        time_stop - time_start) +
-    '  Time init: {:.3f} s\n'.format(
-        time_init - time_start) +
-    '  Time plotting: {:.3f} s\n'.format(
-        time_stop - time_init)
-    )
+# Summarize time measurements.
+#tiime_measurement.print_times(os.path.basename(__file__), logtime_data)

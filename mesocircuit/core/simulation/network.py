@@ -46,7 +46,7 @@ class Network:
         self.__setup_nest()
 
     @timeit
-    def create(self, log_time):
+    def create(self, **kwargs):
         """ Creates all network nodes.
 
         Neuronal populations and recording and stimulating devices are created.
@@ -62,7 +62,8 @@ class Network:
         if self.stim_dict['dc_input']:
             self.__create_dc_stim_input()
 
-    def connect(self):
+    @timeit
+    def connect(self, **kwargs):
         """ Connects the network.
 
         Recurrent connections among neurons of the neuronal populations are
@@ -93,7 +94,17 @@ class Network:
         nest.Prepare()
         nest.Cleanup()
 
-    def simulate(self, t_sim):
+
+    @timeit
+    def presimulate(self, t_presim, **kwargs):
+        """
+        Wrapper for separate time measurement.
+        kwargs is not passed on for not duplicating the measurement.
+        """
+        self.simulate(t_presim)
+
+    @timeit
+    def simulate(self, t_sim, **kwargs):
         """ Simulates the mesocircuit.
 
         Parameters
