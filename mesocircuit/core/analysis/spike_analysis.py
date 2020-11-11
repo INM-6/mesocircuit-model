@@ -17,8 +17,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from mpi4py import MPI
 from prettytable import PrettyTable
-
-from ..helpers.time_measurement import timeit
+from ..helpers import parallelism_time as pt
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
@@ -92,8 +91,7 @@ class SpikeAnalysis:
         return
 
 
-    @timeit
-    def preprocess_data(self, **kwargs):
+    def preprocess_data(self):
         """
         Converts raw node ids to processed ones, merges raw spike and position
         files, prints a minimal sanity check of the data, performs basic
@@ -110,11 +108,11 @@ class SpikeAnalysis:
 
         # merge spike and position files generated on different threads or
         # processes
-        num_spikes = self.__parallelize(self.X,
+        num_spikes = pt.parallelize_by_array(self.X,
                                         self.__merge_raw_files_X,
                                         int,
                                         'spike_recorder')
-        num_neurons = self.__parallelize(self.X,
+        num_neurons = pt.parallelize_by_array(self.X,
                                         self.__merge_raw_files_X,
                                         int,
                                         'positions')
@@ -125,26 +123,24 @@ class SpikeAnalysis:
         self.__first_glance_at_data(num_spikes)
 
         # preprocess data of each population in parallel
-        self.__parallelize(self.X,
+        pt.parallelize_by_array(self.X,
                            self.__preprocess_data_X)
         return
 
 
-    @timeit
-    def compute_statistics(self, **kwargs):
+    def compute_statistics(self):
         """
         Computes statistics in parallel for each population.
         """
         if RANK == 0:
             print('Computing statistics.')
 
-        self.__parallelize(self.X,
+        pt.parallelize_by_array(self.X,
                            self.__compute_statistics_X)
         return
 
 
-    @timeit
-    def merge_h5_files_populations(self, **kwargs):
+    def merge_h5_files_populations(self):
         """
         Merges preprocessed data files and computed statistics for all
         populations.
@@ -152,10 +148,10 @@ class SpikeAnalysis:
         if RANK == 0:
             print('Merging .h5 files for all populations.')
 
-        self.__parallelize(self.ana_dict['datatypes_preprocess'],
+        pt.parallelize_by_array(self.ana_dict['datatypes_preprocess'],
                            self.__merge_h5_files_populations_datatype)
 
-        self.__parallelize(self.ana_dict['datatypes_statistics'],
+        pt.parallelize_by_array(self.ana_dict['datatypes_statistics'],
                            self.__merge_h5_files_populations_datatype)
         return
 
@@ -179,55 +175,6 @@ class SpikeAnalysis:
                                 h5data[X]['data_row_col'][()][:, 2])),
                                shape=h5data[X]['shape'][()])
         return data_X.tocsr()
- 
-
-
-    def __parallelize(self, array, func, result_dtype=None, *args):
-        """
-        Uses MPI to parallelize a loop over an array evaluating a function in
-        every loop iteration and returning a result obtained with Allgather.
-
-        Parameters
-        ----------
-        array
-            Array-like to iterate over.
-        func
-            Function to be evaluated in every loop iteration.
-        result_dtype
-            Dtype of the entries in the returned array.
-        *args
-            Further arguments to function.
-
-        Returns
-        -------
-        result
-            Array combining the results of the individual MPI processes.
-        """
-        # total number of iterations
-        num_its = len(array)
-        if num_its == 0:
-            return None
-        # at most as many MPI processes needed as iterations have to be done
-        num_procs = np.min([SIZE, num_its]).astype(int)
-        # number of iterations assigned to each rank;
-        # Allgather requires equally sized chunks.
-        # if not evenly divisible, num_its_rank * num_procs > num_its such that
-        # the highest rank (= num_procs - 1) has less iterations to perform
-        num_its_rank = np.ceil(num_its / num_procs).astype(int)
-
-        res_local = np.zeros(num_its_rank, dtype=result_dtype)
-        res_global = np.zeros(num_its_rank * SIZE, dtype=result_dtype)
-        if RANK < num_procs:
-            for i,val in enumerate(array):
-                if RANK == int(i / num_its_rank):
-                    res_local[i % num_its_rank] = func(i, val, *args)
-        else:
-            pass
-        # gather and concatenate MPI-local results
-        COMM.Allgather(res_local, res_global)
-        result = res_global[:num_its]
-        COMM.barrier() # TODO needed? 
-        return result   
 
 
     def __load_raw_nodeids(self):
@@ -256,7 +203,7 @@ class SpikeAnalysis:
     
     def __merge_raw_files_X(self, i, X, datatype):
         """
-        Inner function to be used as argument of self.__parallelize()
+        Inner function to be used as argument of pt.parallelize_by_array()
         with array=self.X.
         Corresponding outer function: self.__preprocess_data()
 
@@ -373,7 +320,7 @@ class SpikeAnalysis:
 
     def __preprocess_data_X(self, i, X):
         """
-        Inner function to be used as argument of self.__parallelize()
+        Inner function to be used as argument of pt.parallelize_by_array()
         with array=self.X.
         Corresponding outer function: self.preprocess_data()
 
@@ -548,7 +495,7 @@ class SpikeAnalysis:
 
     def __compute_statistics_X(self, i, X):
         """
-        Inner function to be used as argument of self.__parallelize()
+        Inner function to be used as argument of pt.parallelize_by_array()
         with array=self.X.
         Corresponding outer function: self.compute_statistics()
 
@@ -751,7 +698,7 @@ class SpikeAnalysis:
 
     def __merge_h5_files_populations_datatype(self, i, datatype):
         """
-        Inner function to be used as argument of self.__parallelize()
+        Inner function to be used as argument of pt.parallelize_by_array()
         with array=datatypes.
         Corresponding outer function: self.__preprocess_data()
 

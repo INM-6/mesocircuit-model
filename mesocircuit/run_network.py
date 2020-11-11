@@ -12,7 +12,7 @@ import sys
 import pickle
 import nest
 import core.simulation.network as network
-import core.helpers.time_measurement as time_measurement
+import core.helpers.parallelism_time as pt
 
 ################################################################################
 # Load simulation, network and stimulation parameters from files located in the
@@ -35,21 +35,15 @@ sim_dict, net_dict, stim_dict = dics
 # be excluded from a time measurement of the state propagation phase. Besides,
 # statistical measures of the spike activity should only be computed after the
 # transient has passed.
+# Time measurements are printed.
 
 net = network.Network(sim_dict, net_dict, stim_dict)
 
-logtime_data = [] # list for collecting time measurements
+functions = [
+    net.create,
+    net.connect,
+    [net.presimulate, [sim_dict['t_presim']]],
+    [net.simulate, [sim_dict['t_sim']]]
+]
 
-net.create(logtime=logtime_data)
-
-net.connect(logtime=logtime_data)
-
-net.presimulate(sim_dict['t_presim'], logtime=logtime_data)
-
-net.simulate(sim_dict['t_sim'], logtime=logtime_data)
-
-###############################################################################
-# Summarize time measurements. Rank 0 usually takes longest because of the
-# data evaluation and print calls.
-
-time_measurement.print_times(os.path.basename(__file__), logtime_data)
+pt.run_parallel_functions_sequentially(functions, os.path.basename(__file__))

@@ -10,9 +10,6 @@ import os
 import numpy as np
 import nest
 
-from ..helpers.time_measurement import timeit
-
-
 class Network:
     """ Provides functions to setup NEST, to create and connect all nodes of
     the network and to simulate.
@@ -45,8 +42,8 @@ class Network:
         # initialize the NEST kernel
         self.__setup_nest()
 
-    @timeit
-    def create(self, **kwargs):
+    
+    def create(self):
         """ Creates all network nodes.
 
         Neuronal populations and recording and stimulating devices are created.
@@ -62,8 +59,8 @@ class Network:
         if self.stim_dict['dc_input']:
             self.__create_dc_stim_input()
 
-    @timeit
-    def connect(self, **kwargs):
+
+    def connect(self):
         """ Connects the network.
 
         Recurrent connections among neurons of the neuronal populations are
@@ -95,16 +92,14 @@ class Network:
         nest.Cleanup()
 
 
-    @timeit
-    def presimulate(self, t_presim, **kwargs):
+    def presimulate(self, t_presim):
         """
         Wrapper for separate time measurement.
         kwargs is not passed on for not duplicating the measurement.
         """
         self.simulate(t_presim)
 
-    @timeit
-    def simulate(self, t_sim, **kwargs):
+    def simulate(self, t_sim):
         """ Simulates the mesocircuit.
 
         Parameters

@@ -13,15 +13,7 @@ import h5py
 import numpy as np
 import core.plotting.plotting as plotting
 import core.plotting.figures as figures
-
-
-import core.helpers.time_measurement as time_measurement
-
-from mpi4py import MPI
-# initialize MPI
-COMM = MPI.COMM_WORLD
-SIZE = COMM.Get_size()
-RANK = COMM.Get_rank()
+import core.helpers.parallelism_time as pt
 
 ################################################################################
 # Load simulation, network, stimulation, analysis and plotting parameters from
@@ -51,31 +43,16 @@ for datatype in np.append(ana_dict['datatypes_preprocess'],
 
 ################################################################################
 # Plot figures and measure times.
+# Time measurements are printed.
 
-# TODO parallelize properly
+functions = [ \
+    [figures.raster,
+     [pl, d['all_sptrains'], d['all_pos_sorting_arrays']]],
 
-logtime_data = [] # list for collecting time measurements
-figcounter = 0 #  
+    [figures.statistics_overview,
+     [pl, d['all_rates'], d['all_LVs'], d['all_CCs'],d['all_PSDs']]]
+]
 
-figures.raster(
-    pl,
-    d['all_sptrains'], d['all_pos_sorting_arrays'],
-    logtime=logtime_data,
-    counter=figcounter)
-time_measurement.print_times(os.path.basename(__file__), logtime_data, rank=figcounter)
-figcounter += 1
-
-figures.statistics_overview(
-    pl,
-    d['all_rates'], d['all_LVs'], d['all_CCs'],d['all_PSDs'],
-    logtime=logtime_data,
-    counter=figcounter)
-time_measurement.print_times(os.path.basename(__file__), logtime_data, rank=figcounter)
-figcounter += 1
-
+pt.run_serial_functions_in_parallel(functions, os.path.basename(__file__))
 
 # TODO close files
-
-################################################################################
-# Summarize time measurements.
-#tiime_measurement.print_times(os.path.basename(__file__), logtime_data)

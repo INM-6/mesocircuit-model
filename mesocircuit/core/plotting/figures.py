@@ -10,10 +10,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 
-from ..helpers.time_measurement import timeit_serial
-
-@timeit_serial
-def raster(plot, all_sptrains, all_pos_sorting_arrays, **kwargs):
+def raster(plot, all_sptrains, all_pos_sorting_arrays):
     """
     Creates a figure with a raster plot.
 
@@ -55,8 +52,7 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays, **kwargs):
     return
 
 
-@timeit_serial
-def statistics_overview(plot, all_rates, all_LVs, all_CCs, all_PSDs, **kwargs):
+def statistics_overview(plot, all_rates, all_LVs, all_CCs, all_PSDs):
     """
     Creates a figure with boxplots and distributions of rates, LVs and CCs, and
     plots PSDs.
