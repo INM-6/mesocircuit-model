@@ -16,6 +16,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.ticker import MultipleLocator, MaxNLocator
+from ..helpers import io
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
@@ -79,27 +80,6 @@ class Plotting:
         return
 
 
-    def __load_h5_to_sparse_X(self, X, h5data):
-        """
-        TODO currently fct variants duplicated in plotting and analysis
-        Loads sparse matrix stored in COOrdinate format in HDF5.
-
-        Parameters
-        ----------
-        X
-            Group name for datasets
-            'data', 'row', 'col' vectors of equal length
-            'shape' : shape of array tuple
-        h5data
-            Open .h5 file.
-        """
-        data_X = sp.coo_matrix((h5data[X]['data_row_col'][()][:, 0],
-                               (h5data[X]['data_row_col'][()][:, 1],
-                                h5data[X]['data_row_col'][()][:, 2])),
-                               shape=h5data[X]['shape'][()])
-        return data_X.tocsr()
-
-
     def plot_raster(self,
         gs,
         populations,
@@ -150,7 +130,7 @@ class Plotting:
         yticks = []
         ax = plt.subplot(gs)   
         for i,X in enumerate(populations):
-            data = self.__load_h5_to_sparse_X(X, all_sptrains)
+            data = io.load_h5_to_sparse_X(X, all_sptrains)
 
             # slice according to time interval
             time_indices = np.arange(

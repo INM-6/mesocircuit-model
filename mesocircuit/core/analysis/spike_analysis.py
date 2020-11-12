@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 from mpi4py import MPI
 from prettytable import PrettyTable
 from ..helpers import parallelism_time as pt
+from ..helpers import io
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
@@ -154,27 +155,6 @@ class SpikeAnalysis:
         pt.parallelize_by_array(self.ana_dict['datatypes_statistics'],
                            self.__merge_h5_files_populations_datatype)
         return
-
-
-    def __load_h5_to_sparse_X(self, X, h5data):
-        """
-        TODO currently fct variants duplicated in plotting and analysis
-        Loads sparse matrix stored in COOrdinate format in HDF5.
-
-        Parameters
-        ----------
-        X
-            Group name for datasets
-            'data', 'row', 'col' vectors of equal length
-            'shape' : shape of array tuple
-        h5data
-            Open .h5 file.
-        """
-        data_X = sp.coo_matrix((h5data[X]['data_row_col'][()][:, 0],
-                               (h5data[X]['data_row_col'][()][:, 1],
-                                h5data[X]['data_row_col'][()][:, 2])),
-                               shape=h5data[X]['shape'][()])
-        return data_X.tocsr()
 
 
     def __load_raw_nodeids(self):
@@ -519,7 +499,7 @@ class SpikeAnalysis:
             data = h5py.File(fn, 'r')
             # load .h5 files with sparse data to csr format
             if 'data_row_col' in data[X]:
-                data = self.__load_h5_to_sparse_X(X, data)             
+                data = io.load_h5_to_sparse_X(X, data)             
             d.update({datatype + '_X': data})
 
 
