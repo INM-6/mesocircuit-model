@@ -170,13 +170,25 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     # stimulus parameters
     stim_dict = copy.copy(base_stim_dict)
 
-    # thalamic input # TODO does not work right now, requires scaling as other
-    # cortical populations
+    # thalamic input
     if stim_dict['thalamic_input']:
-        num_th_synapses = num_synapses_from_conn_probs(
-            stim_dict['conn_probs_th'],
-            stim_dict['num_th_neurons'],
-            net_dict['full_num_neurons'])[0]
+        # linear scaling of thalamic neuron numbers with area
+        # (note that thalamic neurons are not downscaled with N_scaling)
+        num_th_neurons = stim_dict['num_th_neurons_1mm2'] * area
+        stim_dict['num_th_neurons'] = \
+            np.round(num_th_neurons).astype(int)
+
+        # TODO synapses not finished
+        # number of thalamic synapses
+        num_th_synapses_1mm2 = num_synapses_from_conn_probs(
+            stim_dict['conn_probs_th_1mm2'],
+            stim_dict['num_th_neurons_1mm2'],
+            num_neurons_1mm2)[0]
+
+        # TODO just for first test
+        num_th_synapses = num_th_synapses_1mm2
+
+
         stim_dict['weight_th'] = stim_dict['PSP_th'] * PSC_over_PSP
         if net_dict['K_scaling'] != 1:
             num_th_synapses *= net_dict['K_scaling']

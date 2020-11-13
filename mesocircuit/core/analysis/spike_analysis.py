@@ -63,16 +63,19 @@ class SpikeAnalysis:
         self.stim_dict = stim_dict
         self.ana_dict = ana_dict
 
-        # thalamic population 'TC' is treated as the cortical populations
         # presynaptic population names
-        # TODO add TC properly
-        self.X = self.net_dict['populations'] 
-        #self.X = np.append(self.net_dict['populations'], 'TC')
+        self.X = self.net_dict['populations']
+        if self.stim_dict['thalamic_input']:
+            # thalamic population is treated as a cortical population
+            self.X = np.append(self.X, self.stim_dict['th_name'])
+
         # postsynaptic population names
         self.Y = self.net_dict['populations']
+
         # population sizes
         self.N_X = self.net_dict['num_neurons']
-        #self.N_X = np.append(self.net_dict['num_neurons', self.net_dict['num_neurons_th'])
+        if self.stim_dict['thalamic_input']:
+            self.N_X = np.append(self.N_X, self.stim_dict['num_th_neurons'])
 
         # temporal bins for pure and resampled spike trains
         self.time_bins = np.arange(
