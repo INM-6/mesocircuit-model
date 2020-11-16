@@ -78,3 +78,30 @@ def statistics_overview(plot, all_rates, all_LVs, all_CCs, all_PSDs):
 
     plot.savefig('statistics_overview')
     return
+
+
+def spatial_snapshots(plot, all_inst_rates_bintime_binspace):
+    """
+    Creates a figure with consecutive snapshots.
+
+    Parameters
+    ----------
+    plot
+    all_inst_rates_bintime_binspace
+    """
+
+    print('Plotting spatial snapshots.')
+    fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 5.))
+    gs = gridspec.GridSpec(1, 1)
+    gs.update(top=0.99, bottom=0.1, left=0.2, right=0.8)
+    ax = plot.plot_spatial_snapshots(
+         gs[0,0],
+         plot.X,
+         all_inst_rates_bintime_binspace,
+         plot.ana_dict['binsize_time'],
+         plot.ana_dict['binsize_space']
+        #plot.plot_dict['raster_time_interval'],
+        #raster_sample_step)
+    )
+    plot.savefig('spatial_snapshots')
+    return

@@ -16,14 +16,14 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.ticker import MultipleLocator, MaxNLocator
-from ..helpers import io
+from ..helpers import base_class
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
 SIZE = COMM.Get_size()
 RANK = COMM.Get_rank()
 
-class Plotting:
+class Plotting(base_class.BaseAnalysisPlotting):
     """ 
     Provides functions to plot the analyzed data.
 
@@ -56,29 +56,14 @@ class Plotting:
         if RANK == 0:
             print('Instantiating a Plotting object.')
 
-        self.sim_dict = sim_dict
-        self.net_dict = net_dict
-        self.stim_dict = stim_dict
-        self.ana_dict = ana_dict
+        # inherit from parent class
+        super().__init__(sim_dict, net_dict, stim_dict, ana_dict)
+
+        # plot_dict is not in parent class
         self.plot_dict = plot_dict
 
         # update the matplotlib.rcParams
         matplotlib.rcParams.update(self.plot_dict['rcParams'])
-
-        # TODO this is currently the same as in the __init__ of analysis
-        # presynaptic population names
-        self.X = self.net_dict['populations']
-        if self.stim_dict['thalamic_input']:
-            # thalamic population is treated as a cortical population
-            self.X = np.append(self.X, self.stim_dict['th_name'])
-
-        # postsynaptic population names
-        self.Y = self.net_dict['populations']
-
-        # population sizes
-        self.N_X = self.net_dict['num_neurons']
-        if self.stim_dict['thalamic_input']:
-            self.N_X = np.append(self.N_X, self.stim_dict['num_th_neurons'])
         return
 
 
@@ -132,7 +117,7 @@ class Plotting:
         yticks = []
         ax = plt.subplot(gs)   
         for i,X in enumerate(populations):
-            data = io.load_h5_to_sparse_X(X, all_sptrains)
+            data = self.load_h5_to_sparse_X(X, all_sptrains)
 
             # slice according to time interval
             time_indices = np.arange(
@@ -204,7 +189,7 @@ class Plotting:
         # top: rates
         print('  Plotting boxcharts: rates')
         axes[0] = self.plot_boxcharts(gs_c0[0,0],
-            all_rates, xlabel='', ylabel=r'$\nu$ (s$^{-1}$)',
+            all_rates, xlabel='', ylabel='FR (spikes/s)',
             xticklabels=False)
         
         # middle: LVs
@@ -227,7 +212,7 @@ class Plotting:
         # left: rates
         print('  Plotting distributions: rates')
         axes[3] = self.plot_layer_panels(gs_cols[0,3:5],
-            xlabel=r'$\nu$ (s$^{-1}$)',
+            xlabel='FR (spikes/s)',
             plotfunc=self.__plotfunc_distributions,
             bins=bins_unscaled * self.plot_dict['distr_max_rate'],
             data=all_rates,
@@ -259,6 +244,89 @@ class Plotting:
             plotfunc=self.__plotfunc_PSDs,
             data=all_PSDs)
         return axes
+
+
+    def plot_spatial_snapshots(self,
+        gs,
+        populations,
+        all_inst_rates_bintime_binspace,
+        binsize_time,
+        binsize_space,
+        start_time=199., # ms
+        step=1, # multiplication
+        nframes=5,
+        cbar='bottom'):
+        """
+        """
+        start_frame = int(start_time / binsize_time) 
+        end_frame = start_frame + (nframes - 1) * step
+        times = np.arange(start_frame, end_frame+1, step) * binsize_time
+
+        numbins = self.space_bins.size - 1
+
+        vmin = 0 # minimum firing rate
+        val_sep = vmin - 1 # separator between panels masked with cmap.set_under()
+        vmax = 100 # maximum firing rate
+
+        for X in populations:
+            data = self.load_h5_to_sparse_X(X, all_inst_rates_bintime_binspace)
+            data = data[:, start_frame:end_frame+1:step].toarray()
+            data = data.reshape((numbins, -1, data.shape[-1]))
+
+            # append frames as columns
+            separator_frames = np.array([val_sep]*(numbins)).reshape(-1,1)
+            data0 = np.concatenate((data[:,:,0], separator_frames), axis=1)
+            for n in np.arange(nframes-1):
+                data_apnd = np.concatenate((data0, data[:,:,n+1]), axis=1)
+                data0 = np.concatenate((data_apnd, separator_frames), axis=1)
+
+            # append populations as rows
+            separator_pops = \
+                np.array([val_sep] * np.shape(data_apnd)[1]).reshape(1,-1)
+            if X==populations[0]:
+                plot_data0 = np.concatenate((data_apnd, separator_pops), axis=0)
+            else:
+                plot_data = np.concatenate((plot_data0, data_apnd), axis=0)
+                plot_data0 = np.concatenate((plot_data, separator_pops), axis=0)
+
+        ax = plt.subplot(gs)
+
+        cmap = matplotlib.cm.Greys
+        cmap.set_under(color='black')
+        im = ax.imshow(plot_data, interpolation='nearest', cmap=cmap,
+                       vmin=vmin, vmax=vmax)
+
+        ticks = [numbins / 2.]
+        for t in np.arange(np.max([nframes - 1, len(self.X) - 1])):
+            ticks.append(ticks[-1] + numbins + 1.)
+
+        ax.set_xticks(ticks[:nframes])
+        ax.set_xticklabels(times)
+
+        ax.set_yticks(ticks[:len(self.X)])
+        ax.set_yticklabels(self.plot_dict['pop_labels'][:len(self.X)])
+
+        ax.set_xlabel('time (ms)')
+
+
+        if cbar=='bottom':
+            fig = plt.gcf()
+            rect = np.array(ax.get_position().bounds)
+            rect[0] += 0.0 # left
+            rect[2] -= 0.0 # width
+            rect[1] -= 0.1#0.006 # bottom  # TODO move to parameters?
+            rect[3] = 0.009 # height
+
+            cax = fig.add_axes(rect)
+            cb = fig.colorbar(im, cax=cax, orientation='horizontal')
+            cax.xaxis.set_label_position(cbar)
+            cb.set_label('FR (spikes/s)')
+            cb.locator = MaxNLocator(nbins=5)
+            cb.update_ticks() # necessary for location
+
+        return ax
+
+
 
 
     def plot_boxcharts(self, gs, data, xlabel='', ylabel='',
@@ -384,7 +452,7 @@ class Plotting:
         ax.set_xlim(right=self.plot_dict['psd_max_freq'])
         return
 
-    
+
     def add_label(self, ax, label, offset=[0,0],
                   weight='bold', fontsize_scale=1.2):
         """

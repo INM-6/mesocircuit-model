@@ -18,14 +18,14 @@ import matplotlib.pyplot as plt
 from mpi4py import MPI
 from prettytable import PrettyTable
 from ..helpers import parallelism_time as pt
-from ..helpers import io
+from ..helpers import base_class
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
 SIZE = COMM.Get_size()
 RANK = COMM.Get_rank()
 
-class SpikeAnalysis:
+class SpikeAnalysis(base_class.BaseAnalysisPlotting):
     """ 
     Provides functions to analyze the spiking data written out by NEST.
 
@@ -58,40 +58,9 @@ class SpikeAnalysis:
         if RANK == 0:
             print('Instantiating a SpikeAnalysis object.')
 
-        self.sim_dict = sim_dict
-        self.net_dict = net_dict
-        self.stim_dict = stim_dict
-        self.ana_dict = ana_dict
+        # inherit from parent class
+        super().__init__(sim_dict, net_dict, stim_dict, ana_dict)
 
-        # presynaptic population names
-        self.X = self.net_dict['populations']
-        if self.stim_dict['thalamic_input']:
-            # thalamic population is treated as a cortical population
-            self.X = np.append(self.X, self.stim_dict['th_name'])
-
-        # postsynaptic population names
-        self.Y = self.net_dict['populations']
-
-        # population sizes
-        self.N_X = self.net_dict['num_neurons']
-        if self.stim_dict['thalamic_input']:
-            self.N_X = np.append(self.N_X, self.stim_dict['num_th_neurons'])
-
-        # temporal bins for pure and resampled spike trains
-        self.time_bins = np.arange(
-            0.,
-            self.sim_dict['t_sim'],
-            self.sim_dict['sim_resolution'])
-        self.time_bins_rs = np.arange(
-            0.,
-            self.sim_dict['t_sim'],
-            self.ana_dict['binsize_time'])
-
-        # spatial bins
-        # TODO check in later functions, old version used linspace
-        self.space_bins = np.arange(-self.net_dict['extent'] / 2.,
-                                    self.net_dict['extent'] / 2.,
-                                    self.ana_dict['binsize_space'])
         return
 
 
@@ -333,31 +302,60 @@ class SpikeAnalysis:
             data_load.append(data)
         spikes, positions = data_load
 
-        # order is important! # TODO improve
+        # order is important as some datasets rely on previous ones
+        datasets = {}
         for datatype in self.ana_dict['datatypes_preprocess']:
             if i==0:
                 print('  Processing: ' + datatype)
 
-            # time binned spike trains
+            # overwritten for non-sparse datasets
+            is_sparse = True
+            dataset_dtype = None
+
+            # spike trains with a temporal binsize corresponding to the
+            # simulation resolution
             if datatype == 'sptrains':
-                dataset = self.__time_binned_sptrains_X(
-                    X, spikes, self.time_bins, dtype=np.uint8)
-                is_sparse = True
-                dtype = None
+                datasets[datatype] = self.__time_binned_sptrains_X(
+                    X, spikes, self.time_bins_sim, dtype=np.uint8)
+
+            # time-binned spike trains
+            elif datatype == 'sptrains_bintime':
+                datasets[datatype] = self.__time_binned_sptrains_X(
+                    X, spikes, self.time_bins_rs, dtype=np.uint8)
+
+            # time-binned and space-binned spike trains
+            elif datatype == 'sptrains_bintime_binspace':
+                datasets[datatype] = self.__space_binned_sptrains_X(
+                    X, positions, datasets['sptrains_bintime'], dtype=np.uint16) 
+
+            # neuron count in each spatial bin
+            elif datatype == 'neuron_count_binspace':
+                datasets[datatype] = self.__neuron_count_per_spatial_bin_X(
+                    X, positions)
+                is_sparse = False
+                dataset_dtype = int
+
+            # time-binned and space-binned instantaneous rates
+            elif datatype == 'inst_rates_bintime_binspace':
+                datasets[datatype] = self.__inst_and_space_binned_rates_X(
+                    X, datasets['sptrains_bintime_binspace'],
+                    self.ana_dict['binsize_time'],
+                    datasets['neuron_count_binspace']) 
 
             # position sorting arrays
             elif datatype == 'pos_sorting_arrays':
-                dataset = self.__pos_sorting_array_X(
+                datasets[datatype] = self.__pos_sorting_array_X(
                     X, positions)
                 is_sparse = False
-                dtype = int
+                dataset_dtype = int
 
-            self.__write_dataset_to_h5_X(X, datatype, dataset, is_sparse, dtype)
+            self.__write_dataset_to_h5_X(
+                X, datatype, datasets[datatype], is_sparse, dataset_dtype)
         return
 
 
     def __write_dataset_to_h5_X(self,
-        X, datatype, dataset, is_sparse, dtype=None):
+        X, datatype, dataset, is_sparse, dataset_dtype=None):
         """
         Writes sparse and non-sparse datasets for population X to .h5.
 
@@ -371,7 +369,7 @@ class SpikeAnalysis:
             The data itself.
         is_sparse
             Whether the data shall be written in sparse format.
-        dtype
+        dataset_dtype
             dtype only needed for non-sparse datasets.
         """
         fn = os.path.join(self.sim_dict['path_processed_data'],
@@ -396,12 +394,12 @@ class SpikeAnalysis:
                                         maxshape= (None,))            
         else:
             f.create_dataset(X,
-                                data=dataset,
-                                dtype=dtype,
-                                compression='gzip',
-                                compression_opts=2,
-                                chunks=True,
-                                shape=dataset.shape)
+                            data=dataset,
+                            dtype=dataset_dtype,
+                            compression='gzip',
+                            compression_opts=2,
+                            chunks=True,
+                            shape=dataset.shape)
         f.flush()
         f.close()
         return
@@ -410,6 +408,12 @@ class SpikeAnalysis:
     def __time_binned_sptrains_X(self, X, spikes, time_bins, dtype):
         """
         Computes a histogram with ones for each spike.
+
+        Sparse matrix with 'data_row_col':
+        data: 1 (for a spike)
+        row:  nodeid
+        col:  time index (binned times in ms can be obtained by multiplying
+              with time resolution = time_bins[1] - time_bins[0])
 
         Parameters
         ----------
@@ -425,7 +429,8 @@ class SpikeAnalysis:
         Returns
         -------
         sptrains
-            Spike trains as Compressed Sparse Row matrix.
+            Spike trains as sparse matrix in COOrdinate format.
+
         """
         # if no spikes were recorded, return an empty sparse matrix
         i = np.where(self.X==X)[0][0] # TODO
@@ -433,7 +438,7 @@ class SpikeAnalysis:
 
         if spikes.size == 0:
             sptrains = sp.coo_matrix(shape, dtype=dtype)
-        else: 
+        else:
             # time bins shifted by one bin as needed by np.digitize()
             dt = time_bins[1] - time_bins[0]
             time_bins_digi = np.r_[time_bins[1:], [time_bins[-1] + dt]]
@@ -446,6 +451,134 @@ class SpikeAnalysis:
                 (data, (spikes['nodeid'], time_indices)),
                 shape=shape, dtype=dtype)
         return sptrains
+
+
+    def __space_binned_sptrains_X(self, X, positions, sptrains, dtype):
+        """
+        Computes position-binned spike trains.
+
+        Sparse matrix with 'data_row_col':
+        data: number of spikes in spatio-temporal bin
+        row:  flat position index
+        col:  time index (binned times in ms can be obtained by multiplying
+              with time resolution = time_bins[1] - time_bins[0] of sptrains)
+
+        Parameters
+        ----------
+        X
+            Population name.
+        positions
+            Positions of population X.
+        spikes
+            Array of node ids and spike times.
+        dtype
+            An integer dtype that fits the data.
+
+        Returns
+        -------
+        binned_sptrains
+            Spike trains as sparse matrix in Compressed Sparse Row format.
+        """
+        # match position indices with spatial indices
+        pos_x = np.digitize(positions['x-position_mm'],
+                            self.space_bins[1:], right=True)
+        pos_y = np.digitize(positions['y-position_mm'],
+                            self.space_bins[1:], right=True)
+        
+        # 2D sparse array with spatial bins flattened to 1D
+        map_y, map_x = np.mgrid[0:self.space_bins.size-1,
+                                0:self.space_bins.size-1]
+        map_y = map_y.ravel()
+        map_x = map_x.ravel()
+        
+        sptrains_coo = sptrains.tocoo().astype(dtype)
+        nspikes = np.asarray(sptrains_coo.sum(axis=1)).flatten().astype(int)
+        data = sptrains_coo.data
+        col = sptrains_coo.col
+        row = np.zeros(sptrains_coo.nnz)
+        j = 0
+        for i, n in enumerate(nspikes):
+            [ind] = np.where((map_x == pos_x[i]) & (map_y==pos_y[i]))[0]
+            row[j:j+n] = ind
+            j += n
+        
+        binned_sptrains_coo = sp.coo_matrix(
+            (data, (row, col)), shape=(map_x.size, sptrains.shape[1]))
+        
+        try:
+            assert(sptrains.sum() == binned_sptrains_coo.tocsr().sum())
+        except AssertionError as ae:
+            raise ae(
+                'sptrains.sum()={0} != binned_sptrains_coo.sum()={1}'.format(\
+                    sptrains.sum(), binned_sptrains_coo.tocsr().sum()))
+    
+        binned_sptrains = binned_sptrains_coo.tocsr()
+        return binned_sptrains
+
+
+    def __neuron_count_per_spatial_bin_X(self, X, positions):
+        """
+        Counts the number of neurons in each spatial bin.
+       
+        Parameters
+        ----------
+        X
+            Population name.
+        positions
+            Positions of population X.
+
+        Returns
+        -------
+        pos_hist
+            2D-Histogram with neuron counts in spatial bins.
+        """
+        pos_hist = np.histogram2d(positions['y-position_mm'],
+                                  positions['x-position_mm'],
+                                  bins=[self.space_bins, self.space_bins])[0]
+        pos_hist = pos_hist.astype(int)
+        return pos_hist
+
+
+    def __inst_and_space_binned_rates_X(self, 
+        X, sptrains_binspace, binsize_time, neuron_count_binspace):
+        """
+        Computes the time and position downsampled spike rates averaged over
+        neurons in a spatial bin
+
+        Sparse matrix with 'data_row_col':
+        data: instantaneous rate in spikes/s
+        row:  flat position index
+        col:  time index (binned times in ms can be obtained by multiplying
+              with time resolution = time_bins[1] - time_bins[0] of sptrains
+
+        Parameters
+        ----------
+        X
+            Population name.
+        sptrains_binspace
+            Spatially binned spike trains.
+        binsize_time
+            TODO
+
+        Returns
+        -------
+        binned_rates
+            Rates as sparse matrix in Compressed Sparse Row format.
+        """        
+        # number of spikes in each spatio-temporal bin per second
+        binned_rates = sptrains_binspace.astype(float) / (binsize_time * 1E-3)
+
+        # rates per neuron
+        # flatten histogram and avoid division by zero
+        pos_hist = neuron_count_binspace.flatten()
+        pos_inds = np.where(pos_hist > 0)
+
+        binned_rates = binned_rates.tolil()
+        binned_rates[pos_inds] = (
+            binned_rates[pos_inds].toarray().T /  pos_hist[pos_inds]).T
+    
+        binned_rates = binned_rates.tocsr()
+        return binned_rates
 
 
     def __pos_sorting_array_X(self, X, positions):
@@ -462,7 +595,7 @@ class SpikeAnalysis:
 
         Returns
         -------
-        argsort
+        pos_sorting_arrays
             Sorting array.
         """
         if self.ana_dict['sorting_axis'] == 'x':
@@ -502,7 +635,7 @@ class SpikeAnalysis:
             data = h5py.File(fn, 'r')
             # load .h5 files with sparse data to csr format
             if 'data_row_col' in data[X]:
-                data = io.load_h5_to_sparse_X(X, data)             
+                data = self.load_h5_to_sparse_X(X, data)             
             d.update({datatype + '_X': data})
 
 
@@ -613,8 +746,6 @@ class SpikeAnalysis:
         binsize_time
             Temporal resolution of sptrains_X (in ms).
         """
-        # TODO update when TC is added
-
         min_num_neurons = np.min(self.net_dict['num_neurons'])
         if self.ana_dict['ccs_num_neurons'] == 'auto' or \
             self.ana_dict['ccs_num_neurons'] > min_num_neurons:
@@ -622,11 +753,10 @@ class SpikeAnalysis:
         else:
             num_neurons = self.ana_dict['ccs_num_neurons']
 
-        # convert to array, remove non-spiking neurons, and extract at most
-        # num_neurons neurons for computing CCs
         spt = sptrains_X.toarray()
-        spt = spt[~np.all(spt==0, axis=1)]
-        spt = spt[:num_neurons, :]
+        spt = spt[:,:-1] # discard very last time bin 
+        spt = spt[~np.all(spt==0, axis=1)] # remove non-spiking neurons
+        spt = spt[:num_neurons, :] # extract at most num_neurons neurons
         num_neurons_spk = np.shape(spt)[0]
 
         if X=='L23E':

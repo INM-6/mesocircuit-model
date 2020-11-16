@@ -34,7 +34,12 @@ ana_dict = {
     # quantities to be computed during the preprocessing phase.
     # order is important because of dependencies
     'datatypes_preprocess': np.array(['sptrains',
-                                      'pos_sorting_arrays']),
+                                      'sptrains_bintime',
+                                      'sptrains_bintime_binspace',
+                                      'neuron_count_binspace', # TODO rename
+                                      'inst_rates_bintime_binspace',
+                                      'pos_sorting_arrays', # TODO rename
+                                      ]),
 
     # quantities to be computed during the statistics phase
     'datatypes_statistics': np.array(['rates',
@@ -43,7 +48,7 @@ ana_dict = {
                                       'PSDs']),
 
     # temporal bin size (in ms)
-    'binsize_time': 0.5,
+    'binsize_time': 1.,
     # spatial bin size (in mm)
     'binsize_space': 0.1,
 
