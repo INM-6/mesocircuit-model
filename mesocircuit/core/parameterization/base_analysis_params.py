@@ -36,19 +36,20 @@ ana_dict = {
     'datatypes_preprocess': np.array(['sptrains',
                                       'sptrains_bintime',
                                       'sptrains_bintime_binspace',
-                                      'neuron_count_binspace', # TODO rename
+                                      'neuron_count_binspace',
                                       'inst_rates_bintime_binspace',
-                                      'pos_sorting_arrays', # TODO rename
+                                      'pos_sorting_arrays',
                                       ]),
 
     # quantities to be computed during the statistics phase
     'datatypes_statistics': np.array(['rates',
                                       'LVs',
                                       'CCs',
-                                      'PSDs']),
+                                      'PSDs',
+                                      ]),
 
     # temporal bin size (in ms)
-    'binsize_time': 1.,
+    'binsize_time': 0.5,
     # spatial bin size (in mm)
     'binsize_space': 0.1,
 

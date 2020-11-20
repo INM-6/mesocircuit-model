@@ -66,6 +66,8 @@ plot_dict = {
                              '#AF143C',   # I, red pastel
                              '#696969']), # other, dimgrey
 
+
+    ## parameters for plot_raster()
     # time interval for short raster plots (in ms)
     'raster_time_interval': np.array([0., 1000.]),
     # sample step of raster plot (1 means all neurons are shown).
@@ -73,6 +75,7 @@ plot_dict = {
     # computed
     'raster_sample_step': 'auto',
 
+    ## parameters for plot_statistics_overview()
     # number of bins for distributions
     'distr_num_bins': 30,
     # maximum bin for rate distributions (in Hz), first is at 0
@@ -84,5 +87,9 @@ plot_dict = {
 
     # maximum frequency to show for PSDs (in Hz)
     'psd_max_freq': 1000,
+
+    ## parameters for plot_spatial_snapshots()
+    # maximum rate on color bar (in spikes/s)
+    'snapshots_max_rate': 1000.0
 
 }

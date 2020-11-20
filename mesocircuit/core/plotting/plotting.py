@@ -252,21 +252,29 @@ class Plotting(base_class.BaseAnalysisPlotting):
         all_inst_rates_bintime_binspace,
         binsize_time,
         binsize_space,
-        start_time=199., # ms
+        start_time='th_pulse_start', # ms
         step=1, # multiplication
-        nframes=5,
-        cbar='bottom'):
+        nframes=8,
+        tickstep=2,
+        cbar=True,
+        cbar_bottom=0.12,
+        cbar_height=0.02):
         """
         """
+        # start time of thalamic pulses is a possible start_time
+        if start_time == 'th_pulse_start':
+            start_time = self.stim_dict[start_time] - self.sim_dict['t_presim']
+
         start_frame = int(start_time / binsize_time) 
         end_frame = start_frame + (nframes - 1) * step
         times = np.arange(start_frame, end_frame+1, step) * binsize_time
 
         numbins = self.space_bins.size - 1
 
-        vmin = 0 # minimum firing rate
-        val_sep = vmin - 1 # separator between panels masked with cmap.set_under()
-        vmax = 100 # maximum firing rate
+        # minimum rate a bit below 0 to avoid issues with cmap.set_under()
+        vmin = -0.001
+        # separator between sub-panels masked with cmap.set_under()
+        val_sep = -1
 
         for X in populations:
             data = self.load_h5_to_sparse_X(X, all_inst_rates_bintime_binspace)
@@ -294,39 +302,45 @@ class Plotting(base_class.BaseAnalysisPlotting):
         cmap = matplotlib.cm.Greys
         cmap.set_under(color='black')
         im = ax.imshow(plot_data, interpolation='nearest', cmap=cmap,
-                       vmin=vmin, vmax=vmax)
+                       vmin=vmin,
+                       vmax=self.plot_dict['snapshots_max_rate'])
 
-        ticks = [numbins / 2.]
+        # ticks dependent on number of spatial bins
+        xy_ticks = [numbins / 2.]
         for t in np.arange(np.max([nframes - 1, len(self.X) - 1])):
-            ticks.append(ticks[-1] + numbins + 1.)
+            xy_ticks.append(xy_ticks[-1] + numbins + 1.)
 
-        ax.set_xticks(ticks[:nframes])
-        ax.set_xticklabels(times)
+        xticks = xy_ticks[:nframes:tickstep]
+        ticklabels = times[::tickstep]
+        if (int(ticklabels[0]) == ticklabels[0] and
+            int(ticklabels[1]) == ticklabels[1]):
+            ticklabels = ticklabels.astype(int)
 
-        ax.set_yticks(ticks[:len(self.X)])
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(ticklabels)
+
+        ax.set_yticks(xy_ticks[:len(self.X)])
         ax.set_yticklabels(self.plot_dict['pop_labels'][:len(self.X)])
 
         ax.set_xlabel('time (ms)')
 
-
-        if cbar=='bottom':
+        if cbar:
             fig = plt.gcf()
             rect = np.array(ax.get_position().bounds)
             rect[0] += 0.0 # left
             rect[2] -= 0.0 # width
-            rect[1] -= 0.1#0.006 # bottom  # TODO move to parameters?
-            rect[3] = 0.009 # height
+            rect[1] -= cbar_bottom # bottom
+            rect[3] = cbar_height # height
 
             cax = fig.add_axes(rect)
-            cb = fig.colorbar(im, cax=cax, orientation='horizontal')
-            cax.xaxis.set_label_position(cbar)
+            cb = fig.colorbar(
+                im, cax=cax, orientation='horizontal', extend='max')
+            cax.xaxis.set_label_position('bottom')
             cb.set_label('FR (spikes/s)')
             cb.locator = MaxNLocator(nbins=5)
             cb.update_ticks() # necessary for location
 
         return ax
-
-
 
 
     def plot_boxcharts(self, gs, data, xlabel='', ylabel='',
