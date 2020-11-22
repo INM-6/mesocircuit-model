@@ -52,8 +52,11 @@ functions = [ \
     [figures.statistics_overview,
      [pl, d['all_rates'], d['all_LVs'], d['all_CCs'],d['all_PSDs']]],
 
-     [figures.spatial_snapshots,
+    [figures.spatial_snapshots,
      [pl, d['all_inst_rates_bintime_binspace']]],
+
+    [figures.crosscorrelation_funcs_thalamic_pulses,
+     [pl, d['all_CCfuncs_thalamic_pulses']]]
 ]
 
 pt.run_serial_functions_in_parallel(functions, os.path.basename(__file__))

@@ -46,11 +46,13 @@ ana_dict = {
                                       'LVs',
                                       'CCs',
                                       'PSDs',
+                                      'CCfuncs_thalamic_pulses',
                                       ]),
 
     # temporal bin size (in ms)
     'binsize_time': 0.5,
-    # spatial bin size (in mm)
+    # spatial bin size (in mm), must lead to an even number of bins along each
+    # axis
     'binsize_space': 0.1,
 
     # sorting axis for raster plot. Options are 'x', 'y' and None.
@@ -66,4 +68,12 @@ ana_dict = {
 
     # number of data points used in each block for the FFT
     'psd_NFFT': 2048,
+
+    ## parameters for __compute_cc_funcs_thalamus_center()
+    # time lag (in ms)
+    'cc_funcs_tau': 25.0,
+    # number of bins along the diagonal, must be an even number.
+    # if the given number is higher than the number of bins in one dimension,
+    # the latter is assumed.
+    'cc_funcs_nbins_diag': 14,
 }

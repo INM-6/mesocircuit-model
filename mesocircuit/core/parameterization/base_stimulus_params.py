@@ -18,7 +18,7 @@ stim_dict = {
     #               all thalamic neurons
     # 'pulses':     repetitive pulses from stimulating thalamic neurons  in the
     #               center of the network
-    'thalamic_input': False,
+    'thalamic_input': 'pulses',
 
     # name of the thalamic population (TC stands for Thalamo-Cortical)
     'th_name': 'TC',

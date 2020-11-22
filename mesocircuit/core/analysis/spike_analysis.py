@@ -378,29 +378,41 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         f = h5py.File(fn, 'w')
 
         if is_sparse:
-            # TODO why not everything in COO format?
             if type(dataset) == sp.coo_matrix:
                 d = dataset
             else:
                 d = dataset.tocoo()
 
             group = f.create_group(X)
-            dset = group.create_dataset('data_row_col',
-                                        data=np.c_[d.data, d.row, d.col],
-                                        compression='gzip',
-                                        compression_opts=2,
-                                        maxshape = (None, None))
-            dset = group.create_dataset('shape',
-                                        data=d.shape,
-                                        maxshape= (None,))            
+            group.create_dataset('data_row_col',
+                                 data=np.c_[d.data, d.row, d.col],
+                                 compression='gzip',
+                                 compression_opts=2,
+                                 maxshape = (None, None))
+            group.create_dataset('shape',
+                                 data=d.shape,
+                                 maxshape= (None,))            
         else:
-            f.create_dataset(X,
-                            data=dataset,
-                            dtype=dataset_dtype,
-                            compression='gzip',
-                            compression_opts=2,
-                            chunks=True,
-                            shape=dataset.shape)
+            if type(dataset) == dict:
+                group = f.create_group(X)
+                for key,value in dataset.items():
+                    group.create_dataset(key,
+                                         data=value,
+                                         dtype=dataset_dtype,
+                                         compression='gzip',
+                                         compression_opts=2,
+                                         chunks=True,
+                                         shape=value.shape)
+
+
+            else:
+                f.create_dataset(X,
+                                data=dataset,
+                                dtype=dataset_dtype,
+                                compression='gzip',
+                                compression_opts=2,
+                                chunks=True,
+                                shape=dataset.shape)
         f.flush()
         f.close()
         return
@@ -669,6 +681,23 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                     dataset = self.__compute_psds(
                         X, d['sptrains_X'], self.sim_dict['sim_resolution'])
 
+                # distance-dependent cross-correlation functions with the
+                # thalamic population TC only for pulses
+                elif datatype == 'CCfuncs_thalamic_pulses':
+                    if self.stim_dict['thalamic_input'] == 'pulses' and X != 'TC':
+                        # load data from TC
+                        fn_TC = os.path.join(self.sim_dict['path_processed_data'],
+                            'sptrains_bintime_binspace_TC.h5')
+                        data_TC = h5py.File(fn_TC, 'r')
+                        sptrains_bintime_binspace_TC = \
+                            self.load_h5_to_sparse_X('TC', data_TC)
+                        dataset = self.__compute_cc_funcs_thalamic_pulses(
+                            X, d['sptrains_bintime_binspace_X'],
+                            sptrains_bintime_binspace_TC)
+                    else:
+                        # TODO print sth
+                        dataset=np.array([])
+                        
             self.__write_dataset_to_h5_X(X, datatype, dataset, is_sparse=False)
         return
 
@@ -811,6 +840,133 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # frequencies (in 1/s), PSDs (in s^{-2} / Hz)
         psds = np.array([freq, Pxx])
         return psds
+
+
+    def __compute_cc_funcs_thalamic_pulses(self,
+        X, sptrains_bintime_binspace_X, sptrains_bintime_binspace_TC):
+        """
+        Compute distance-dependent cross-correlation functions for thalamic
+        pulses.
+
+        Each spatio-temporally binned spike train is correlated with the
+        thalamic pulse activity.
+        Distances are computed as a function of distance to the center of the
+        network.
+
+        Parameters
+        ----------
+        X
+            Population name.
+        sptrains_bintime_binspace_X
+            Time- and space-binned spike trains of population X.
+        sptrains_bintime_binspace_TC
+            Time- and space-binned spike trains of the thalamic population TC. 
+
+        Returns
+        -------
+        cc_func_dic
+            Dictionary with cross-correlation functions, distances and time lags.
+        """
+        # unique spike times of TC neurons, 1s at spike times (else 0s)
+        data0 = sptrains_bintime_binspace_TC.toarray()
+        data0_prune = np.sum(data0, axis=0)
+        data0_prune[np.nonzero(data0_prune)] = 1
+        data0_prune = data0_prune.astype(float) # were integers up to here
+
+        # determine number of bins along the diagonals to be evaluated
+        dim = int(np.sqrt(data0.shape[0])) # number of spatial bin in data
+        nbins_diag = self.ana_dict['cc_funcs_nbins_diag']
+        if nbins_diag > int(dim / 2):
+            nbins_diag = int(dim / 2)
+        if dim%2 != 0: raise Exception
+
+        if X=='L23E' and nbins_diag != self.ana_dict['cc_funcs_nbins_diag']:
+            print('    Using ' + str(nbins_diag) + ' spatial bins for ' + 
+                  'computing CCfuncs_thalmus_center.')
+
+        # time lag indices and lag values
+        lag_binsize = self.ana_dict['cc_funcs_tau'] / self.ana_dict['binsize_time']
+        lag_range = np.arange(-lag_binsize, lag_binsize + 1) 
+
+        lag_inds = lag_range.astype(int) + int(data0.shape[-1] / 2.)
+        lags = lag_range * self.ana_dict['binsize_time']
+
+        # distances in mm corresponding to nbins_diag
+        distances = np.arange(
+            self.ana_dict['binsize_space'] / np.sqrt(2.),
+            nbins_diag * np.sqrt(2.) * self.ana_dict['binsize_space'],
+            np.sqrt(2.) * self.ana_dict['binsize_space'])
+
+        cc_func = np.zeros((nbins_diag, lags.size))
+
+        data1 = sptrains_bintime_binspace_X.toarray().astype(float)
+        dim1 = int(np.sqrt(data1.shape[0])) # number of spatial bins
+        if dim1 != dim: raise Exception
+
+        # indeces of diagonal elements, both diagonals
+        idx_diag_1 = np.reshape([i * dim1 + i for i in range(dim1)], (2,-1))
+        idx_diag_2 = np.reshape([(i+1) * dim1 - (i+1) for i in range(dim1)], (2,-1))
+
+        # 4 elements at the same distance from the center
+        idx_diag_same_dist = np.array([idx_diag_1[0][::-1],
+                                       idx_diag_1[1],
+                                       idx_diag_2[0][::-1],
+                                       idx_diag_2[1]])
+
+        # go through nbins_diag distances
+        for k in np.arange(0, nbins_diag, 1):
+            # container
+            cc = np.zeros((4, lags.size)) # 4 diagonal elements at equal distance
+
+            # indices at k diagonal bins distance
+            idx_k = idx_diag_same_dist[:, k]
+
+            data1_prune = data1[idx_k, :]
+
+            for j in range(len(idx_k)):
+                # correlated entries
+                x0 = self.__ztransform(data0_prune)
+                x0 /= x0.size
+
+                x1 = self.__ztransform(data1_prune[j,:])
+
+                cc[j, ] = np.correlate(x0, x1, 'same')[lag_inds][::-1]
+
+            cc_func_mean_k = cc.mean(axis=0)
+
+            # for every distance, subtract baseline (mean value before time lag 0)
+            idx_bl = np.arange(0, int(len(lags) / 2.))
+            baseline_k = np.mean(cc_func_mean_k[idx_bl])
+            cc_func[k,:] = cc_func_mean_k - baseline_k
+
+        cc_func_dic = {'cc_func': cc_func,
+                       'distances_mm': distances,
+                       'lags_ms': lags}
+        return cc_func_dic
+
+
+    def __ztransform(self, x):
+        '''
+        Returns signal with zero mean and standard deviation of 1.
+        If a signal with zero standard deviation is supplied, a zero vector
+        is returned.
+        
+        Parameters
+        ----------
+        x
+            Signal.
+        
+        Returns
+        -------
+        ztrans
+            Z-transformed data.
+        
+        '''
+        if x.std() == 0:
+            ztrans = np.zeros_like(x)
+        else:
+            ztrans = (x - x.mean()) / x.std()
+        return ztrans
 
 
     def __merge_h5_files_populations_datatype(self, i, datatype):

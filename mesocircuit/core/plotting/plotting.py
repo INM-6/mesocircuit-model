@@ -16,6 +16,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.ticker import MultipleLocator, MaxNLocator
+from matplotlib.colors import SymLogNorm
 from ..helpers import base_class
 
 # initialize MPI
@@ -341,6 +342,87 @@ class Plotting(base_class.BaseAnalysisPlotting):
             cb.update_ticks() # necessary for location
 
         return ax
+
+
+    def plot_crosscorrelation_funcs_thalamic_pulses(self,
+        gs,
+        populations,
+        all_CCfuncs_thalamic_pulses,
+        wspace=0.2,
+        cbar=True,
+        cbar_left = 0.4,
+        cbar_bottom=0.12,
+        cbar_height=0.02):
+        """
+        """
+        ncols = int(np.floor(np.sqrt(len(populations))))
+        nrows = len(populations) // ncols
+        gsf = gridspec.GridSpecFromSubplotSpec(
+            nrows, ncols, subplot_spec=gs, wspace=wspace)
+
+        for i, X in enumerate(populations):
+            ax = plt.subplot(gsf[i])
+
+            cmap = 'RdGy_r'
+            vmax = 0.5
+            vmin = -vmax
+            linthresh = 0.05
+
+            cc_func = all_CCfuncs_thalamic_pulses[X]['cc_func']
+            distances = all_CCfuncs_thalamic_pulses[X]['distances_mm']
+            lags = all_CCfuncs_thalamic_pulses[X]['lags_ms']
+            dstep = distances[1] - distances[0]
+
+            im = ax.imshow(cc_func, cmap=cmap, aspect='auto',
+                           extent=[lags[0], lags[-1],
+                                   distances[0]-dstep/2., distances[-1]+dstep/2.],
+                        norm=SymLogNorm(linthresh=linthresh, linscale=1,
+                                        vmin=vmin, vmax=vmax),
+                        interpolation='nearest',
+                        origin='lower')
+            ax.axis(ax.axis('tight'))
+            # grid lines
+            ax.grid(which='major', axis='both', linestyle=':', color='k')
+
+            ax.yaxis.set_major_locator(MaxNLocator(nbins=5))
+
+            layer = self.plot_dict['layer_labels'][int(i/2.)]
+            if i==0:
+                ax.set_title('E')
+                ax.set_ylabel('r (mm)\n' + layer)
+                ax_return = ax
+            if i % ncols==0 and i!=0:
+                ax.set_ylabel(layer)
+
+            if i==1:
+                ax.set_title('I')
+
+            if i % ncols > 0:
+                ax.set_yticklabels([])
+
+            if i >= len(populations)-2:
+                ax.set_xlabel(r'$\tau$ (ms)')
+            else:
+                ax.set_xticklabels([])
+
+            if cbar:
+                if i==len(populations)-1:
+                    fig = plt.gcf()
+                    rect = np.array(ax.get_position().bounds)
+                    rect[0] -= cbar_left # left
+                    rect[2] += cbar_left # width
+                    rect[1] -= cbar_bottom # bottom
+                    rect[3] = cbar_height # height
+
+                    cax = fig.add_axes(rect)
+                    cb = fig.colorbar(im, cax=cax, orientation='horizontal')
+                    cax.xaxis.set_label_position('bottom')
+                    cb.set_label(r'CC$^\mathrm{FR}\, (\tau, r)$', labelpad=0.1)
+                    ticks = [vmin, -linthresh, 0, linthresh, vmax]
+                    cb.set_ticks(ticks)
+                    cb.set_ticklabels(ticks)
+                    cb.update_ticks() # necessary for locator
+        return ax_return
 
 
     def plot_boxcharts(self, gs, data, xlabel='', ylabel='',

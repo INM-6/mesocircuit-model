@@ -102,3 +102,27 @@ def spatial_snapshots(plot, all_inst_rates_bintime_binspace):
          plot.ana_dict['binsize_space'])
     plot.savefig('spatial_snapshots')
     return
+
+
+def crosscorrelation_funcs_thalamic_pulses(
+    plot, all_CCfuncs_thalamic_pulses):
+    """
+    Creates a figure with distance-dependent cross-correlation functions for
+    thalamic pulses.
+
+    Parameters
+    ----------
+    plot
+    all_CCfuncs_thalamus_center
+    """
+    print('Plotting cross-correlation functions with thalamic pulses.')
+
+    fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 4.))
+    gs = gridspec.GridSpec(1, 1)
+    gs.update(left=0.22, right=0.97, top=0.99, bottom=0.22)
+    ax = plot.plot_crosscorrelation_funcs_thalamic_pulses(
+         gs[0,0],
+         plot.Y,
+         all_CCfuncs_thalamic_pulses)
+    plot.savefig('crosscorrelation_funcs_thalamic_pulses')
+    return
