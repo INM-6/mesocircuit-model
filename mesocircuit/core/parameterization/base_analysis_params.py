@@ -44,7 +44,7 @@ ana_dict = {
     # quantities to be computed during the statistics phase
     'datatypes_statistics': np.array(['rates',
                                       'LVs',
-                                      'CCs',
+                                      'CCs_distances',
                                       'PSDs',
                                       'CCfuncs_thalamic_pulses',
                                       ]),

@@ -52,7 +52,7 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays):
     return
 
 
-def statistics_overview(plot, all_rates, all_LVs, all_CCs, all_PSDs):
+def statistics_overview(plot, all_rates, all_LVs, all_CCs_distances, all_PSDs):
     """
     Creates a figure with boxplots and distributions of rates, LVs and CCs, and
     plots PSDs.
@@ -62,10 +62,15 @@ def statistics_overview(plot, all_rates, all_LVs, all_CCs, all_PSDs):
     plot
     all_raters
     all_LVs
-    all_CCs
+    all_CCs_distances
     all_PSDs
     """
     print('Plotting statistics overview.')
+
+    # extract all_CCs from all_CCs_distances
+    all_CCs = {}
+    for X in all_CCs_distances:
+        all_CCs[X] = all_CCs_distances[X]['ccs']
 
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 4))
     gs = gridspec.GridSpec(1, 1)
@@ -77,6 +82,31 @@ def statistics_overview(plot, all_rates, all_LVs, all_CCs, all_PSDs):
         plot.add_label(axes[i], label)
 
     plot.savefig('statistics_overview')
+    return
+
+
+def corrcoef_distance(plot, all_CCs_distances):
+    """
+    Creates a figure of Pearson correlation coefficients vs. distance.
+
+    Parameters
+    ----------
+    plot
+    all_CCs_distances
+    """
+    print('Plotting correlation coefficients vs. distance.')
+
+    fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 5.))
+    gs = gridspec.GridSpec(1, 1)
+    gs.update(top=0.98, bottom=0.09, left=0.17, right=0.98)
+    ax = plot.plot_layer_panels(
+         gs[0,0],
+         plotfunc=plot.plotfunc_CCs_distance,
+         data=all_CCs_distances,
+         xlabel='distance (mm)',
+         ylabel='CC')   
+
+    plot.savefig('corrcoef_distance')
     return
 
 
@@ -108,13 +138,19 @@ def crosscorrelation_funcs_thalamic_pulses(
     plot, all_CCfuncs_thalamic_pulses):
     """
     Creates a figure with distance-dependent cross-correlation functions for
-    thalamic pulses.
+    thalamic pulses if the data exists.
 
     Parameters
     ----------
     plot
     all_CCfuncs_thalamus_center
     """
+    # only call plot function if data is not empty
+    if 'cc_funcs' not in all_CCfuncs_thalamic_pulses[plot.Y[0]]:
+        print('Not plotting cross-correlation functions with thalamic pulses ' +
+              'because all_CCfuncs_thalamic_pulses is empty.')
+        return
+
     print('Plotting cross-correlation functions with thalamic pulses.')
 
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 4.))

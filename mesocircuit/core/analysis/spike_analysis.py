@@ -12,6 +12,7 @@ import glob
 import h5py
 import numpy as np
 import scipy.sparse as sp
+import scipy.spatial as spatial
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -655,6 +656,12 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 data = self.load_h5_to_sparse_X(X, data)             
             d.update({datatype + '_X': data})
 
+        fn = os.path.join(
+            self.sim_dict['path_processed_data'], 'positions_' + X + '.dat')
+        d.update({'positions_X': 
+            np.loadtxt(
+                fn, dtype=self.ana_dict['read_nest_ascii_dtypes']['positions'])})
+
         # order is important!
         for datatype in self.ana_dict['datatypes_statistics']:
             if i==0:
@@ -671,10 +678,11 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 elif datatype == 'LVs':
                     dataset = self.__compute_lvs(X, d['sptrains_X'])
 
-                # correlation coefficients
-                elif datatype == 'CCs':
-                    dataset = self.__compute_ccs(
-                        X, d['sptrains_X'], self.sim_dict['sim_resolution'])
+                # correlation coefficients with distances
+                elif datatype == 'CCs_distances':
+                    dataset = self.__compute_ccs_distances(
+                        X, d['sptrains_X'], self.sim_dict['sim_resolution'],
+                        d['positions_X'])
 
                 # power spectral densities
                 elif datatype == 'PSDs':
@@ -766,9 +774,10 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         return lvs
 
 
-    def __compute_ccs(self, X, sptrains_X, binsize_time):
+    def __compute_ccs_distances(self, X, sptrains_X, binsize_time, positions):
         """
-        Computes Pearson correlation coefficients, excluding auto-correlations.
+        Computes Pearson correlation coefficients (excluding auto-correlations)
+        and distances between correlated neurons.
 
         Parameters
         ----------
@@ -778,6 +787,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             Sptrains of population X in sparse csr format.
         binsize_time
             Temporal resolution of sptrains_X (in ms).
+        positions
+            Positions of population X.
         """
         min_num_neurons = np.min(self.net_dict['num_neurons'])
         if self.ana_dict['ccs_num_neurons'] == 'auto' or \
@@ -786,10 +797,21 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         else:
             num_neurons = self.ana_dict['ccs_num_neurons']
 
+        # spike trains and node ids
         spt = sptrains_X.toarray()
-        spt = spt[:,:-1] # discard very last time bin 
-        spt = spt[~np.all(spt==0, axis=1)] # remove non-spiking neurons
-        spt = spt[:num_neurons, :] # extract at most num_neurons neurons
+        spt = spt[:,:-1] # discard very last time bin
+        num_neurons_data = sptrains_X.shape[0]
+
+        # mask out non-spiking neurons
+        mask_nrns = np.ones(num_neurons_data, dtype=bool)
+        mask_nrns[np.all(spt==0, axis=1)] = False
+
+        # extract at most num_neurons neurons from spike trains and from
+        # positions
+        spt = spt[mask_nrns][:num_neurons]
+        pos = positions[mask_nrns][:num_neurons]
+
+        # number of spiking neurons included
         num_neurons_spk = np.shape(spt)[0]
 
         if X=='L23E':
@@ -810,7 +832,14 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # (k=1 excludes auto-correlations, k=0 would include them)
         mask = np.triu(np.ones(ccs.shape), k=1).astype(bool)
         ccs = ccs[mask]
-        return ccs
+
+        # pair-distances between correlated neurons]
+        xy_pos = np.vstack((pos['x-position_mm'], pos['y-position_mm'])).T
+        distances = spatial.distance.pdist(xy_pos, metric='euclidean')
+
+        ccs_dic = {'ccs': ccs,
+                   'distances_mm': distances}
+        return ccs_dic
 
 
     def __compute_psds(self, X, sptrains_X, binsize_time):
@@ -838,7 +867,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         Pxx, freq = plt.psd(x, NFFT=self.ana_dict['psd_NFFT'],
                             Fs=Fs, noverlap=noverlap)
         # frequencies (in 1/s), PSDs (in s^{-2} / Hz)
-        psds = np.array([freq, Pxx])
+        psds = {'frequencies_1/s': freq,
+                'psds_s^-2/Hz': Pxx}
         return psds
 
 
@@ -939,7 +969,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             baseline_k = np.mean(cc_func_mean_k[idx_bl])
             cc_func[k,:] = cc_func_mean_k - baseline_k
 
-        cc_func_dic = {'cc_func': cc_func,
+        cc_func_dic = {'cc_funcs': cc_func,
                        'distances_mm': distances,
                        'lags_ms': lags}
         return cc_func_dic

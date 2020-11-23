@@ -214,7 +214,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         print('  Plotting distributions: rates')
         axes[3] = self.plot_layer_panels(gs_cols[0,3:5],
             xlabel='FR (spikes/s)',
-            plotfunc=self.__plotfunc_distributions,
+            plotfunc=self.plotfunc_distributions,
             bins=bins_unscaled * self.plot_dict['distr_max_rate'],
             data=all_rates,
             MaxNLocatorNBins=3,
@@ -224,7 +224,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         print('  Plotting distributions: LVs') 
         axes[4] = self.plot_layer_panels(gs_cols[0,5:7],
             xlabel='LV',
-            plotfunc=self.__plotfunc_distributions,
+            plotfunc=self.plotfunc_distributions,
             bins=bins_unscaled * self.plot_dict['distr_max_lv'],
             data=all_LVs,
             MaxNLocatorNBins=3)
@@ -233,7 +233,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         print('  Plotting distributions: CCs')
         axes[5] = self.plot_layer_panels(gs_cols[0,7:9],
             xlabel='CC',
-            plotfunc=self.__plotfunc_distributions,
+            plotfunc=self.plotfunc_distributions,
             bins=2.*(bins_unscaled-0.5) * self.plot_dict['distr_max_cc'],
             data=all_CCs,
             MaxNLocatorNBins=2)
@@ -242,7 +242,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         print('  Plotting PSDs.')
         axes[6] = self.plot_layer_panels(gs_cols[0,10:],
             xlabel='f (Hz)', ylabel='PSD (s$^{-2}$/Hz)',
-            plotfunc=self.__plotfunc_PSDs,
+            plotfunc=self.plotfunc_PSDs,
             data=all_PSDs)
         return axes
 
@@ -368,7 +368,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
             vmin = -vmax
             linthresh = 0.05
 
-            cc_func = all_CCfuncs_thalamic_pulses[X]['cc_func']
+            cc_func = all_CCfuncs_thalamic_pulses[X]['cc_funcs']
             distances = all_CCfuncs_thalamic_pulses[X]['distances_mm']
             lags = all_CCfuncs_thalamic_pulses[X]['lags_ms']
             dstep = distances[1] - distances[0]
@@ -515,7 +515,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         return ax_label
 
 
-    def __plotfunc_distributions(self, ax, X, i, bins, data, MaxNLocatorNBins):
+    def plotfunc_distributions(self, ax, X, i, bins, data, MaxNLocatorNBins):
         """
         TODO
         """
@@ -529,14 +529,13 @@ class Plotting(base_class.BaseAnalysisPlotting):
         return 
 
     
-    def __plotfunc_PSDs(self, ax, X, i, data):
+    def plotfunc_PSDs(self, ax, X, i, data):
         """
         TODO ax limits and ticklabels
         """
-        if data[X].size == 0:
-            return
+        freq = data[X]['frequencies_1/s']
+        Pxx = data[X]['psds_s^-2/Hz']
 
-        freq, Pxx = data[X]
         # skip frequency of 0 Hz in loglog plot
         freq = freq[1:]
         Pxx = Pxx[1:]
@@ -546,6 +545,27 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
         ax.set_xticks([10**x for x in np.arange(1, 6)])
         ax.set_xlim(right=self.plot_dict['psd_max_freq'])
+        return
+
+
+    def plotfunc_CCs_distance(self,
+    ax, X, i, data, max_num_pairs=10000, markersize_scale=0.5):
+        """
+        """
+        distances = data[X]['distances_mm'][:max_num_pairs]
+        ccs = data[X]['ccs'][:max_num_pairs]
+
+        # loop for reducing zorder-bias
+        nblocks = 10
+        blocksize = int(len(distances) / nblocks)
+        for b in np.arange(nblocks):
+            indices = np.arange(b*blocksize, (b+1)*blocksize)
+            zorder = 2*b + i%2 # alternating for populations
+            ax.scatter(x=distances[indices],
+                       y=ccs[indices],
+                       s=matplotlib.rcParams['lines.markersize'] * markersize_scale,
+                       c=self.plot_dict['pop_colors'][i],
+                       zorder=zorder)
         return
 
 

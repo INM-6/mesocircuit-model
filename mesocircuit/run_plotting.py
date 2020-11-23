@@ -50,7 +50,10 @@ functions = [ \
      [pl, d['all_sptrains'], d['all_pos_sorting_arrays']]],
 
     [figures.statistics_overview,
-     [pl, d['all_rates'], d['all_LVs'], d['all_CCs'],d['all_PSDs']]],
+     [pl, d['all_rates'], d['all_LVs'], d['all_CCs_distances'],d['all_PSDs']]],
+
+    [figures.corrcoef_distance,
+     [pl, d['all_CCs_distances']]],
 
     [figures.spatial_snapshots,
      [pl, d['all_inst_rates_bintime_binspace']]],
