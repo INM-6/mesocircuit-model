@@ -67,7 +67,7 @@ ana_dict = {
     'ccs_time_interval': 5.,
 
     # number of data points used in each block for the FFT
-    'psd_NFFT': 2048,
+    'psd_NFFT': 512,
 
     ## parameters for __compute_cc_funcs_thalamus_center()
     # time lag (in ms)

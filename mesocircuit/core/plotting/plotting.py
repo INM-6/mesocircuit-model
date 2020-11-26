@@ -533,8 +533,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
         """
         TODO ax limits and ticklabels
         """
-        freq = data[X]['frequencies_1/s']
-        Pxx = data[X]['psds_s^-2/Hz']
+        freq = data[X]['frequencies_s-1']
+        Pxx = data[X]['psds_s^-2_Hz-1']
 
         # skip frequency of 0 Hz in loglog plot
         freq = freq[1:]

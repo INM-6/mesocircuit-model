@@ -687,7 +687,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 # power spectral densities
                 elif datatype == 'PSDs':
                     dataset = self.__compute_psds(
-                        X, d['sptrains_X'], self.sim_dict['sim_resolution'])
+                        X, d['sptrains_bintime_X'], self.ana_dict['binsize_time'])
 
                 # distance-dependent cross-correlation functions with the
                 # thalamic population TC only for pulses
@@ -867,8 +867,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         Pxx, freq = plt.psd(x, NFFT=self.ana_dict['psd_NFFT'],
                             Fs=Fs, noverlap=noverlap)
         # frequencies (in 1/s), PSDs (in s^{-2} / Hz)
-        psds = {'frequencies_1/s': freq,
-                'psds_s^-2/Hz': Pxx}
+        psds = {'frequencies_s-1': freq,
+                'psds_s^-2_Hz-1': Pxx}
         return psds
 
 
