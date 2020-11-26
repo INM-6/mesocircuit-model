@@ -351,71 +351,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 is_sparse = False
                 dataset_dtype = int
 
-            self.__write_dataset_to_h5_X(
+            self.write_dataset_to_h5_X(
                 X, datatype, datasets[datatype], is_sparse, dataset_dtype)
-        return
-
-
-    def __write_dataset_to_h5_X(self,
-        X, datatype, dataset, is_sparse, dataset_dtype=None):
-        """
-        Writes sparse and non-sparse datasets for population X to .h5.
-
-        Parameters
-        ----------
-         X
-            Population name.
-        datatype
-            Name of the dataset.
-        dataset
-            The data itself.
-        is_sparse
-            Whether the data shall be written in sparse format.
-        dataset_dtype
-            dtype only needed for non-sparse datasets.
-        """
-        fn = os.path.join(self.sim_dict['path_processed_data'],
-                          datatype + '_' + X + '.h5')
-        f = h5py.File(fn, 'w')
-
-        if is_sparse:
-            if type(dataset) == sp.coo_matrix:
-                d = dataset
-            else:
-                d = dataset.tocoo()
-
-            group = f.create_group(X)
-            group.create_dataset('data_row_col',
-                                 data=np.c_[d.data, d.row, d.col],
-                                 compression='gzip',
-                                 compression_opts=2,
-                                 maxshape = (None, None))
-            group.create_dataset('shape',
-                                 data=d.shape,
-                                 maxshape= (None,))            
-        else:
-            if type(dataset) == dict:
-                group = f.create_group(X)
-                for key,value in dataset.items():
-                    group.create_dataset(key,
-                                         data=value,
-                                         dtype=dataset_dtype,
-                                         compression='gzip',
-                                         compression_opts=2,
-                                         chunks=True,
-                                         shape=value.shape)
-
-
-            else:
-                f.create_dataset(X,
-                                data=dataset,
-                                dtype=dataset_dtype,
-                                compression='gzip',
-                                compression_opts=2,
-                                chunks=True,
-                                shape=dataset.shape)
-        f.flush()
-        f.close()
         return
 
 
@@ -706,7 +643,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                         # TODO print sth
                         dataset=np.array([])
                         
-            self.__write_dataset_to_h5_X(X, datatype, dataset, is_sparse=False)
+            self.write_dataset_to_h5_X(X, datatype, dataset, is_sparse=False)
         return
 
 
