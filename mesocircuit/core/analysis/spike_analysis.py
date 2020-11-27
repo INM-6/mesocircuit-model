@@ -313,9 +313,15 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             is_sparse = True
             dataset_dtype = None
 
+            # positions
+            if datatype == 'positions':
+                datasets[datatype] = self.__positions_X(
+                    X, positions)
+                is_sparse = False
+
             # spike trains with a temporal binsize corresponding to the
             # simulation resolution
-            if datatype == 'sptrains':
+            elif datatype == 'sptrains':
                 datasets[datatype] = self.__time_binned_sptrains_X(
                     X, spikes, self.time_bins_sim, dtype=np.uint8)
 
@@ -327,12 +333,13 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             # time-binned and space-binned spike trains
             elif datatype == 'sptrains_bintime_binspace':
                 datasets[datatype] = self.__time_and_space_binned_sptrains_X(
-                    X, positions, datasets['sptrains_bintime'], dtype=np.uint16) 
+                    X, datasets['positions'], datasets['sptrains_bintime'],
+                    dtype=np.uint16) 
 
             # neuron count in each spatial bin
             elif datatype == 'neuron_count_binspace':
                 datasets[datatype] = self.__neuron_count_per_spatial_bin_X(
-                    X, positions)
+                    X, datasets['positions'])
                 is_sparse = False
                 dataset_dtype = int
 
@@ -347,13 +354,29 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             # position sorting arrays
             elif datatype == 'pos_sorting_arrays':
                 datasets[datatype] = self.__pos_sorting_array_X(
-                    X, positions)
+                    X, datasets['positions'])
                 is_sparse = False
                 dataset_dtype = int
 
             self.write_dataset_to_h5_X(
                 X, datatype, datasets[datatype], is_sparse, dataset_dtype)
         return
+
+
+    def __positions_X(self, X, positions):
+        """
+        Brings positions in format for writing.
+
+        Parameters
+        ----------
+        X
+            Population name.
+        positions
+            Positions of population X.
+        """
+        pos_dic = {'x-position_mm': positions['x-position_mm'],
+                   'y-position_mm': positions['y-position_mm']}
+        return pos_dic
 
 
     def __time_binned_sptrains_X(self, X, spikes, time_bins, dtype):
@@ -590,14 +613,9 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             data = h5py.File(fn, 'r')
             # load .h5 files with sparse data to csr format
             if type(data[X]) == h5py._hl.group.Group and 'data_row_col' in data[X]:
-                data = self.load_h5_to_sparse_X(X, data)             
+                data = self.load_h5_to_sparse_X(X, data)
+            else: data = data[X]
             d.update({datatype + '_X': data})
-
-        fn = os.path.join(
-            self.sim_dict['path_processed_data'], 'positions_' + X + '.dat')
-        d.update({'positions_X': 
-            np.loadtxt(
-                fn, dtype=self.ana_dict['read_nest_ascii_dtypes']['positions'])})
 
         # order is important!
         for datatype in self.ana_dict['datatypes_statistics']:
@@ -608,7 +626,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 dataset = np.array([])
             else:
                 # per-neuron firing rates
-                if datatype == 'rates':
+                if datatype == 'FRs':
                     dataset = self.__compute_rates(X, d['sptrains_X']) 
 
                 # local coefficients of variation
@@ -711,7 +729,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         return lvs
 
 
-    def __compute_ccs_distances(self, X, sptrains_X, binsize_time, positions):
+    def __compute_ccs_distances(self, X, sptrains_X, binsize_time, positions_X):
         """
         Computes Pearson correlation coefficients (excluding auto-correlations)
         and distances between correlated neurons.
@@ -724,7 +742,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             Sptrains of population X in sparse csr format.
         binsize_time
             Temporal resolution of sptrains_X (in ms).
-        positions
+        positions_X
             Positions of population X.
         """
         min_num_neurons = np.min(self.net_dict['num_neurons'])
@@ -746,7 +764,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # extract at most num_neurons neurons from spike trains and from
         # positions
         spt = spt[mask_nrns][:num_neurons]
-        pos = positions[mask_nrns][:num_neurons]
+        x_pos = positions_X['x-position_mm'][mask_nrns][:num_neurons]
+        y_pos = positions_X['y-position_mm'][mask_nrns][:num_neurons]
 
         # number of spiking neurons included
         num_neurons_spk = np.shape(spt)[0]
@@ -771,7 +790,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         ccs = ccs[mask]
 
         # pair-distances between correlated neurons]
-        xy_pos = np.vstack((pos['x-position_mm'], pos['y-position_mm'])).T
+        xy_pos = np.vstack((x_pos, y_pos)).T
         distances = spatial.distance.pdist(xy_pos, metric='euclidean')
 
         ccs_dic = {'ccs': ccs,

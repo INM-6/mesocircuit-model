@@ -52,7 +52,7 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays):
     return
 
 
-def statistics_overview(plot, all_rates, all_LVs, all_CCs_distances, all_PSDs):
+def statistics_overview(plot, all_FRs, all_LVs, all_CCs_distances, all_PSDs):
     """
     Creates a figure with boxplots and distributions of rates, LVs and CCs, and
     plots PSDs.
@@ -60,7 +60,7 @@ def statistics_overview(plot, all_rates, all_LVs, all_CCs_distances, all_PSDs):
     Parameters
     ----------
     plot
-    all_raters
+    all_FRs
     all_LVs
     all_CCs_distances
     all_PSDs
@@ -76,7 +76,7 @@ def statistics_overview(plot, all_rates, all_LVs, all_CCs_distances, all_PSDs):
     gs = gridspec.GridSpec(1, 1)
     gs.update(left=0.1, right=0.98, bottom=0.15, top=0.95)
     axes = plot.plot_statistics_overview(
-        gs[0], all_rates, all_LVs, all_CCs, all_PSDs)
+        gs[0], all_FRs, all_LVs, all_CCs, all_PSDs)
     labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
     for i,label in enumerate(labels):
         plot.add_label(axes[i], label)

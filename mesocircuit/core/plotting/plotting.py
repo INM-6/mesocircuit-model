@@ -175,7 +175,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
 
     def plot_statistics_overview(self,
-        gs, all_rates, all_LVs, all_CCs, all_PSDs):
+        gs, all_FRs, all_LVs, all_CCs, all_PSDs):
         """
         TODO
         """
@@ -187,10 +187,10 @@ class Plotting(base_class.BaseAnalysisPlotting):
         gs_c0 = gridspec.GridSpecFromSubplotSpec(3, 1, subplot_spec=gs_cols[0,:2],
                                                  hspace=0.5)
         
-        # top: rates
+        # top: FRs
         print('  Plotting boxcharts: rates')
         axes[0] = self.plot_boxcharts(gs_c0[0,0],
-            all_rates, xlabel='', ylabel='FR (spikes/s)',
+            all_FRs, xlabel='', ylabel='FR (spikes/s)',
             xticklabels=False)
         
         # middle: LVs
@@ -210,13 +210,13 @@ class Plotting(base_class.BaseAnalysisPlotting):
         bins_unscaled = (np.arange(0, self.plot_dict['distr_num_bins']+1) /
             self.plot_dict['distr_num_bins'])
         
-        # left: rates
-        print('  Plotting distributions: rates')
+        # left: FRs
+        print('  Plotting distributions: FRs')
         axes[3] = self.plot_layer_panels(gs_cols[0,3:5],
             xlabel='FR (spikes/s)',
             plotfunc=self.plotfunc_distributions,
             bins=bins_unscaled * self.plot_dict['distr_max_rate'],
-            data=all_rates,
+            data=all_FRs,
             MaxNLocatorNBins=3,
             ylabel='p (a.u.)')
 

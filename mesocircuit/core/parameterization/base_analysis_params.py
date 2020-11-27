@@ -33,7 +33,8 @@ ana_dict = {
 
     # quantities to be computed during the preprocessing phase.
     # order is important because of dependencies
-    'datatypes_preprocess': np.array(['sptrains',
+    'datatypes_preprocess': np.array(['positions',
+                                      'sptrains',
                                       'sptrains_bintime',
                                       'sptrains_bintime_binspace',
                                       'neuron_count_binspace',
@@ -42,7 +43,7 @@ ana_dict = {
                                       ]),
 
     # quantities to be computed during the statistics phase
-    'datatypes_statistics': np.array(['rates',
+    'datatypes_statistics': np.array(['FRs',
                                       'LVs',
                                       'CCs_distances',
                                       'PSDs',
@@ -57,6 +58,11 @@ ana_dict = {
 
     # sorting axis for raster plot. Options are 'x', 'y' and None.
     'sorting_axis': 'x',
+
+    # startup transient to discard for computing statistics (in ms).
+    # a good choice for consistency is to choose it equal to the presimulation
+    # time sim_dict['t_presim']
+    't_transient': 500.0,
 
     # number of neurons to compute correlation coefficients from.
     # if 'auto': the population size of the smallest population is taken.
