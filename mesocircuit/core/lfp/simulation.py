@@ -73,7 +73,7 @@ RANK = COMM.Get_rank()
 
 # if True, execute full model. If False, do only the plotting.
 # Simulation results must exist.
-PROPERRUN = False
+PROPERRUN = True
 
 # check if mod file for synapse model specified in expsyni.mod is loaded.
 # if not, compile and load it.
@@ -94,7 +94,6 @@ for dic in ['sim_dict', 'net_dict', 'stim_dict']:
     with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
         dics.append(pickle.load(f))
 sim_dict, net_dict, _ = dics  # stim_dict not neeeded here?
-
 
 ##########################################################################
 # set up the file destination
