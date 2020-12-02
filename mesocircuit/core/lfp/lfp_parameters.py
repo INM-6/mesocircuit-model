@@ -347,7 +347,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     for y, _, depth, N_y in PS.y_zip_list:
         PS.populationParams.update({
             y: {
-                'number': 2,  # N_y,
+                'number': N_y,
                 'z_min': depth - 25,
                 'z_max': depth + 25,
             }
@@ -443,8 +443,8 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     PS.synDelayScale = {y: [None for X in PS.X] for y in PS.y}
     # TODO@JSE: NOT SURE WHAT delay* entry in "net_dict" this corresponds to
 
-    # recurrent strength (nA??????????)
-    PS.J_YX = net_dict['weight_matrix_mean']
+    # PSC amplitues
+    PS.J_YX = net_dict['weight_matrix_mean'] * 1e-3  # pA -> nA unit conversion
     PS.J_yX = {}
     for Y, y in PS.mapping_Yy:
         [i] = np.where(np.array(PS.Y) == Y)[0]
