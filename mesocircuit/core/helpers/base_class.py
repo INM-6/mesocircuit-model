@@ -27,15 +27,30 @@ class BaseAnalysisPlotting:
         if self.stim_dict['thalamic_input']:
             self.N_X = np.append(self.N_X, self.stim_dict['num_th_neurons'])
 
-        # temporal bins for raw and resampled spike trains
+        # temporal bins for raw and resampled spike trains,
+        # pre-simulation and actual simulation are combined
         self.time_bins_sim = np.arange(
             0.,
-            self.sim_dict['t_sim'] + self.sim_dict['sim_resolution'],
+            self.sim_dict['t_presim'] + self.sim_dict['t_sim'] + \
+                self.sim_dict['sim_resolution'],
             self.sim_dict['sim_resolution'])
         self.time_bins_rs = np.arange(
             0.,
-            self.sim_dict['t_sim'] + self.ana_dict['binsize_time'],
+            self.sim_dict['t_presim'] + self.sim_dict['t_sim'] + \
+                self.ana_dict['binsize_time'],
             self.ana_dict['binsize_time'])
+
+        # minimum time index for removal of startup transient
+        self.min_time_index_sim = int(self.ana_dict['t_transient'] / \
+                                      self.sim_dict['sim_resolution'])
+        self.min_time_index_rs = int(self.ana_dict['t_transient'] / \
+                                     self.ana_dict['binsize_time'])
+        
+        # time over which statistics are computed (without transient)
+        self.time_statistics = \
+            self.sim_dict['t_presim'] + \
+            self.sim_dict['t_sim'] - \
+            self.ana_dict['t_transient']
 
         # spatial bins
         self.space_bins = np.linspace(-self.net_dict['extent'] / 2.,

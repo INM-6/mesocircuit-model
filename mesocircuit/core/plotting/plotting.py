@@ -262,9 +262,10 @@ class Plotting(base_class.BaseAnalysisPlotting):
         cbar_height=0.02):
         """
         """
-        # start time of thalamic pulses is a possible start_time
-        if start_time == 'th_pulse_start':
-            start_time = self.stim_dict[start_time] - self.sim_dict['t_presim']
+        # if the start time is a string, the respective entry from the stimulus
+        # parameters is used
+        if type(start_time) == str:
+            start_time = self.stim_dict[start_time]
 
         start_frame = int(start_time / binsize_time) 
         end_frame = start_frame + (nframes - 1) * step
@@ -549,23 +550,27 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
 
     def plotfunc_CCs_distance(self,
-    ax, X, i, data, max_num_pairs=10000, markersize_scale=0.5):
+        ax, X, i, data, max_num_pairs=10000, markersize_scale=0.4, nblocks=3):
         """
         """
         distances = data[X]['distances_mm'][:max_num_pairs]
         ccs = data[X]['ccs'][:max_num_pairs]
 
         # loop for reducing zorder-bias
-        nblocks = 10
         blocksize = int(len(distances) / nblocks)
         for b in np.arange(nblocks):
             indices = np.arange(b*blocksize, (b+1)*blocksize)
             zorder = 2*b + i%2 # alternating for populations
-            ax.scatter(x=distances[indices],
-                       y=ccs[indices],
-                       s=matplotlib.rcParams['lines.markersize'] * markersize_scale,
-                       c=self.plot_dict['pop_colors'][i],
-                       zorder=zorder)
+
+            ax.plot(distances[indices],
+                    ccs[indices],
+                    marker='$.$',
+                    markersize=matplotlib.rcParams['lines.markersize'] * markersize_scale,
+                    color=self.plot_dict['pop_colors'][i],
+                    markeredgecolor='none',
+                    linestyle='',
+                    zorder=zorder,
+                    rasterized=True)
         return
 
 
