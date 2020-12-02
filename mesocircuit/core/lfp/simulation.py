@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 '''
-Hybrid LFP scheme example script, applying the methodology with a model
-implementation similar to:
-
-Nicolas Brunel. "Dynamics of Sparsely Connected Networks of Excitatory and
-Inhibitory Spiking Neurons". J Comput Neurosci, May 2000, Volume 8,
-Issue 3, pp 183-208
+LFP simulation script for 4x4 mm2 network model
 
 But the network is implemented with spatial connectivity, i.e., the neurons
 are assigned positions and distance-dependent connectivity in terms of
@@ -46,16 +41,14 @@ if 'DISPLAY' not in os.environ:
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-# from matplotlib.animation import FuncAnimation
 from time import time
 import neuron  # needs to be imported before MPI
 from hybridLFPy import PostProcess, CachedTopoNetwork, TopoPopulation
-# setup_file_dest,
 import pickle
 from periodiclfp import PeriodicLFP
 from lfp_parameters import get_parameters
 from mpi4py import MPI
-
+from plotting import network_lfp_activity_animation
 
 #################################################
 # matplotlib settings                           #
@@ -71,7 +64,7 @@ np.random.seed(SEED)
 
 
 #################################################
-# Initialization of MPI stuff                   #
+# Initialization of MPI variables                   #
 #################################################
 COMM = MPI.COMM_WORLD
 SIZE = COMM.Get_size()
@@ -80,10 +73,10 @@ RANK = COMM.Get_rank()
 
 # if True, execute full model. If False, do only the plotting.
 # Simulation results must exist.
-PROPERRUN = True
+PROPERRUN = False
 
-
-# check if mod file for synapse model specified in alphaisyn.mod is loaded
+# check if mod file for synapse model specified in expsyni.mod is loaded.
+# if not, compile and load it.
 if not hasattr(neuron.h, 'ExpSynI'):
     if RANK == 0:
         os.system('nrnivmodl')
@@ -92,65 +85,54 @@ if not hasattr(neuron.h, 'ExpSynI'):
 
 
 ##########################################################################
-# HYBRID SCHEME PARAMETERS
+# Network parameters
 ##########################################################################
-
 path_parameters = sys.argv[1]
 
 dics = []
 for dic in ['sim_dict', 'net_dict', 'stim_dict']:
     with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
         dics.append(pickle.load(f))
-sim_dict, net_dict, _ = dics  # stim dict not neeeded here?
+sim_dict, net_dict, _ = dics  # stim_dict not neeeded here?
 
 
 ##########################################################################
-# MAIN simulation procedure
+# set up the file destination
 ##########################################################################
-
-# if PROPERRUN:
-#    # set up the file destination, removing old results by default
-#    setup_file_dest(PS, clearDestination=False)
 path_lfp_data = os.path.join(sim_dict['data_path'], 'lfp',
                              os.path.split(path_parameters)[-1])
-# path_lfp_cells_data = os.path.join(path_lfp_data, 'cells')
-# path_lfp_populations_data = os.path.join(path_lfp_data, 'populations')
-# path_lfp_figures = os.path.join(path_lfp_data, 'figures')
 if RANK == 0:
     if not os.path.isdir(os.path.split(path_lfp_data)[0]):
         os.mkdir(os.path.split(path_lfp_data)[0])
     if not os.path.isdir(path_lfp_data):
         os.mkdir(path_lfp_data)
-    '''
-    if not os.path.isdir(path_lfp_cells_data):
-        os.mkdir(path_lfp_cells_data)
-    if not os.path.isdir(path_lfp_populations_data):
-        os.mkdir(path_lfp_populations_data)
-    if not os.path.isdir(path_lfp_figures):
-        os.mkdir(path_lfp_figures)
-    '''
 
 # wait for operation to finish
 COMM.Barrier()
 
+##########################################################################
 # get ParameterSet object instance with all required parameters for LFPs etc.
+##########################################################################
 PS = get_parameters(path_lfp_data=path_lfp_data,
                     sim_dict=sim_dict,
                     net_dict=net_dict)
 
+# create file for simulation time(s) to file
 if RANK == 0:
     simstats = open(os.path.join(PS.savefolder, 'simstats.dat'), 'w')
-
 
 # tic toc
 tic = time()
 ticc = tic
 
+
+##########################################################################
 # Create an object representation containing the spiking activity of the
 # network simulation output that uses sqlite3.
+##########################################################################
 networkSim = CachedTopoNetwork(**PS.network_params)
 
-
+# tic toc
 tocc = time()
 if RANK == 0:
     simstats.write('CachedNetwork {}\n'.format(tocc - ticc))
@@ -237,6 +219,7 @@ if PROPERRUN:
                            savefolder=PS.savefolder,
                            mapping_Yy=PS.mapping_Yy,
                            savelist=PS.savelist,
+                           probes=probes,
                            cells_subfolder=os.path.split(PS.cells_path)[-1],
                            populations_subfolder=os.path.split(
                                PS.populations_path)[-1],
@@ -260,33 +243,15 @@ COMM.Barrier()
 print(('Execution time: %.3f seconds' % (time() - tic)))
 
 
-'''
 ##########################################################################
-# Create animations from simulation output
+# Create animations from simulation output (offline)
 ##########################################################################
-
-# if RANK == 0:
-#    network_lfp_activity_nolabels_animation
-#    fig = network_lfp_activity_nolabels_animation(PS, PSET, networkSim,
-#        T=(100, 200), save_anim=True)
-
-if RANK == 0 and not PROPERRUN:
-    fig = network_activity_animation(
-        PS, PSET, networkSim, T=(
-            100, 300), N_X=(
-            PS.N_X / 16. / PSET.density).astype(int), save_anim=True)
-    plt.close(fig)
-
-if RANK == 0 and not PROPERRUN:
-    fig = lfp_activity_animation(PS, PSET, T=(100, 300), save_anim=True)
-    plt.close(fig)
-
 if RANK == 0 and not PROPERRUN:
     fig = network_lfp_activity_animation(
-        PS, PSET, networkSim, T=(
-            100, 300), N_X=(
-            PS.N_X / 16. / PSET.density).astype(int), save_anim=True)
+        PS, net_dict,
+        networkSim, T=(100, 300),
+        N_X=PS.N_X,
+        save_anim=True)
     plt.close(fig)
 
 COMM.Barrier()
-'''
