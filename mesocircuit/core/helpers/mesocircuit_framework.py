@@ -51,7 +51,7 @@ def evaluate_parameterspaces(
         are lists of parameter set ids.
 
     """
-    
+
     ps_dicts = {}
 
     if custom_ps_dicts != '':
@@ -94,7 +94,7 @@ def evaluate_parameterspaces(
 
                 # readd ana_dict and plot_dict to get full paramset
                 # (deep copy of sub_paramset is needed, otherwise changes to
-                # paramset['sim_dict']['data_path'] survive iterations) 
+                # paramset['sim_dict']['data_path'] survive iterations)
                 paramset = {
                     **copy.deepcopy(sub_paramset),
                     'ana_dict': parameterspaces[paramspace_key]['ana_dict'],
@@ -121,10 +121,10 @@ def evaluate_parameterset(ps_id, paramset):
     ps_id
         Unique parameter set id.
     paramset
-        Parameter set corresponding to ps_id.    
+        Parameter set corresponding to ps_id.
 
     """
-                
+
     # set paths and create directories for parameters, jobscripts and
     # raw and processed output data
     for dname in \
@@ -142,7 +142,7 @@ def evaluate_parameterset(ps_id, paramset):
 
     # write final parameters to file
     for dic in ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict', 'plot_dict']:
-        filename = os.path.join(paramset['sim_dict']['path_parameters'], dic) 
+        filename = os.path.join(paramset['sim_dict']['path_parameters'], dic)
         # pickle for machine readability
         with open(filename + '.pkl', 'wb') as f:
             pickle.dump(paramset[dic], f)
@@ -155,6 +155,7 @@ def evaluate_parameterset(ps_id, paramset):
     # write jobscripts
     write_jobscript('network.sh', paramset)
     write_jobscript('analysis.sh', paramset)
+    write_jobscript('lfp.sh', paramset)
     write_jobscript('plotting.sh', paramset)
     write_jobscript('analysis_and_plotting.sh', paramset)
     return
@@ -172,13 +173,16 @@ def write_jobscript(jsname, paramset):
     paramset
         A parameter set.
     """
-    
+
     if jsname == 'network.sh':
         run_py = ['run_network.py']
         dic = paramset['sim_dict']
     elif jsname == 'analysis.sh':
         run_py = ['run_analysis.py']
         dic = paramset['ana_dict']
+    elif jsname == 'lfp.sh':
+        run_py = ['run_lfp_simulation.py']
+        dic = paramset['sim_dict']
     elif jsname == 'plotting.sh':
         run_py = ['run_plotting.py']
         dic = paramset['plot_dict']
@@ -190,7 +194,7 @@ def write_jobscript(jsname, paramset):
     if dic['computer'] == 'local':
         # use mpirun only for more than 1 MPI processes
         if dic['num_mpi_per_node'] > 1:
-            run_cmd = 'mpirun -n {} '.format(dic['num_mpi_per_node'])
+            run_cmd = 'mpirun '
         else:
             run_cmd = ''
     elif dic['computer'] == 'jureca':
@@ -215,7 +219,7 @@ def write_jobscript(jsname, paramset):
             threads = int(cores / dic['num_mpi_per_node'])
         else:
             threads = dic['local_num_threads']
-        
+
         stdout = os.path.join(paramset['sim_dict']['path_stdout'],
                               jsname.split('.')[0] + '.txt')
 
@@ -287,7 +291,7 @@ def run_jobs(parameterview, jobscripts, run_type='run_locally',
     """
     Submits given jobscripts of all parameter combinations in parameterview to
     JURECA.
-    
+
     Parameters
     ----------
     parameterview
@@ -316,7 +320,7 @@ def run_jobs(parameterview, jobscripts, run_type='run_locally',
                     jobs = [os.path.join(
                         data_path, 'jobscripts', ps_id, js) for js in jobscripts]
 
-                    job_spec = ' for ' + paramspace_key + ' - ' + ps_id + '.' 
+                    job_spec = ' for ' + paramspace_key + ' - ' + ps_id + '.'
 
                     # run locally one job after the other
                     if run_type == 'run_locally':
@@ -328,7 +332,7 @@ def run_jobs(parameterview, jobscripts, run_type='run_locally',
                     elif run_type == 'submit_jureca':
                         # submit first job
                         print('Submitting ' + jobscripts[0] + job_spec)
-                        submit = 'sbatch ' + jobs[0] 
+                        submit = 'sbatch ' + jobs[0]
                         output = subprocess.getoutput(submit)
                         print(output)
                         jobid = output.split(' ')[-1]
@@ -355,5 +359,5 @@ class NumpyEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
-        
+
         return json.JSONEncoder.default(self, obj)

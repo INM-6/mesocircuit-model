@@ -204,6 +204,9 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     net_dict: dict
         network simulation parameter dictionary
     '''
+    # get source directory
+    file_prefix = os.path.split(__file__)[0]
+
     # initialize parameter object
     PS = ParamsLFP(dict(
         savefolder=path_lfp_data,
@@ -255,7 +258,8 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
                                   [-587.1, -922.2],
                                   [-922.2, -1170.0],
                                   [-1170.0, -1491.7]]),
-        connectivity_table='binzegger_connectivity_table.json',
+        connectivity_table=os.path.join(file_prefix,
+                                        'binzegger_connectivity_table.json'),
         sharedCellParams={
             'cm': 1.0,
             'Ra': 150,
@@ -285,10 +289,10 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     # define morphology file paths
     testing = True  # if True, use ball-and-stick type morphologies
     if testing:
-        PS.PATH_m_y = 'morphologies'
+        PS.PATH_m_y = os.path.join(file_prefix, 'morphologies')
         PS.m_y = [Y + '_' + y + '.hoc' for Y, y in PS.mapping_Yy]
     else:
-        PS.PATH_m_y = os.path.join('morphologies', 'Hagen2016')
+        PS.PATH_m_y = os.path.join(file_prefix, 'morphologies', 'Hagen2016')
         PS.m_y = [
             'L23E_oi24rpy1.hoc',
             'L23I_oi38lbc1.hoc',

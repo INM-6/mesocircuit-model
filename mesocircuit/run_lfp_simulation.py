@@ -45,10 +45,10 @@ from time import time
 import neuron  # needs to be imported before MPI
 from hybridLFPy import PostProcess, CachedTopoNetwork, TopoPopulation
 import pickle
-from periodiclfp import PeriodicLFP
-from lfp_parameters import get_parameters
+from core.lfp.periodiclfp import PeriodicLFP
+from core.lfp.lfp_parameters import get_parameters
+from core.lfp.plotting import network_lfp_activity_animation
 from mpi4py import MPI
-from plotting import network_lfp_activity_animation
 
 #################################################
 # matplotlib settings                           #
@@ -77,12 +77,17 @@ PROPERRUN = True
 
 # check if mod file for synapse model specified in expsyni.mod is loaded.
 # if not, compile and load it.
-if not hasattr(neuron.h, 'ExpSynI'):
+nmodl_dir = os.path.join('core', 'lfp')
+try:
+    assert neuron.load_mechanisms(nmodl_dir)
+except AssertionError:
     if RANK == 0:
+        cwd = os.getcwd()
+        os.chdir(nmodl_dir)
         os.system('nrnivmodl')
+        os.chdir(cwd)
     COMM.Barrier()
-    neuron.load_mechanisms('.')
-
+neuron.load_mechanisms(nmodl_dir)
 
 ##########################################################################
 # Network parameters
