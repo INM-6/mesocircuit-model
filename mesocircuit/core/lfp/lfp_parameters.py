@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+'''derived parameters for hybridLFPy forward-model predictions'''
 import os
 import numpy as np
 from parameters import ParameterSet
