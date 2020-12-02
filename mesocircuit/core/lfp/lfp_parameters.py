@@ -241,6 +241,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         ),
         X=net_dict['populations'].tolist(),  # add TC!!!
         Y=net_dict['populations'].tolist(),
+        N_X=net_dict['num_neurons'],
         N_Y=net_dict['num_neurons'].tolist(),
         y_in_Y=[
             [['p23'], ['b23', 'nb23']],
