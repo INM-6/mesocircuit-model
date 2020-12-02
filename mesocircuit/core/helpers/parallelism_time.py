@@ -8,6 +8,7 @@ COMM = MPI.COMM_WORLD
 SIZE = COMM.Get_size()
 RANK = COMM.Get_rank()
 
+
 def run_parallel_functions_sequentially(funcs, filename):
     '''
     Runs parallelized functions one ofter the other and measures time.
@@ -35,7 +36,7 @@ def run_parallel_functions_sequentially(funcs, filename):
         else:
             fun = func
             fun()
-    
+
         end_time = time.time()
         times_local = np.array([end_time - start_time])
 
@@ -44,7 +45,6 @@ def run_parallel_functions_sequentially(funcs, filename):
 
     print_times(filename, logtime_data)
     COMM.Barrier()
-    return
 
 
 def run_serial_functions_in_parallel(funcs, filename):
@@ -72,11 +72,11 @@ def run_serial_functions_in_parallel(funcs, filename):
     num_its_rank = np.ceil(num_its / num_procs).astype(int)
 
     times_local = np.zeros(num_its_rank)
-    times_global = np.zeros(num_its_rank * SIZE)   
+    times_global = np.zeros(num_its_rank * SIZE)
 
     COMM.Barrier()
     if RANK < num_procs:
-        for i,func in enumerate(funcs):
+        for i, func in enumerate(funcs):
             if RANK == int(i / num_its_rank):
                 start_time = time.time()
 
@@ -86,7 +86,7 @@ def run_serial_functions_in_parallel(funcs, filename):
                 else:
                     fun = func
                     fun()
-  
+
                 end_time = time.time()
                 times_local[i % num_its_rank] += end_time - start_time
 
@@ -98,19 +98,18 @@ def run_serial_functions_in_parallel(funcs, filename):
     # set up logtime_data structure
     # extract all function names
     func_names = []
-    for i,func in enumerate(funcs):
+    for i, func in enumerate(funcs):
         if type(func) == list:
             fun = func[0]
         else:
             fun = func
         func_names.append(fun.__name__)
     func_names = np.array(func_names)
-    
+
     logtime_data = []
     for i in np.arange(num_procs):
         # string with all functions executed on rank i
-        func_names_rank = func_names[\
-            np.where(np.arange(num_procs) == int(i / num_its_rank))]
+        func_names_rank = func_names[np.where(np.arange(num_procs) == int(i / num_its_rank))]
         func_names_rank = ','.join(func_names_rank)
 
         # times are 0 for all but rank i
@@ -119,7 +118,6 @@ def run_serial_functions_in_parallel(funcs, filename):
         logtime_data.append([func_names_rank, list(logtime)])
 
     print_times(filename, logtime_data)
-    return
 
 
 def print_times(filename, logtimes):
@@ -135,7 +133,7 @@ def print_times(filename, logtimes):
     '''
     if RANK != 0:
         return
-    
+
     x = PrettyTable()
     x.field_names = [''] + [logtime[0] for logtime in logtimes]
 
@@ -148,7 +146,6 @@ def print_times(filename, logtimes):
 
     print('\nTime measurements in s: ' + filename)
     print(x, '\n')
-    return
 
 
 def parallelize_by_array(array, func, result_dtype=None, *args):
@@ -189,7 +186,7 @@ def parallelize_by_array(array, func, result_dtype=None, *args):
 
     COMM.Barrier()
     if RANK < num_procs:
-        for i,val in enumerate(array):
+        for i, val in enumerate(array):
             if RANK == int(i / num_its_rank):
                 res_local[i % num_its_rank] = func(i, val, *args)
     else:
@@ -197,5 +194,5 @@ def parallelize_by_array(array, func, result_dtype=None, *args):
     # gather and concatenate MPI-local results
     COMM.Allgather(res_local, res_global)
     result = res_global[:num_its]
-    COMM.Barrier() 
-    return result  
+    COMM.Barrier()
+    return result

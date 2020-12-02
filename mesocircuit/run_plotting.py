@@ -45,12 +45,12 @@ for datatype in np.append(ana_dict['datatypes_preprocess'],
 # Plot figures and measure times.
 # Time measurements are printed.
 
-functions = [ \
+functions = [
     [figures.raster,
      [pl, d['all_sptrains'], d['all_pos_sorting_arrays']]],
 
     [figures.statistics_overview,
-     [pl, d['all_FRs'], d['all_LVs'], d['all_CCs_distances'],d['all_PSDs']]],
+     [pl, d['all_FRs'], d['all_LVs'], d['all_CCs_distances'], d['all_PSDs']]],
 
     [figures.corrcoef_distance,
      [pl, d['all_CCs_distances']]],

@@ -27,7 +27,9 @@ from ..parameterization.base_plotting_params import plot_dict
 
 
 def evaluate_parameterspaces(
-    custom_ps_dicts='', paramspace_keys=[], with_base_params=False):
+        custom_ps_dicts='',
+        paramspace_keys=[],
+        with_base_params=False):
     """
     Evaluates the parameter spaces as specified by the arguments.
 
@@ -51,7 +53,7 @@ def evaluate_parameterspaces(
         are lists of parameter set ids.
 
     """
-    
+
     ps_dicts = {}
 
     if custom_ps_dicts != '':
@@ -66,26 +68,30 @@ def evaluate_parameterspaces(
     parameterview = {}
 
     for paramspace_key in sorted(ps_dicts):
-        if (len(paramspace_keys)==0 or # all keys
-            paramspace_key in paramspace_keys or # selected key(s)
-            paramspace_key=='base'): # base parameters if with_base_params
+        if (len(paramspace_keys) == 0 or               # all keys
+                paramspace_key in paramspace_keys or   # selected key(s)
+                paramspace_key == 'base'):             # base parameters if with_base_params
+
             parameterview[paramspace_key] = []
 
             parameterspaces[paramspace_key] = ps.ParameterSpace({})
             # start with default parameters and update
-            for dic,vdic in zip(
-                ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict', 'plot_dict'],
-                [sim_dict, net_dict, stim_dict, ana_dict, plot_dict]):
-                parameterspaces[paramspace_key][dic] = dict(vdic) # copy is needed
+            for dic, vdic in [
+                    ('sim_dict', sim_dict),
+                    ('net_dict', net_dict),
+                    ('stim_dict', stim_dict),
+                    ('ana_dict', ana_dict),
+                    ('plot_dict', plot_dict)]:
+                parameterspaces[paramspace_key][dic] = dict(vdic)   # copy is needed
                 if dic in ps_dicts[paramspace_key]:
                     parameterspaces[paramspace_key][dic].update(
-                    ps_dicts[paramspace_key][dic])
+                        ps_dicts[paramspace_key][dic])
 
             # only sim_dict, net_dict and stim_dict enable parameter spaces
             # and are used to compute a unique id
             dicts_unique = ['sim_dict', 'net_dict', 'stim_dict']
             sub_paramspace = ps.ParameterSpace(
-                {k:parameterspaces[paramspace_key][k] for k in dicts_unique})
+                {k: parameterspaces[paramspace_key][k] for k in dicts_unique})
 
             for sub_paramset in sub_paramspace.iter_inner():
                 ps_id = get_unique_id(sub_paramset)
@@ -94,7 +100,7 @@ def evaluate_parameterspaces(
 
                 # readd ana_dict and plot_dict to get full paramset
                 # (deep copy of sub_paramset is needed, otherwise changes to
-                # paramset['sim_dict']['data_path'] survive iterations) 
+                # paramset['sim_dict']['data_path'] survive iterations)
                 paramset = {
                     **copy.deepcopy(sub_paramset),
                     'ana_dict': parameterspaces[paramspace_key]['ana_dict'],
@@ -121,18 +127,20 @@ def evaluate_parameterset(ps_id, paramset):
     ps_id
         Unique parameter set id.
     paramset
-        Parameter set corresponding to ps_id.    
-
+        Parameter set corresponding to ps_id.
     """
-                
     # set paths and create directories for parameters, jobscripts and
     # raw and processed output data
-    for dname in \
-        ['parameters', 'jobscripts', 'raw_data', 'processed_data', 'plots',
-         'stdout']:
+    for dname in [
+            'parameters',
+            'jobscripts',
+            'raw_data',
+            'processed_data',
+            'plots',
+            'stdout']:
         path = os.path.join(paramset['sim_dict']['data_path'], dname, ps_id)
         if not os.path.isdir(path):
-            os.makedirs(path) # also creates sub directories
+            os.makedirs(path)       # also creates sub directories
         paramset['sim_dict']['path_' + dname] = path
 
     # compute dependent network parameters
@@ -142,7 +150,7 @@ def evaluate_parameterset(ps_id, paramset):
 
     # write final parameters to file
     for dic in ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict', 'plot_dict']:
-        filename = os.path.join(paramset['sim_dict']['path_parameters'], dic) 
+        filename = os.path.join(paramset['sim_dict']['path_parameters'], dic)
         # pickle for machine readability
         with open(filename + '.pkl', 'wb') as f:
             pickle.dump(paramset[dic], f)
@@ -157,7 +165,6 @@ def evaluate_parameterset(ps_id, paramset):
     write_jobscript('analysis.sh', paramset)
     write_jobscript('plotting.sh', paramset)
     write_jobscript('analysis_and_plotting.sh', paramset)
-    return
 
 
 def write_jobscript(jsname, paramset):
@@ -172,7 +179,6 @@ def write_jobscript(jsname, paramset):
     paramset
         A parameter set.
     """
-    
     if jsname == 'network.sh':
         run_py = ['run_network.py']
         dic = paramset['sim_dict']
@@ -184,7 +190,7 @@ def write_jobscript(jsname, paramset):
         dic = paramset['plot_dict']
     elif jsname == 'analysis_and_plotting.sh':
         run_py = ['run_analysis.py', 'run_plotting.py']
-        dic = paramset['ana_dict'] # use configuration from analysis
+        dic = paramset['ana_dict']      # use configuration from analysis
 
     # computer-dependent run command
     if dic['computer'] == 'local':
@@ -215,7 +221,7 @@ def write_jobscript(jsname, paramset):
             threads = int(cores / dic['num_mpi_per_node'])
         else:
             threads = dic['local_num_threads']
-        
+
         stdout = os.path.join(paramset['sim_dict']['path_stdout'],
                               jsname.split('.')[0] + '.txt')
 
@@ -234,9 +240,8 @@ def write_jobscript(jsname, paramset):
         jobscript += executable
 
     with open(os.path.join(paramset['sim_dict']['path_jobscripts'],
-        jsname), 'w') as f:
+              jsname), 'w') as f:
         f.write(jobscript)
-    return
 
 
 def get_unique_id(d):
@@ -287,7 +292,7 @@ def run_jobs(parameterview, jobscripts, run_type='run_locally',
     """
     Submits given jobscripts of all parameter combinations in parameterview to
     JURECA.
-    
+
     Parameters
     ----------
     parameterview
@@ -316,32 +321,31 @@ def run_jobs(parameterview, jobscripts, run_type='run_locally',
                     jobs = [os.path.join(
                         data_path, 'jobscripts', ps_id, js) for js in jobscripts]
 
-                    job_spec = ' for ' + paramspace_key + ' - ' + ps_id + '.' 
+                    job_spec = ' for ' + paramspace_key + ' - ' + ps_id + '.'
 
                     # run locally one job after the other
                     if run_type == 'run_locally':
-                        for i,js in enumerate(jobs):
+                        for i, js in enumerate(jobs):
                             print('Running ' + jobscripts[i] + job_spec)
-                            os.system('sh ' +  js)
+                            os.system('sh ' + js)
 
                     # submit jobs to jureca
                     elif run_type == 'submit_jureca':
                         # submit first job
                         print('Submitting ' + jobscripts[0] + job_spec)
-                        submit = 'sbatch ' + jobs[0] 
+                        submit = 'sbatch ' + jobs[0]
                         output = subprocess.getoutput(submit)
                         print(output)
                         jobid = output.split(' ')[-1]
                         # submit potential following jobs with dependency
                         if len(jobs) > 1:
-                            for i,js in enumerate(jobs[1:]):
+                            for i, js in enumerate(jobs[1:]):
                                 print('Submitting ' + jobscripts[i+1] + job_spec)
-                                submit = 'sbatch --dependency=afterok:' + jobid + ' ' +  js
+                                submit = 'sbatch --dependency=afterok:' + jobid + ' ' + js
                                 output = subprocess.getoutput(submit)
                                 print(output)
                                 jobid = output.split(' ')[-1]
                     submitted_jobs.append(ps_id)
-    return
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -355,5 +359,5 @@ class NumpyEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
-        
+
         return json.JSONEncoder.default(self, obj)

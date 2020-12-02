@@ -9,6 +9,7 @@ base parameter dictionaries.
 import numpy as np
 import copy
 
+
 def derive_dependent_parameters(base_net_dict, base_stim_dict):
     """
     Derives network and stimulus parameters which depend on the base parameters.
@@ -41,7 +42,7 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
             net_dict['delay_exc_mean'],
             net_dict['delay_inh_mean'],
             net_dict['num_pops'])
-    
+
     elif net_dict['delay_type'] == 'linear':
         # matrix of delay offsets
         net_dict['delay_offset_matrix'] = get_exc_inh_matrix(
@@ -102,16 +103,16 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
 
         # average indegrees in 1mm2 network
         indegrees_1mm2 = (num_synapses_1mm2 /
-                          num_neurons_1mm2[:,np.newaxis])
+                          num_neurons_1mm2[:, np.newaxis])
 
     elif net_dict['base_model'] == 'SvA2018':
         indegrees_1mm2 = net_dict['indegrees_1mm2_SvA2018']
 
     net_dict['indegrees_1mm2'] = np.round(indegrees_1mm2).astype(int)
-                      
+
     # indegrees are scaled only if connect_method is 'fixedindegree_exp';
     # otherwise the indegrees from the 1mm2 network are preserved
-    if net_dict['connect_method'] == 'fixedindegree_exp': 
+    if net_dict['connect_method'] == 'fixedindegree_exp':
         # scale indegrees from disc of 1mm2 to disc of radius extent/2.
         net_dict['K_area_scaling'] = scale_indegrees_to_extent(
             net_dict['beta'], net_dict['extent'])
@@ -166,7 +167,6 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     net_dict['weight_ext'] = PSC_ext
     net_dict['DC_amp'] = DC_amp
 
-
     # stimulus parameters
     stim_dict = copy.copy(base_stim_dict)
 
@@ -187,7 +187,6 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
 
         # TODO just for first test
         num_th_synapses = num_th_synapses_1mm2
-
 
         stim_dict['weight_th'] = stim_dict['PSP_th'] * PSC_over_PSP
         if net_dict['K_scaling'] != 1:
@@ -226,10 +225,9 @@ def scale_indegrees_to_extent(beta, extent):
     radius_area = extent / 2.
 
     K_indegree_scaling = (expression(beta, radius_area) /
-                          expression(beta, radius_1mm2)) 
+                          expression(beta, radius_1mm2))
 
     return K_indegree_scaling
-
 
 
 def get_exc_inh_matrix(val_exc, val_inh, num_pops):
@@ -324,7 +322,7 @@ def postsynaptic_potential_to_current(C_m, tau_m, tau_syn):
         Conversion factor to be multiplied to a `PSP` (in mV) to obtain a `PSC`
         (in pA).
 
-    """
+    """  # noqa
     sub = 1. / (tau_syn - tau_m)
     pre = tau_m * tau_syn / C_m * sub
     frac = (tau_m / tau_syn) ** sub

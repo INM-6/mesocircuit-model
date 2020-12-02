@@ -1,7 +1,7 @@
 import os
 import parameters as ps
 
-### definitions for local simulations ###
+# definitions for local simulations
 local_data_path = os.path.join(os.getcwd(), 'data')
 
 local_sim_dict = {
@@ -12,22 +12,22 @@ local_sim_dict = {
 
 local_ana_dict = {
     'computer': 'local',
-    #'num_mpi_per_node': 1,
+    # 'num_mpi_per_node': 1,
     }
 
 local_plot_dict = {
     'computer': 'local',
-    #'num_mpi_per_node': 1,
+    # 'num_mpi_per_node': 1,
     }
 
 local_sim_ana_plot_dicts = {
     'sim_dict': local_sim_dict,
     'ana_dict': local_ana_dict,
-    'plot_dict': local_plot_dict,  
+    'plot_dict': local_plot_dict,
     }
 
 
-### model-specific definitions ###
+# model-specific definitions
 net_dict_microcircuit = {
     'base_model': 'PD2014',
     'delay_type': 'normal',

@@ -6,9 +6,10 @@ Definition of figures plotted with Plotting class in plotting.py.
 
 import numpy as np
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('Agg')   # noqa
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+
 
 def raster(plot, all_sptrains, all_pos_sorting_arrays):
     """
@@ -33,14 +34,13 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays):
             rate_estim * \
             np.sum(plot.net_dict['num_neurons'])
         raster_sample_step = 1 + int(full_num_dots_estim / target_num_dots)
-        print('  Automatically set raster_sample_step to ' + 
-                str(raster_sample_step) + '.')
+        print('  Automatically set raster_sample_step to ' + str(raster_sample_step) + '.')
 
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 5.))
     gs = gridspec.GridSpec(1, 1)
     gs.update(top=0.98, bottom=0.1, left=0.17, right=0.92)
     ax = plot.plot_raster(
-        gs[0,0],
+        gs[0, 0],
         plot.X,
         all_sptrains,
         all_pos_sorting_arrays,
@@ -49,7 +49,6 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays):
         raster_sample_step)
 
     plot.savefig('raster', eps_conv=True)
-    return
 
 
 def statistics_overview(plot, all_FRs, all_LVs, all_CCs_distances, all_PSDs):
@@ -78,11 +77,10 @@ def statistics_overview(plot, all_FRs, all_LVs, all_CCs_distances, all_PSDs):
     axes = plot.plot_statistics_overview(
         gs[0], all_FRs, all_LVs, all_CCs, all_PSDs)
     labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
-    for i,label in enumerate(labels):
+    for i, label in enumerate(labels):
         plot.add_label(axes[i], label)
 
     plot.savefig('statistics_overview')
-    return
 
 
 def corrcoef_distance(plot, all_CCs_distances):
@@ -100,14 +98,13 @@ def corrcoef_distance(plot, all_CCs_distances):
     gs = gridspec.GridSpec(1, 1)
     gs.update(top=0.98, bottom=0.09, left=0.17, right=0.98)
     ax = plot.plot_layer_panels(
-         gs[0,0],
+         gs[0, 0],
          plotfunc=plot.plotfunc_CCs_distance,
          data=all_CCs_distances,
          xlabel='distance (mm)',
-         ylabel='CC')   
+         ylabel='CC')
 
     plot.savefig('corrcoef_distance')
-    return
 
 
 def spatial_snapshots(plot, all_inst_rates_bintime_binspace):
@@ -125,17 +122,15 @@ def spatial_snapshots(plot, all_inst_rates_bintime_binspace):
     gs = gridspec.GridSpec(1, 1)
     gs.update(left=0.17, right=0.97, top=0.99, bottom=0.2)
     ax = plot.plot_spatial_snapshots(
-         gs[0,0],
+         gs[0, 0],
          plot.X,
          all_inst_rates_bintime_binspace,
          plot.ana_dict['binsize_time'],
          plot.ana_dict['binsize_space'])
     plot.savefig('spatial_snapshots')
-    return
 
 
-def crosscorrelation_funcs_thalamic_pulses(
-    plot, all_CCfuncs_thalamic_pulses):
+def crosscorrelation_funcs_thalamic_pulses(plot, all_CCfuncs_thalamic_pulses):
     """
     Creates a figure with distance-dependent cross-correlation functions for
     thalamic pulses if the data exists.
@@ -157,8 +152,7 @@ def crosscorrelation_funcs_thalamic_pulses(
     gs = gridspec.GridSpec(1, 1)
     gs.update(left=0.22, right=0.97, top=0.99, bottom=0.22)
     ax = plot.plot_crosscorrelation_funcs_thalamic_pulses(
-         gs[0,0],
+         gs[0, 0],
          plot.Y,
          all_CCfuncs_thalamic_pulses)
     plot.savefig('crosscorrelation_funcs_thalamic_pulses')
-    return

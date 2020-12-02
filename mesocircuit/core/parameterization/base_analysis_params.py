@@ -27,7 +27,7 @@ ana_dict = {
     # settings for writing .dat files similar to ASCII files from NEST
     'write_ascii': {
         'spike_recorder': {'sortby': 'time_ms',
-                           'fmt' : ['%d', '%.3f']},
+                           'fmt': ['%d', '%.3f']},
         'positions': {'sortby': 'nodeid',
                       'fmt': ['%d', '%f', '%f']}},
 
@@ -75,7 +75,7 @@ ana_dict = {
     # number of data points used in each block for the FFT
     'psd_NFFT': 512,
 
-    ## parameters for __compute_cc_funcs_thalamus_center()
+    # parameters for __compute_cc_funcs_thalamus_center()
     # time lag (in ms)
     'cc_funcs_tau': 25.0,
     # number of bins along the diagonal, must be an even number.

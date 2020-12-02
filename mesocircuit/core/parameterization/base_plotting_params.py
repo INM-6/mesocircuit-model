@@ -52,22 +52,23 @@ plot_dict = {
                             'L6E', 'L6I',
                             'TC']),
     # population colors
-    'pop_colors': np.array(['#114477',   # L23E blue
-                            '#77AADD',   # L23I
-                            '#117744',   # L4E green
-                            '#88CCAA',   # L4I
-                            '#774411',   # L5E brown
-                            '#DDAA77',   # L5I
-                            '#771155',   # L6E pompadour
-                            '#CC99BB',   # L6I
-                            '#696969']), # TC  dimgrey
+    'pop_colors': np.array(['#114477',     # L23E blue
+                            '#77AADD',     # L23I
+                            '#117744',     # L4E green
+                            '#88CCAA',     # L4I
+                            '#774411',     # L5E brown
+                            '#DDAA77',     # L5I
+                            '#771155',     # L6E pompadour
+                            '#CC99BB',     # L6I
+                            '#696969']),   # TC  dimgrey
     # neuron type colors
-    'type_colors': np.array(['#595289',   # E, blue pastel
-                             '#AF143C',   # I, red pastel
-                             '#696969']), # other, dimgrey
+    'type_colors': np.array(['#595289',    # E, blue pastel
+                             '#AF143C',    # I, red pastel
+                             '#696969']),  # other, dimgrey
 
 
-    ## parameters for plot_raster()
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    # parameters for plot_raster()
     # time interval for short raster plots (in ms)
     'raster_time_interval': np.array([500., 1500.]),
     # sample step of raster plot (1 means all neurons are shown).
@@ -75,7 +76,8 @@ plot_dict = {
     # computed
     'raster_sample_step': 'auto',
 
-    ## parameters for plot_statistics_overview()
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    # parameters for plot_statistics_overview()
     # number of bins for distributions
     'distr_num_bins': 30,
     # maximum bin for rate distributions (in Hz), first is at 0
@@ -88,7 +90,8 @@ plot_dict = {
     # maximum frequency to show for PSDs (in Hz)
     'psd_max_freq': 1000,
 
-    ## parameters for plot_spatial_snapshots()
+    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+    # parameters for plot_spatial_snapshots()
     # maximum rate on color bar (in spikes/s)
     'snapshots_max_rate': 1000.0
 
