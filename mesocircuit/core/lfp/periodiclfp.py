@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+'''derived class definitions for LFP predictions'''
 import numpy as np
 from lfpykit import RecExtElectrode
 
@@ -10,8 +12,9 @@ class PeriodicLFP(RecExtElectrode):
     Parameters
     ----------
     side_length: float > 0
-        periodicity along lateral x and y direction
+        periodicity along lateral x and y direction. Default: 4000 µm
     order: int >= 1
+        number of "mirror" sources. Default: 1
 
     **kwargs:
         lfpykit.RecExtElectrode parameters

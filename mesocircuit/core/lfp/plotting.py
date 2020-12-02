@@ -73,15 +73,14 @@ def network_lfp_activity_animation(PSET, net_dict, networkSim, T=(
                 np.histogram(t, bins=tbins)[0] * 200, kernel, 'same')
 
         # scatter plot of positions, will not be shown in animation
-        scat[X] = ax.scatter(spikes[X]['pos'][:,
-                                              0],
-                             spikes[X]['pos'][:,
-                                              1],
-                             s=np.random.rand(spikes[X]['size'].shape[0]) * 100,
-                             marker='^' if 'E' in X else '*',
-                             facecolors=networkSim.colors[j],
-                             edgecolors='none',
-                             label=X)
+        scat[X] = ax.scatter(
+            spikes[X]['pos'][:, 0],
+            spikes[X]['pos'][:, 1],
+            s=np.random.rand(spikes[X]['size'].shape[0]) * 100,
+            marker='^' if 'E' in X else '*',
+            facecolors=networkSim.colors[j],
+            edgecolors='none',
+            label=X)
 
     # set legend
     ax.legend(loc=(0.65, -0.2), ncol=3, fontsize=10, frameon=False)
