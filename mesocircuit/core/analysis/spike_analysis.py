@@ -169,7 +169,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         datatype='positions').
         Node ids and, if applicable also, spike times are processed.
         The processed node ids start at 0 for each population.
-        The pre-simulation time is subtracted.
+        Files from pre-simulation and actual simulation are combined.
         The final processed data is written to file.
 
         Parameters
@@ -195,9 +195,10 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             print('  Merging raw files:', datatype)
 
         # gather names of single files
+        # combine files from pre-simulation and actual simulation
         single_files = glob.glob(os.path.join(
             self.sim_dict['path_raw_data'],
-            datatype + '_' + X + '*.dat'))
+            '*' + datatype + '_' + X + '*.dat'))
 
         # load data from single files and combine them
         read_dtype = self.ana_dict['read_nest_ascii_dtypes'][datatype]
@@ -215,10 +216,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # change from raw to processed node ids:
         # subtract the first one of the raw ids in each population
         comb_data['nodeid'] -= self.nodeids_raw[i][0]
-
-        if 'time_ms' in comb_data.dtype.names:
-            # subtract the pre-simulation time
-            comb_data['time_ms'] -= self.sim_dict['t_presim']
 
         # sort the final data
         comb_data = np.sort(
@@ -593,7 +590,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         with array=self.X.
         Corresponding outer function: self.compute_statistics()
 
-        Each function computing a dataset already writes it to .h5 file.
+        Startup transients are removed from temporal data for computing the
+        statistics.
 
         Parameters
         ----------
@@ -609,14 +607,38 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         d = {}
         for datatype in self.ana_dict['datatypes_preprocess']:
             datatype_X = datatype + '_' + X
+            key = datatype + '_X'
             fn = os.path.join(self.sim_dict['path_processed_data'], datatype_X + '.h5')
             data = h5py.File(fn, 'r')
             # load .h5 files with sparse data to csr format
             if type(data[X]) == h5py._hl.group.Group and 'data_row_col' in data[X]:
                 data = self.load_h5_to_sparse_X(X, data)
             else: data = data[X]
-            d.update({datatype + '_X': data})
 
+            # non-temporal data
+            if datatype in \
+                ['positions',
+                 'neuron_count_binspace',
+                 'pos_sorting_arrays']:
+                 d.update({key: data})
+
+            # remove startup transient from data with simulation resolution
+            elif datatype in \
+                ['sptrains']:
+                d.update({key: data[:, self.min_time_index_sim:]})
+
+            # remove startup transient from temporally binned data
+            elif datatype in \
+                ['sptrains_bintime',
+                 'sptrains_bintime_binspace',
+                 'inst_rates_bintime_binspace']:
+                d.update({key: data[:, self.min_time_index_rs:]})
+
+            else:
+                raise Exception(
+                    'Handling undefined for datatype: ', datatype)
+
+        # compute statistics
         # order is important!
         for datatype in self.ana_dict['datatypes_statistics']:
             if i==0:
@@ -627,7 +649,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             else:
                 # per-neuron firing rates
                 if datatype == 'FRs':
-                    dataset = self.__compute_rates(X, d['sptrains_X']) 
+                    dataset = self.__compute_rates(
+                        X, d['sptrains_X'], self.time_statistics) 
 
                 # local coefficients of variation
                 elif datatype == 'LVs':
@@ -652,23 +675,23 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                         fn_TC = os.path.join(self.sim_dict['path_processed_data'],
                             'sptrains_bintime_binspace_TC.h5')
                         data_TC = h5py.File(fn_TC, 'r')
+                        data_TC = self.load_h5_to_sparse_X('TC', data_TC)
                         sptrains_bintime_binspace_TC = \
-                            self.load_h5_to_sparse_X('TC', data_TC)
+                            data_TC[:,self.min_time_index_rs:]
                         dataset = self.__compute_cc_funcs_thalamic_pulses(
                             X, d['sptrains_bintime_binspace_X'],
                             sptrains_bintime_binspace_TC)
                     else:
-                        # TODO print sth
                         dataset=np.array([])
                         
             self.write_dataset_to_h5_X(X, datatype, dataset, is_sparse=False)
         return
 
 
-    def __compute_rates(self, X, sptrains_X):
+    def __compute_rates(self, X, sptrains_X, duration):
         """
         Computes the firing rate of each neuron by dividing the spike count by
-        the simulation time.
+        the analyzed simulation time.
         
         Parameters
         ----------
@@ -676,10 +699,12 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             Population name.
         sptrains_X
             Sptrains of population X in sparse csr format.
+        duration
+            Length of the time interval of sptrains_X (in ms).
 
         """
         count = np.array(sptrains_X.sum(axis=1)).flatten()
-        rates = count * 1.E3 / self.sim_dict['t_sim'] # in 1/s
+        rates = count * 1.E3 / duration # in 1/s
         return rates
 
 
