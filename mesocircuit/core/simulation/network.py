@@ -94,24 +94,36 @@ class Network:
 
     def presimulate(self, t_presim):
         """
-        Wrapper for separate time measurement.
-        kwargs is not passed on for not duplicating the measurement.
+        Simulates the mesocircuit for a pre-simulation time.
+        
+        data_prefix is set such that the following simulation does not
+        overwrite data recorded during the presimulation time.
+
+        Parameters
+        ----------
+        t_presim
+            Pre-simulation time (in ms).
         """
-        self.simulate(t_presim)
+        if nest.Rank() == 0:
+            print('Pre-simulating {} ms.'.format(t_presim))
+
+        nest.SetKernelStatus({'data_prefix': 'presim_'})
+        nest.Simulate(t_presim)
 
 
     def simulate(self, t_sim):
-        """ Simulates the mesocircuit.
+        """
+        Simulates the mesocircuit for a simulation time.
 
         Parameters
         ----------
         t_sim
             Simulation time (in ms).
-
         """
         if nest.Rank() == 0:
             print('Simulating {} ms.'.format(t_sim))
 
+        nest.SetKernelStatus({'data_prefix': 'sim_'})
         nest.Simulate(t_sim)
 
 
@@ -170,7 +182,11 @@ class Network:
             'grng_seed': grng_seed,
             'rng_seeds': rng_seeds,
             'overwrite_files': self.sim_dict['overwrite_files'],
-            'print_time': self.sim_dict['print_time']}
+            'print_time': self.sim_dict['print_time'],
+            'data_path': self.sim_dict['path_raw_data'],
+            # set presimulation-prefix already here to avoid empty files without
+            # prefix
+            'data_prefix': 'presim_'}
         nest.SetKernelStatus(kernel_dict)
 
 
@@ -262,9 +278,8 @@ class Network:
                                                params=sd_dict)
 
             # cannot provide list of labels with params
-            sd_labels = [os.path.join(self.sim_dict['path_raw_data'],
-                                      'spike_recorder_' + pop) \
-                         for pop in self.net_dict['populations']]
+            sd_labels = \
+                ['spike_recorder_' + pop for pop in self.net_dict['populations']]
             for i,sd in enumerate(self.spike_recorders):
                 sd.label = sd_labels[i]
 
@@ -280,9 +295,8 @@ class Network:
                                           params=vm_dict)
 
             # cannot provide list of labels with params
-            vm_labels = [os.path.join(self.sim_dict['path_raw_data'],
-                                      'voltmeter_' + pop) \
-                         for pop in self.net_dict['populations']]
+            vm_labels = \
+                ['voltmeter_' + pop for pop in self.net_dict['populations']]
             for i,vm in enumerate(self.voltmeters):
                 vm.label = vm_labels[i]
 
@@ -346,9 +360,7 @@ class Network:
 
         # spike recorder for thalamic population
         sd_dict = {'record_to': 'ascii',
-                   'label': os.path.join(
-                       self.sim_dict['path_raw_data'],
-                       'spike_recorder_' + self.stim_dict['th_name'])}
+                   'label': 'spike_recorder_' + self.stim_dict['th_name']}
         self.spike_recorder_th = nest.Create('spike_recorder', 1, sd_dict)
         
         # input to thalamic population
