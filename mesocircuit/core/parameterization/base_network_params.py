@@ -113,7 +113,7 @@ net_dict = {
     # 'optimized': population-specific mean and standard deviation, allowing a
     #              reduction of the initial activity burst in the network
     #              (default)
-    # TODO check if 'optimizied' works well with mesocircuit
+    # TODO parameters for optimized are currently from microcircuit
     'V0_type': 'optimized',
     # parameters of the neuron model
     'neuron_params': {
@@ -146,8 +146,11 @@ net_dict = {
     # 'fixedindegree': fixed indegree, no space
     # 'fixedindegree_exp': fixed indegree, distance-dependent connection
     #                      probabilities with an exponential profile, uses the
+    #                      decay parameter 'beta'
+    # 'distr_indegree_exp': distributed indegrees, distance-dependent connection
+    #                      probabilities with an exponential profile, uses the
     #                      decay parameter 'beta' (default)
-    'connect_method': 'fixedindegree_exp',
+    'connect_method': 'distr_indegree_exp',
     # decay parameter of exponential profile (in mm),
     # used if 'connect_medhod' is 'fixedindegree_exp',
     # default values extracted from Reimann2017, Supplement 1, Figure S2,

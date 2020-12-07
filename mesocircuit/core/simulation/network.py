@@ -210,7 +210,7 @@ class Network:
                 pos=nest.random.uniform(min=-self.net_dict['extent']/2.,
                                         max=self.net_dict['extent']/2.),
                 edge_wrap=True,
-                num_dimensions=2)
+                extent=[self.net_dict['extent'], self.net_dict['extent']])
 
             population = nest.Create(self.net_dict['neuron_model'],
                                      self.net_dict['num_neurons'][i],
@@ -423,6 +423,7 @@ class Network:
             for j, source_pop in enumerate(self.pops):
                 if self.net_dict['num_synapses'][i][j] >= 0.:
 
+                    # TODO simplify these loops and conditions
                     # specify which connections exist
                     if self.net_dict['connect_method'] == 'fixedtotalnumber':
                         conn_dict_rec = {
@@ -441,9 +442,20 @@ class Network:
                                 beta=self.net_dict['beta'][i][j]),
                             'mask': {'circular': {
                                 'radius': self.net_dict['extent'] / 2.}}}
+                    elif self.net_dict['connect_method'] == 'distr_indegree_exp':
+                        conn_dict_rec = {
+                            'rule': 'pairwise_bernoulli',
+                            'p': self.net_dict['p0'][i][j] * \
+                                nest.spatial_distributions.exponential(
+                                    x=nest.spatial.distance,
+                                    beta=self.net_dict['beta'][i][j]),
+                            'mask': {'circular': {
+                                'radius': self.net_dict['extent'] / 2.}}}
                     else:
                         raise Exception('connect_method is incorrect.')
 
+                    # allow_multapses: True is ineffective for rule
+                    # pairwise_bernoulli ('connect_method' == 'distr_indegree_exp')
                     conn_dict_rec.update({'allow_autapses': False,
                                           'allow_multapses': True})
 
@@ -483,10 +495,16 @@ class Network:
                             min=self.sim_resolution,
                             max=np.Inf)}
 
-                    nest.Connect(
-                        source_pop, target_pop,
-                        conn_spec=conn_dict_rec,
-                        syn_spec=syn_dict)
+                    # repeat_connect is 1 apart from rule pairwise_bernoulli
+                    # ('connect_method' == 'distr_indegree_exp').
+                    # note that for pairwise_bernoulli repeat_connect determines
+                    # the maximum possible number of connections (multapses) for
+                    # a pair of neurons
+                    for repeat in np.arange(self.net_dict['repeat_connect'][i][j]):
+                        nest.Connect(
+                            source_pop, target_pop,
+                            conn_spec=conn_dict_rec,
+                            syn_spec=syn_dict)
 
 
     def __connect_recording_devices(self):
