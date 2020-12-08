@@ -11,31 +11,13 @@ import numpy as np
 stim_dict = {
     # optional thalamic input
     # options are:
-    # False:        no thalamic input
-    # 'onlycreate': thalamic neurons are created and connected, but they are not
+    # False:        thalamic neurons are created and connected, but they are not
     #               active
     # 'poisson':    persistent thalamic poisson input for a given duration to
     #               all thalamic neurons
     # 'pulses':     repetitive pulses from stimulating thalamic neurons  in the
     #               center of the network
     'thalamic_input': False,
-
-    # name of the thalamic population (TC stands for Thalamo-Cortical)
-    'th_name': 'TC',
-    # general parameters for thalamus
-    # number of thalamic neurons of network covering 1mm2
-    'num_th_neurons_1mm2': 902,
-    # connection probabilities of the thalamus to the different populations
-    # (same order as in 'populations' in 'net_dict') of network covering 1mm2
-    'conn_probs_th_1mm2':
-        np.array([0.0, 0.0, 0.0983, 0.0619, 0.0, 0.0, 0.0512, 0.0196]),
-    # mean amplitude of the thalamic postsynaptic potential (in mV),
-    # standard deviation will be taken from 'net_dict'
-    'PSP_th': 0.15,
-    # mean delay of the thalamic input (in ms) # TODO intended?
-    'delay_th_mean': 1.5,
-    # relative standard deviation of the thalamic delay (in ms)
-    'delay_th_rel_std': 0.5,
 
     # thalamic_input = 'poisson'
     # start of the thalamic input (in ms)

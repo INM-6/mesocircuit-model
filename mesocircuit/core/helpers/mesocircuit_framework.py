@@ -136,9 +136,8 @@ def evaluate_parameterset(ps_id, paramset):
         paramset['sim_dict']['path_' + dname] = path
 
     # compute dependent network parameters
-    paramset['net_dict'], paramset['stim_dict'] = \
-        helpnet.derive_dependent_parameters(
-            paramset['net_dict'], paramset['stim_dict'])
+    paramset['net_dict'] = \
+        helpnet.derive_dependent_parameters(paramset['net_dict'])
 
     # write final parameters to file
     for dic in ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict', 'plot_dict']:

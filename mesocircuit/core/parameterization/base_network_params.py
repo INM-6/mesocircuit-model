@@ -17,7 +17,7 @@ net_dict = {
     'neuron_model': 'iaf_psc_exp',
     # names of the simulated neuronal populations
     'populations': np.array(
-        ['L23E', 'L23I', 'L4E', 'L4I', 'L5E', 'L5I', 'L6E', 'L6I']),
+        ['L23E', 'L23I', 'L4E', 'L4I', 'L5E', 'L5I', 'L6E', 'L6I', 'TC']),
     # base model used for num_neurons_1mm2, conn_probs_1mm2 / indegrees_1mm2,
     # mean_rates, and K_ext
     # options are
@@ -30,6 +30,8 @@ net_dict = {
         np.array([20683, 5834, 21915, 5479, 4850, 1065, 14395, 2948]),
     'num_neurons_1mm2_SvA2018':
         np.array([47386, 13366, 70387, 17597, 20740, 4554, 19839, 4063]),
+    # number of thalamic neurons
+    'num_neurons_th_1mm2': 902,
     # connection probabilities (the first index corresponds to the targets
     # and the second to the sources) of network covering 1mm2
     'conn_probs_1mm2_PD2014':
@@ -52,6 +54,9 @@ net_dict = {
              [568.214412020203, 78.1506995350578, 282.524967334319, 5.33709891502392, 146.307555909299, 187.593064274647, 64.0388656508819, 0.001459301922844],
              [159.401948962628, 19.9785159873622, 227.441084484738, 46.0107686142342, 138.832688971888, 10.5525583810149, 287.535665222409, 355.683175924637],
              [368.658922577975, 2.77868306292702, 31.990783610677, 2.64327372576867, 67.4774463423829, 4.20258522768281, 478.851911854799, 220.365998044097]]),
+    # connection probabilities from thalamus
+    'conn_probs_th_1mm2':
+        np.array([0.0, 0.0, 0.0983, 0.0619, 0.0, 0.0, 0.0512, 0.0196]),
     # mean rates of the different populations in the non-scaled version of the
     # mesocircuit (in spikes/s; same order as in 'populations');
     # necessary for the scaling of the network.
@@ -162,10 +167,14 @@ net_dict = {
     # The final beta is beta_unscaled * beta_scaling.
     'beta_scaling': 1.,
 
+    # TODO maybe remove
     # If beta_exh_inh is not False, it must be a list with excitatory and
     # inhibitory decay parameters [beta_exc, beta_inh] which will be used to
     # override the matrix beta above.
     'beta_exc_inh': False,
+
+    # beta from thalamic population
+    'beta_th': 0.2, 
 
     # side length (in mm) of square sheets in which neurons are randomly
     # distributed
