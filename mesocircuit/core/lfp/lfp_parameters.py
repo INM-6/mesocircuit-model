@@ -343,7 +343,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
             PS.rand_rot_axis.update({y: ['x', 'z']})
 
     # additional simulation kwargs, see LFPy.Cell.simulate() docstring
-    PS.simulationParams = {}
+    PS.simulationParams = {'rec_imem': True}
 
     # a dict setting the number of cells N_y and geometry
     # of cell type population y
