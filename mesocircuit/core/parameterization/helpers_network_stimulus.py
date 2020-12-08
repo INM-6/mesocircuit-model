@@ -83,7 +83,7 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     # 1mm2 neuron number dependent on the base model
     num_neurons_1mm2 = net_dict['num_neurons_1mm2_' + net_dict['base_model']]
     # 1mm2 external indegrees dependent on the base model
-    K_ext = net_dict['K_ext_' + net_dict['base_model']]
+    ext_indegrees_1mm2 = net_dict['K_ext_' + net_dict['base_model']]
 
     # linear scaling of neuron numbers with square area
     area = net_dict['extent']**2
@@ -109,18 +109,30 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
 
     net_dict['indegrees_1mm2'] = np.round(indegrees_1mm2).astype(int)
                       
-    # indegrees are scaled only if connect_method is 'fixedindegree_exp';
+    # indegrees are scaled only if connect_method is 'fixedindegree_exp' or
+    # distr_indegree_exp;
     # otherwise the indegrees from the 1mm2 network are preserved
-    if net_dict['connect_method'] in ['fixedindegree_exp', 'distr_indegree_exp']:
+    if (net_dict['extent'] > 1. and 
+        net_dict['connect_method'] in ['fixedindegree_exp', 'distr_indegree_exp']):
         # scale indegrees from disc of 1mm2 to disc of radius extent/2.
         net_dict['K_area_scaling'] = scale_indegrees_to_extent(
             net_dict['extent'], net_dict['beta'])
 
         # elementwise multiplication because K_area_scaling is a matrix
         full_indegrees = np.multiply(indegrees_1mm2, net_dict['K_area_scaling'])
+
+        # adjust external indegrees to compensate for additional interal indegrees
+        full_ext_indegrees = adjust_ext_indegrees_to_preserve_mean_input(
+            indegrees_1mm2, full_indegrees,
+            ext_indegrees_1mm2,
+            net_dict['mean_rates_' + net_dict['base_model']],
+            net_dict['bg_rate'],
+            PSC_matrix_mean, PSC_ext)
     else:
         full_indegrees = indegrees_1mm2
+        full_ext_indegrees = ext_indegrees_1mm2
     net_dict['full_indegrees'] = np.round(full_indegrees).astype(int)
+    net_dict['full_ext_indegrees'] = np.round(full_ext_indegrees).astype(int)
     full_num_synapses = full_indegrees * full_num_neurons[:, np.newaxis]
     net_dict['full_num_synapses'] = np.round(full_num_synapses).astype(int)
     net_dict['full_num_synapses_sum'] = \
@@ -134,7 +146,7 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     net_dict['num_synapses'] = np.round(full_num_synapses *
                                         net_dict['N_scaling'] *
                                         net_dict['K_scaling']).astype(int)
-    net_dict['ext_indegrees'] = np.round(K_ext *
+    net_dict['ext_indegrees'] = np.round(full_ext_indegrees *
                                          net_dict['K_scaling']).astype(int)
 
     # DC input compensates for potentially missing Poisson input
@@ -144,7 +156,7 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
         if nest.Rank() == 0:
             print('DC input compensates for missing Poisson input.\n')
         DC_amp = dc_input_compensating_poisson(
-            net_dict['bg_rate'], K_ext,
+            net_dict['bg_rate'], full_ext_indegrees,
             net_dict['neuron_params']['tau_syn'],
             PSC_ext)
 
@@ -159,7 +171,7 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
                 net_dict['mean_rates_' + net_dict['base_model']],
                 DC_amp,
                 net_dict['poisson_input'],
-                net_dict['bg_rate'], K_ext)
+                net_dict['bg_rate'], full_ext_indegrees)
 
     # p0 is computed for non-fixed in-degrees
     # connectivity profile: p0 * exp(-r/beta)
@@ -241,6 +253,61 @@ def scale_indegrees_to_extent(extent, beta):
                           expression(beta, radius_1mm2)) 
 
     return K_indegree_scaling
+
+
+def adjust_ext_indegrees_to_preserve_mean_input(
+    indegrees_1mm2, full_indegrees, ext_indegrees_1mm2, mean_rates, bg_rate,
+    PSC_matrix_mean, PSC_ext):
+    """
+    Computes external indegrees to adjusted to modified internal indegrees to
+    preserve the mean input.
+
+    Parameters
+    ----------
+    indegrees_1mm2
+        Indegree matrix of the 1mm2 network.
+    full_indegrees
+        Indegree matrix of the full network.
+    ext_indegrees_1mm2
+        External indegrees of the 1mm2 network.
+    mean_rates
+        Mean firing rates of each population (in spikes/s).
+    bg_rate
+        Background firing rate (in spikes/s).
+    PSC_matrix_mean
+        Weight matrix (in pA).
+    PSC_ext
+        External weight (in pA).
+
+    Returns
+    -------
+    full_ext_indegrees
+        Adjusted external indegrees.
+    """
+    frac_psc = PSC_matrix_mean / PSC_ext # g
+    frac_rates = mean_rates / bg_rate
+    diff_indegrees = indegrees_1mm2 - full_indegrees
+    diff_rec_inputs = np.multiply(frac_psc * frac_rates, diff_indegrees)
+    sum_diff_rec_inputs = np.sum(diff_rec_inputs, axis=1)
+
+    full_ext_indegrees = ext_indegrees_1mm2 + sum_diff_rec_inputs
+
+    # TODO could be converted into a unit test
+    #full = np.zeros_like(mean_rates)
+    #mm2 = np.zeros_like(mean_rates)
+    #for i in np.arange(len(PSC_matrix_mean)): # target
+    #    rec_input_full = 0.
+    #    rec_input_1mm2 = 0.
+    #    for j in np.arange(len(PSC_matrix_mean[i])): # source
+    #        rec_input_full += full_indegrees[i][j] * PSC_matrix_mean[i][j] * mean_rates[j]
+    #        rec_input_1mm2 += indegrees_1mm2[i][j] * PSC_matrix_mean[i][j] * mean_rates[j]
+    #
+    #    diff_rec_input = rec_input_1mm2 - rec_input_full
+    #
+    #    full[i] = rec_input_full + full_ext_indegrees[i] * PSC_ext * bg_rate
+    #    mm2[i] = rec_input_1mm2 + ext_indegrees_1mm2[i] * PSC_ext * bg_rate
+
+    return full_ext_indegrees
 
 
 def zero_distance_conn_prob_exp(num_neurons, indegrees, extent, beta):

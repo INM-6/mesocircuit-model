@@ -410,7 +410,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         shape = (self.N_X[i], time_bins.size)
 
         if spikes.size == 0:
-            sptrains = sp.coo_matrix(shape, dtype=dtype)
+            sptrains_bintime = sp.coo_matrix(shape, dtype=dtype)
         else:
             # time bins shifted by one bin as needed by np.digitize()
             dt = time_bins[1] - time_bins[0]
