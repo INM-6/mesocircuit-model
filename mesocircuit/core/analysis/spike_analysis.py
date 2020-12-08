@@ -245,8 +245,9 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         num_spikes
             An array of spike counts per population.
         """
-        # compute firing rates
-        rates = np.divide(num_spikes, self.N_X)
+        # compute firing rates in 1/s
+        rates = num_spikes / self.N_X / \
+            ((self.sim_dict['t_sim'] + self.sim_dict['t_presim']) / 1000.)
 
         # collect overview data
         dtype = {'names': ('population', 'num_neurons', 'rate_s-1'),
