@@ -534,6 +534,10 @@ class Plotting(base_class.BaseAnalysisPlotting):
         """
         TODO ax limits and ticklabels
         """
+        # return if no data
+        if type(data[X]) == h5py._hl.dataset.Dataset and data[X].size == 0:
+            return
+
         freq = data[X]['frequencies_s-1']
         Pxx = data[X]['psds_s^-2_Hz-1']
 
@@ -553,6 +557,10 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax, X, i, data, max_num_pairs=10000, markersize_scale=0.4, nblocks=3):
         """
         """
+        # return if no data
+        if type(data[X]) == h5py._hl.dataset.Dataset and data[X].size == 0:
+            return
+
         distances = data[X]['distances_mm'][:max_num_pairs]
         ccs = data[X]['ccs'][:max_num_pairs]
 

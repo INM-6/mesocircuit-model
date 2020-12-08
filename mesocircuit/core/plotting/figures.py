@@ -5,6 +5,7 @@ Definition of figures plotted with Plotting class in plotting.py.
 """
 
 import numpy as np
+import h5py
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -70,7 +71,10 @@ def statistics_overview(plot, all_FRs, all_LVs, all_CCs_distances, all_PSDs):
     # extract all_CCs from all_CCs_distances
     all_CCs = {}
     for X in all_CCs_distances:
-        all_CCs[X] = all_CCs_distances[X]['ccs']
+        if type(all_CCs_distances[X]) == h5py._hl.group.Group:
+            all_CCs[X] = all_CCs_distances[X]['ccs']
+        else:
+            all_CCs[X] = np.array([])
 
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 4))
     gs = gridspec.GridSpec(1, 1)
