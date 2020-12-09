@@ -43,16 +43,13 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
     net_dict
          Dictionary containing all parameters specific to the neuron and
          network models (derived from: ``base_network_params.py``).
-    stim_dict
-        Dictionary containing all parameters specific to the potential stimulus
-        (derived from: ``base_stimulus_params.py``
     ana_dict
         Dictionary containing all parameters specific to the network analysis
         (derived from: ``base_analysis_params.py``
 
     """
 
-    def __init__(self, sim_dict, net_dict, stim_dict, ana_dict):
+    def __init__(self, sim_dict, net_dict, ana_dict):
         """
         Initializes some class attributes.
         """
@@ -60,7 +57,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             print('Instantiating a SpikeAnalysis object.')
 
         # inherit from parent class
-        super().__init__(sim_dict, net_dict, stim_dict, ana_dict)
+        super().__init__(sim_dict, net_dict, ana_dict)
 
         return
 
@@ -671,7 +668,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 # distance-dependent cross-correlation functions with the
                 # thalamic population TC only for pulses
                 elif datatype == 'CCfuncs_thalamic_pulses':
-                    if self.stim_dict['thalamic_input'] == 'pulses' and X != 'TC':
+                    if self.net_dict['thalamic_input'] == 'pulses' and X != 'TC':
                         # load data from TC
                         fn_TC = os.path.join(self.sim_dict['path_processed_data'],
                             'sptrains_bintime_binspace_TC.h5')

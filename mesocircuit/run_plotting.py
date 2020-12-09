@@ -22,16 +22,16 @@ import core.helpers.parallelism_time as pt
 path_parameters = sys.argv[1]
 
 dics = []
-for dic in ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict', 'plot_dict']:
+for dic in ['sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
     with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
         dics.append(pickle.load(f))
-sim_dict, net_dict, stim_dict, ana_dict, plot_dict = dics
+sim_dict, net_dict, ana_dict, plot_dict = dics
 
 ################################################################################
 # Instantiate a Plotting object.
 # Load preprocessed data and pre-computed statistics.
 
-pl = plotting.Plotting(sim_dict, net_dict, stim_dict, ana_dict, plot_dict)
+pl = plotting.Plotting(sim_dict, net_dict, ana_dict, plot_dict)
 
 d = {}
 for datatype in np.append(ana_dict['datatypes_preprocess'],

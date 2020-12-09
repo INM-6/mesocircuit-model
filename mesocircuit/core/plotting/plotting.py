@@ -38,9 +38,6 @@ class Plotting(base_class.BaseAnalysisPlotting):
     net_dict
          Dictionary containing all parameters specific to the neuron and
          network models (derived from: ``base_network_params.py``).
-    stim_dict
-        Dictionary containing all parameters specific to the potential stimulus
-        (derived from: ``base_stimulus_params.py``
     ana_dict
         Dictionary containing all parameters specific to the network analysis
         (derived from: ``base_analysis_params.py``
@@ -50,7 +47,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
     """
 
-    def __init__(self, sim_dict, net_dict, stim_dict, ana_dict, plot_dict):
+    def __init__(self, sim_dict, net_dict, ana_dict, plot_dict):
         """
         Initializes some class attributes.
         """
@@ -58,7 +55,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
             print('Instantiating a Plotting object.')
 
         # inherit from parent class
-        super().__init__(sim_dict, net_dict, stim_dict, ana_dict)
+        super().__init__(sim_dict, net_dict, ana_dict)
 
         # plot_dict is not in parent class
         self.plot_dict = plot_dict
@@ -265,7 +262,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         # if the start time is a string, the respective entry from the stimulus
         # parameters is used
         if type(start_time) == str:
-            start_time = self.stim_dict[start_time]
+            start_time = self.net_dict[start_time]
 
         start_frame = int(start_time / binsize_time) 
         end_frame = start_frame + (nframes - 1) * step
@@ -309,7 +306,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
         # ticks dependent on number of spatial bins
         xy_ticks = [numbins / 2.]
-        for t in np.arange(np.max([nframes - 1, len(self.X) - 1])):
+        for t in np.arange(np.max([nframes - 1, len(populations) - 1])):
             xy_ticks.append(xy_ticks[-1] + numbins + 1.)
 
         xticks = xy_ticks[:nframes:tickstep]
@@ -321,8 +318,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax.set_xticks(xticks)
         ax.set_xticklabels(ticklabels)
 
-        ax.set_yticks(xy_ticks[:len(self.X)])
-        ax.set_yticklabels(self.plot_dict['pop_labels'][:len(self.X)])
+        ax.set_yticks(xy_ticks[:len(populations)])
+        ax.set_yticklabels(self.plot_dict['pop_labels'][:len(populations)])
 
         ax.set_xlabel('time (ms)')
 
@@ -436,7 +433,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
             ax.spines[loc].set_color('none')
 
         data_plot = []
-        for X in self.net_dict['populations']:
+        for X in self.Y:
             # remove potential NANs
             data_X = data[X][~np.isnan(data[X])]
             data_plot.append(data_X)
@@ -479,7 +476,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         gs_c = gridspec.GridSpecFromSubplotSpec(4, 1, subplot_spec=gs)#, hspace=0.5)
 
         layer_count = 0
-        for i,X in enumerate(self.net_dict['populations']):
+        for i,X in enumerate(self.Y):
             # select subplot
             if i > 0 and i % 2 == 0:
                 layer_count += 1

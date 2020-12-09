@@ -21,7 +21,6 @@ from ..parameterization import helpers_network_stimulus as helpnet
 # default parameters
 from ..parameterization.base_sim_params import sim_dict
 from ..parameterization.base_network_params import net_dict
-from ..parameterization.base_stimulus_params import stim_dict
 from ..parameterization.base_analysis_params import ana_dict
 from ..parameterization.base_plotting_params import plot_dict
 
@@ -74,16 +73,16 @@ def evaluate_parameterspaces(
             parameterspaces[paramspace_key] = ps.ParameterSpace({})
             # start with default parameters and update
             for dic,vdic in zip(
-                ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict', 'plot_dict'],
-                [sim_dict, net_dict, stim_dict, ana_dict, plot_dict]):
+                ['sim_dict', 'net_dict',  'ana_dict', 'plot_dict'],
+                [sim_dict, net_dict, ana_dict, plot_dict]):
                 parameterspaces[paramspace_key][dic] = dict(vdic) # copy is needed
                 if dic in ps_dicts[paramspace_key]:
                     parameterspaces[paramspace_key][dic].update(
                     ps_dicts[paramspace_key][dic])
 
-            # only sim_dict, net_dict and stim_dict enable parameter spaces
-            # and are used to compute a unique id
-            dicts_unique = ['sim_dict', 'net_dict', 'stim_dict']
+            # only sim_dict and net_dict enable parameter spaces and are used to
+            # compute a unique id
+            dicts_unique = ['sim_dict', 'net_dict']
             sub_paramspace = ps.ParameterSpace(
                 {k:parameterspaces[paramspace_key][k] for k in dicts_unique})
 
@@ -140,7 +139,7 @@ def evaluate_parameterset(ps_id, paramset):
         helpnet.derive_dependent_parameters(paramset['net_dict'])
 
     # write final parameters to file
-    for dic in ['sim_dict', 'net_dict', 'stim_dict', 'ana_dict', 'plot_dict']:
+    for dic in ['sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
         filename = os.path.join(paramset['sim_dict']['path_parameters'], dic) 
         # pickle for machine readability
         with open(filename + '.pkl', 'wb') as f:

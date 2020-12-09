@@ -25,8 +25,6 @@ def derive_dependent_parameters(base_net_dict):
     -------
     net_dict
         Dictionary containing base and derived network parameters.
-    stim_dict
-        Dictionary containing base and derived stimulus parameters.
     """
     # network parameters
     net_dict = copy.copy(base_net_dict)
@@ -178,8 +176,7 @@ def derive_dependent_parameters(base_net_dict):
     if net_dict['poisson_input']:
         DC_amp = np.zeros(net_dict['num_pops']-1)
     else:
-        if nest.Rank() == 0:
-            print('DC input compensates for missing Poisson input.\n')
+        print('DC input compensates for missing Poisson input.')
         DC_amp = dc_input_compensating_poisson(
             net_dict['bg_rate'], full_ext_indegrees,
             net_dict['neuron_params']['tau_syn'],
@@ -214,6 +211,11 @@ def derive_dependent_parameters(base_net_dict):
     net_dict['weight_matrix_mean'] = PSC_matrix_mean
     net_dict['weight_ext'] = PSC_ext
     net_dict['DC_amp'] = DC_amp
+
+
+    # absolute radius for thalamic pulses
+    if net_dict['thalamic_input'] == 'pulses':
+        net_dict['th_radius'] = net_dict['th_rel_radius'] * net_dict['extent']
 
     return net_dict
 
