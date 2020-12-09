@@ -41,6 +41,11 @@ net_dict_macaqueV1 = {
     'connect_method': 'fixedtotalnumber',
     'extent': 1.}
 
+net_dict_mesomacaqueV1 = {
+    'base_model': 'SvA2018',
+    'g': -11.,
+}
+
 ################################################################################
 
 # main dictionary as used by evaluate_parameterspaces() in helpers.py
@@ -78,6 +83,21 @@ ps_dicts = {
             **net_dict_macaqueV1,
             'N_scaling': 0.1,
             'K_scaling': 0.1,
+            },
+        },
+
+    'local_mesomacaqueV1': {
+        **local_sim_ana_plot_dicts,
+        'net_dict': {
+            **net_dict_mesomacaqueV1,
+            'N_scaling': 0.008,
+            'K_scaling': 0.1,
+            },
+        },
+
+    'mesomacaqueV1': {
+        'net_dict': {
+            **net_dict_mesomacaqueV1,
             },
         },
 

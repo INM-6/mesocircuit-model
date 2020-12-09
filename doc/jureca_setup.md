@@ -4,7 +4,7 @@
 
 ```
 module use $OTHERSTAGES
-module load Stages/2019a
+module load Stages/2020
 module load GCC CMake ParaStationMPI GSL jemalloc h5py mpi4py
 
 jutil env activate -p <XXX>
