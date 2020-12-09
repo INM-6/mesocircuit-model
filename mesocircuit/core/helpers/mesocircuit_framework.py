@@ -201,7 +201,7 @@ def write_jobscript(jsname, paramset):
         run_cmd = 'srun '
 
     # define executable
-    executable = [run_cmd + 'python3 ' + os.path.join(os.getcwd(), py) + ' ' +
+    executable = [run_cmd + 'python3 -u' + os.path.join(os.getcwd(), py) + ' ' +
                   paramset['sim_dict']['path_parameters'] for py in run_py]
     sep = '\n\n' + 'wait' + '\n\n'
     executable = sep.join(executable)
