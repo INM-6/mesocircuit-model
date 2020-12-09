@@ -16,7 +16,7 @@ import json
 import hashlib
 import copy
 
-from ..parameterization import helpers_network_stimulus as helpnet
+from ..parameterization import helpers_network as helpnet
 
 # default parameters
 from ..parameterization.base_sim_params import sim_dict
