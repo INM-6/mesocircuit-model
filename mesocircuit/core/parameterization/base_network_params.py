@@ -17,7 +17,7 @@ net_dict = {
     'neuron_model': 'iaf_psc_exp',
     # names of the simulated neuronal populations
     'populations': np.array(
-        ['L23E', 'L23I', 'L4E', 'L4I', 'L5E', 'L5I', 'L6E', 'L6I']),
+        ['L23E', 'L23I', 'L4E', 'L4I', 'L5E', 'L5I', 'L6E', 'L6I', 'TC']),
     # base model used for num_neurons_1mm2, conn_probs_1mm2 / indegrees_1mm2,
     # mean_rates, and K_ext
     # options are
@@ -30,6 +30,8 @@ net_dict = {
         np.array([20683, 5834, 21915, 5479, 4850, 1065, 14395, 2948]),
     'num_neurons_1mm2_SvA2018':
         np.array([47386, 13366, 70387, 17597, 20740, 4554, 19839, 4063]),
+    # number of thalamic neurons
+    'num_neurons_th_1mm2': 902,
     # connection probabilities (the first index corresponds to the targets
     # and the second to the sources) of network covering 1mm2
     'conn_probs_1mm2_PD2014':
@@ -52,6 +54,9 @@ net_dict = {
              [568.214412020203, 78.1506995350578, 282.524967334319, 5.33709891502392, 146.307555909299, 187.593064274647, 64.0388656508819, 0.001459301922844],
              [159.401948962628, 19.9785159873622, 227.441084484738, 46.0107686142342, 138.832688971888, 10.5525583810149, 287.535665222409, 355.683175924637],
              [368.658922577975, 2.77868306292702, 31.990783610677, 2.64327372576867, 67.4774463423829, 4.20258522768281, 478.851911854799, 220.365998044097]]),
+    # connection probabilities from thalamus
+    'conn_probs_th_1mm2':
+        np.array([0.0, 0.0, 0.0983, 0.0619, 0.0, 0.0, 0.0512, 0.0196]),
     # mean rates of the different populations in the non-scaled version of the
     # mesocircuit (in spikes/s; same order as in 'populations');
     # necessary for the scaling of the network.
@@ -63,7 +68,8 @@ net_dict = {
         np.array([0.943, 3.026, 4.368, 5.882, 7.733, 8.664, 1.096, 7.851]),
     # TODO recorded with 1mm2 macaqueV1, but probably not final
     'mean_rates_SvA2018':
-        np.array([0.15709281, 1.6874907, 2.4200633, 2.8021822, 3.6009161, 4.2362757, 2.209184, 4.16761]),
+        np.array([0.15709281, 1.6874907, 2.4200633, 2.8021822,
+                  3.6009161, 4.2362757, 2.209184, 4.16761]),
     # mean amplitude of excitatory postsynaptic potential (in mV)
     'PSP_exc_mean': 0.15,
     # relative standard deviation of the weight
@@ -101,7 +107,7 @@ net_dict = {
     # indegree of external connections to the different populations (same order
     # as in 'populations')
     'K_ext_PD2014': np.array([1600, 1500, 2100, 1900, 2000, 1900, 2900, 2100]),
-    'K_ext_SvA2018': 10./8. * np.array([1267, 1251, 1255, 1246, 1430, 1250, 1777, 1254]),
+    'K_ext_SvA2018': 10. / 8. * np.array([1267, 1251, 1255, 1246, 1430, 1250, 1777, 1254]),
     # rate of the Poisson generator (in spikes/s)
     'bg_rate': 8.,
     # delay from the Poisson generator to the network (in ms)
@@ -157,18 +163,62 @@ net_dict = {
     # format:   E->E   I->E
     #           E->I   I->I
     'beta_unscaled': np.tile([[0.232, 0.161],
-                              [0.125, 0.120]], (4,4)),
+                              [0.125, 0.120]], (4, 4)),
     # scaling factor applied to all elements of beta_unscaled.
     # The final beta is beta_unscaled * beta_scaling.
     'beta_scaling': 1.,
 
+    # TODO maybe remove
     # If beta_exh_inh is not False, it must be a list with excitatory and
     # inhibitory decay parameters [beta_exc, beta_inh] which will be used to
     # override the matrix beta above.
     'beta_exc_inh': False,
 
+    # beta from thalamic population
+    'beta_th': 0.1,
+
     # side length (in mm) of square sheets in which neurons are randomly
     # distributed
     'extent': 4.,
-    }
 
+    # parameters for external stimulus
+    # optional thalamic input
+    # options are:
+    # False:        thalamic neurons are created and connected, but they are not
+    #               active
+    # 'poisson':    persistent thalamic poisson input for a given duration to
+    #               all thalamic neurons
+    # 'pulses':     repetitive pulses from stimulating thalamic neurons  in the
+    #               center of the network
+    'thalamic_input': False,
+
+    # thalamic_input = 'poisson'
+    # start of the thalamic input (in ms)
+    'th_start': 700.0,
+    # duration of the thalamic input (in ms)
+    'th_duration': 10.0,
+    # rate of the thalamic input (in spikes/s)
+    'th_rate': 120.0,
+
+    # thalamic_input = 'pulses'
+    # only thalamic neurons within a circle in the center are stimulated.
+    # the radius is th_rel_radius * extent
+    'th_rel_radius': 0.3,
+    # time of first pulse (in ms)
+    'th_pulse_start': 700.0,
+    # pulse interval (in ms)
+    'th_interval': 100.0,
+    # delay between the pulse spike generator and the thalamic neurons
+    'th_delay_pulse_generator': 1.0,
+
+    # optional DC input
+    # turn DC input on or off (True or False)
+    'dc_input': False,
+    # start of the DC input (in ms)
+    'dc_start': 650.0,
+    # duration of the DC input (in ms)
+    'dc_dur': 100.0,
+    # amplitude of the DC input (in pA); final amplitude is population-specific
+    # and will be obtained by multiplication with 'K_ext'
+    'dc_amp': 0.3
+}
