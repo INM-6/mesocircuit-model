@@ -48,6 +48,7 @@ import pickle
 from core.lfp.periodiclfp import PeriodicLFP
 from core.lfp.lfp_parameters import get_parameters
 from core.lfp.plotting import network_lfp_activity_animation
+from lfpykit import VolumetricCurrentSourceDensity
 from mpi4py import MPI
 
 #################################################
@@ -154,6 +155,7 @@ print(('NEST simulation and gdf file processing done in  %.3f seconds' % toc))
 if PROPERRUN:
     probes = []
     probes.append(PeriodicLFP(cell=None, **PS.electrodeParams))
+    probes.append(VolumetricCurrentSourceDensity(cell=None, **PS.CSDParams))
 
 ##############################################################################
 # Create multicompartment neuron populations for LFP predictions

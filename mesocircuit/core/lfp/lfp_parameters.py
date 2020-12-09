@@ -244,6 +244,12 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
             # dendrite line sources, soma as sphere source (Linden2014)
             method='root_as_point',
         ),
+        CSDParams=dict(
+            # volumetric bin edges
+            x=np.linspace(-2000, 2000, 11),
+            y=np.linspace(-2000, 2000, 11),
+            z=np.array([-450, -350]),
+        ),
         X=net_dict['populations'].tolist(),  # add TC!!!
         Y=net_dict['populations'].tolist(),
         N_X=net_dict['num_neurons'],
@@ -502,7 +508,8 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
                         )
                     }
                 })
-            elif net_dict['connect_method'] == 'fixedindegree_exp':
+            elif net_dict['connect_method'] == 'fixedindegree_exp' or \
+                    net_dict['connect_method'] == 'distr_indegree_exp':
                 PS.topology_connections[X][y].update({
                     'kernel': {
                         'exponential': dict(
