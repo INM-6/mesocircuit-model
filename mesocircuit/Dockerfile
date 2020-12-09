@@ -22,7 +22,7 @@ RUN pip install mpi4py
 RUN git clone https://github.com/nest/nest-simulator.git && \
     cd nest-simulator && \
     # git checkout master && \
-    # git checkout 24de43dc21c568e017839eeb335253c2bc2d487d && \
+    git checkout b628ccf && \
     cd .. && \
     mkdir nest-build && \
     ls -l && \
@@ -78,10 +78,10 @@ RUN pip3 install PrettyTable
 # Add NEST binary folder to PATH
 ENV PATH /opt/nest/bin:${PATH}
 
-# Add pyNEST to PYTHONPATH
+# Add PyNEST to PYTHONPATH
 ENV PYTHONPATH /opt/nest/lib/python3.8/site-packages:${PYTHONPATH}
 
-# If runnign with Singularity, run the below line in the host.
+# If running with Singularity, run the below line in the host.
 # PYTHONPATH set here doesn't carry over:
 # export SINGULARITYENV_PYTHONPATH=/opt/nest/lib/python3.8/site-packages
 # Alternatively, run "source /opt/local/bin/nest_vars.sh" while running the container
