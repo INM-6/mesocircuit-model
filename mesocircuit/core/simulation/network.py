@@ -8,7 +8,11 @@ build and simulate the network.
 
 import os
 import numpy as np
+from pathlib import Path
+import tarfile
 import nest
+from mpi4py import MPI
+
 
 class Network:
     """ Provides functions to setup NEST, to create and connect all nodes of
@@ -36,13 +40,15 @@ class Network:
         self.net_dict = net_dict
         self.stim_dict = stim_dict
 
+        # wipe files from raw output directory it they exist
+        self.__wipe()
+
         # check parameters and print information
         self.__check_parameters()
 
         # initialize the NEST kernel
         self.__setup_nest()
 
-    
     def create(self):
         """ Creates all network nodes.
 
@@ -95,7 +101,7 @@ class Network:
     def presimulate(self, t_presim):
         """
         Simulates the mesocircuit for a pre-simulation time.
-        
+
         data_prefix is set such that the following simulation does not
         overwrite data recorded during the presimulation time.
 
@@ -126,6 +132,63 @@ class Network:
         nest.SetKernelStatus({'data_prefix': 'sim_'})
         nest.Simulate(t_sim)
 
+
+    def tar_raw_data(self,
+                     delete_files=True,
+                     filepatterns=['*.dat'],
+                     mode='w'):
+        '''
+        Create tar file of content in `raw_data/<>` and optionally
+        delete files matching given pattern.
+
+        Parameters
+        ----------
+        output_path: path
+            params.raw_nest_output_path
+        delete_files: bool
+            if True, delete files matching pattern
+        filepatterns: list of str
+            patterns of files being deleted
+        mode: String
+            tarfile.open file mode. Default: 'w'
+        '''
+        output_path = self.sim_dict["path_raw_data"]
+
+        if nest.Rank() == 0:
+            # create tarfile
+            fname = output_path + '.tar'
+            with tarfile.open(fname, mode) as t:
+                t.add(output_path,
+                      arcname=os.path.split(output_path)[-1])
+
+            # remove files from <raw_nest_output_path>
+            if delete_files:
+                for pattern in filepatterns:
+                    for p in Path(output_path).glob(pattern):
+                        while p.is_file():
+                            try:
+                                p.unlink()
+                            except OSError as e:
+                                print('Error: {} : {}'.format(p, e.strerror))
+                # remove raw directory
+                os.rmdir(output_path)
+
+        MPI.COMM_WORLD.Barrier()
+
+        return
+
+
+    def __wipe(self):
+        """ Wipe raw output directory from any existing files"""
+        if nest.Rank() == 0:
+            if os.path.isdir(self.sim_dict['path_raw_data']):
+                for p in Path(self.sim_dict['path_raw_data']).glob('*'):
+                    while p.is_file():
+                        try:
+                            p.unlink()
+                        except OSError as e:
+                            print('Error: {} : {}'.format(p, e.strerror))
+        MPI.COMM_WORLD.Barrier()
 
     def __check_parameters(self):
         """
@@ -289,7 +352,7 @@ class Network:
             vm_dict = {'interval': self.sim_dict['rec_V_int'],
                        'record_to': 'ascii',
                        'record_from': ['V_m']}
-                                             
+
             self.voltmeters = nest.Create('voltmeter',
                                           n=self.net_dict['num_pops'],
                                           params=vm_dict)
@@ -362,7 +425,7 @@ class Network:
         sd_dict = {'record_to': 'ascii',
                    'label': 'spike_recorder_' + self.stim_dict['th_name']}
         self.spike_recorder_th = nest.Create('spike_recorder', 1, sd_dict)
-        
+
         # input to thalamic population
         if self.stim_dict['thalamic_input'] == 'poisson':
             self.poisson_input_th = nest.Create('poisson_generator')
@@ -370,7 +433,7 @@ class Network:
                 rate=self.stim_dict['th_rate'],
                 start=self.stim_dict['th_start'],
                 stop=(self.stim_dict['th_start'] + self.stim_dict['th_duration']))
-        
+
         elif self.stim_dict['thalamic_input'] == 'pulses':
             # substract from pulse times the delay between pulse spike
             # generator and the thalamic population such that the first
@@ -381,9 +444,9 @@ class Network:
                           self.stim_dict['th_interval']) - \
                 self.stim_dict['th_delay_pulse_generator']
 
-            # one spike generator at the center of the network                
+            # one spike generator at the center of the network
             self.spike_pulse_input_th = \
-                nest.Create('spike_generator', 
+                nest.Create('spike_generator',
                             params={'spike_times': pulse_times},
                             positions=nest.spatial.grid(
                                 #center=[0.,0.],
