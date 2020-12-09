@@ -29,3 +29,9 @@ container can be accessed after invoking them by issuing:
 
 and opening the resulting URL in a browser on the host computer, similar to:
 http://127.0.0.1:5000/?token=dcf8f859f859740fc858c568bdd5b015e0cf15bfc2c5b0c1
+
+
+Singularity
+-----------
+
+Confer JSC instructions on how to build container at https://gitlab.version.fz-juelich.de/bvonstvieth_publications/container_userdoc_tmp
