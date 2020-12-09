@@ -40,11 +40,26 @@ class Network:
         self.net_dict = net_dict
         self.stim_dict = stim_dict
 
+        # wipe files from raw output directory it they exist
+        self.__wipe()
+
         # check parameters and print information
         self.__check_parameters()
 
         # initialize the NEST kernel
         self.__setup_nest()
+
+    def __wipe(self):
+        """ Wipe raw output directory from any existing files"""
+        if nest.Rank() == 0:
+            if os.path.isdir(self.sim_dict['path_raw_data']):
+                for p in Path(self.sim_dict['path_raw_data']).glob('*'):
+                    while p.is_file():
+                        try:
+                            p.unlink()
+                        except OSError as e:
+                            print('Error: {} : {}'.format(p, e.strerror))
+        MPI.COMM_WORLD.Barrier()
 
 
     def create(self):
