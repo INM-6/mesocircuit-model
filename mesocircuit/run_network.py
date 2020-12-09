@@ -14,7 +14,7 @@ import nest
 import core.simulation.network as network
 import core.helpers.parallelism_time as pt
 
-################################################################################
+##########################################################################
 # Load simulation, network and stimulation parameters from files located in the
 # folder provided as command line argument.
 

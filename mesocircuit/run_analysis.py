@@ -12,7 +12,7 @@ import pickle
 import core.analysis.spike_analysis as spike_analysis
 import core.helpers.parallelism_time as pt
 
-################################################################################
+##########################################################################
 # Load simulation, network, stimulation and analysis parameters from files
 # located in the folder provided as command line argument.
 
@@ -24,7 +24,7 @@ for dic in ['sim_dict', 'net_dict', 'ana_dict']:
         dics.append(pickle.load(f))
 sim_dict, net_dict, ana_dict = dics
 
-################################################################################
+##########################################################################
 # Instantiate a SpikeAnalysis object, preprocess the data (spatial and temporal
 # binning), and compute statistics.
 # Time measurements are printed.

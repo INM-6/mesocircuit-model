@@ -43,6 +43,7 @@ class Network:
 
         # initialize the NEST kernel
         self.__setup_nest()
+        return
 
     def create(self):
         """ Creates all network nodes.
@@ -59,7 +60,7 @@ class Network:
             self.__create_thalamic_stim_input()
         if self.net_dict['dc_input']:
             self.__create_dc_stim_input()
-
+        return
 
     def connect(self):
         """ Connects the network.
@@ -91,7 +92,7 @@ class Network:
 
         nest.Prepare()
         nest.Cleanup()
-
+        return
 
     def presimulate(self, t_presim):
         """
@@ -110,7 +111,7 @@ class Network:
 
         nest.SetKernelStatus({'data_prefix': 'presim_'})
         nest.Simulate(t_presim)
-
+        return
 
     def simulate(self, t_sim):
         """
@@ -126,7 +127,7 @@ class Network:
 
         nest.SetKernelStatus({'data_prefix': 'sim_'})
         nest.Simulate(t_sim)
-
+        return
 
     def tar_raw_data(self,
                      delete_files=True,
@@ -169,9 +170,7 @@ class Network:
                 os.rmdir(output_path)
 
         MPI.COMM_WORLD.Barrier()
-
         return
-
 
     def __wipe(self):
         """ Wipe raw output directory from any existing files"""
@@ -184,6 +183,7 @@ class Network:
                         except OSError as e:
                             print('Error: {} : {}'.format(p, e.strerror))
         MPI.COMM_WORLD.Barrier()
+        return
 
     def __check_parameters(self):
         """
@@ -204,7 +204,7 @@ class Network:
                         self.net_dict['K_scaling'])
                 message += '\n  Weights and DC input are adjusted to compensate.\n'
             print(message)
-
+        return
 
     def __setup_nest(self):
         """ Initializes the NEST kernel.
@@ -246,7 +246,7 @@ class Network:
             # prefix
             'data_prefix': 'presim_'}
         nest.SetKernelStatus(kernel_dict)
-
+        return
 
     def __create_neuronal_populations(self):
         """ Creates the neuronal populations.
@@ -265,8 +265,8 @@ class Network:
 
             # random positions in 2D with periodic boundary conditions
             positions = nest.spatial.free(
-                pos=nest.random.uniform(min=-self.net_dict['extent']/2.,
-                                        max=self.net_dict['extent']/2.),
+                pos=nest.random.uniform(min=-self.net_dict['extent'] / 2.,
+                                        max=self.net_dict['extent'] / 2.),
                 edge_wrap=True,
                 extent=[self.net_dict['extent'], self.net_dict['extent']])
 
@@ -286,9 +286,10 @@ class Network:
                     I_e=self.net_dict['DC_amp'][i])
 
                 if self.net_dict['V0_type'] == 'optimized':
-                    population.set(V_m=nest.random.normal(
-                        self.net_dict['neuron_params']['V0_mean']['optimized'][i],
-                        self.net_dict['neuron_params']['V0_std']['optimized'][i]))
+                    population.set(
+                        V_m=nest.random.normal(
+                            self.net_dict['neuron_params']['V0_mean']['optimized'][i],
+                            self.net_dict['neuron_params']['V0_std']['optimized'][i]))
                 elif self.net_dict['V0_type'] == 'original':
                     population.set(V_m=nest.random.normal(
                         self.net_dict['neuron_params']['V0_mean']['original'],
@@ -317,12 +318,12 @@ class Network:
 
         # write MPI-local positions to file
         # rank is automatically appended to file name
-        for i,pop in enumerate(self.pops):
+        for i, pop in enumerate(self.pops):
             fn = os.path.join(
                 self.sim_dict['path_raw_data'],
                 'positions_' + self.net_dict['populations'][i] + '.dat')
             nest.DumpLayerNodes(pop, fn)
-
+        return
 
     def __create_recording_devices(self):
         """ Creates one recording device of each kind per population.
@@ -345,9 +346,10 @@ class Network:
                                                params=sd_dict)
 
             # cannot provide list of labels with params
-            sd_labels = \
-                ['spike_recorder_' + pop for pop in self.net_dict['populations']]
-            for i,sd in enumerate(self.spike_recorders):
+            sd_labels = [
+                'spike_recorder_' +
+                pop for pop in self.net_dict['populations']]
+            for i, sd in enumerate(self.spike_recorders):
                 sd.label = sd_labels[i]
 
         if 'voltmeter' in self.sim_dict['rec_dev']:
@@ -364,9 +366,9 @@ class Network:
             # cannot provide list of labels with params
             vm_labels = \
                 ['voltmeter_' + pop for pop in self.net_dict['populations']]
-            for i,vm in enumerate(self.voltmeters):
+            for i, vm in enumerate(self.voltmeters):
                 vm.label = vm_labels[i]
-
+        return
 
     def __create_poisson_bg_input(self):
         """ Creates the Poisson generators for ongoing background input if
@@ -383,7 +385,7 @@ class Network:
                                             n=self.net_dict['num_pops'] - 1)
         self.poisson_bg_input.rate = \
             self.net_dict['bg_rate'] * self.net_dict['ext_indegrees']
-
+        return
 
     def __create_thalamic_stim_input(self):
         """ Creates input for the thalamic neuronal population if specified in
@@ -399,8 +401,10 @@ class Network:
             self.poisson_input_th.set(
                 rate=self.net_dict['th_rate'],
                 start=self.net_dict['th_start'],
-                stop=(self.net_dict['th_start'] + self.net_dict['th_duration']))
-        
+                stop=(
+                    self.net_dict['th_start'] +
+                    self.net_dict['th_duration']))
+
         elif self.net_dict['thalamic_input'] == 'pulses':
             # substract from pulse times the delay between pulse spike
             # generator and the thalamic population such that the first
@@ -418,7 +422,7 @@ class Network:
                             positions=nest.spatial.grid(
                                 shape=[1, 1],
                                 edge_wrap=True))
-
+        return
 
     def __create_dc_stim_input(self):
         """ Creates DC generators for external stimulation if specified
@@ -438,16 +442,18 @@ class Network:
                    'stop': (self.net_dict['dc_start'] +
                             self.net_dict['dc_dur'])}
         self.dc_stim_input = nest.Create('dc_generator',
-                                         n=self.net_dict['num_pops'] - 1, # not for thalamus
+                                         # not for thalamus
+                                         n=self.net_dict['num_pops'] - 1,
                                          params=dc_dict)
-
+        return
 
     def __connect_neuronal_populations(self):
         """ Creates the recurrent connections between neuronal populations. """
         if nest.Rank() == 0:
             print('Connecting neuronal populations recurrently.')
 
-        for i, target_pop in enumerate(self.pops[:-1]): # thalamus is no target
+        for i, target_pop in enumerate(
+                self.pops[:-1]):  # thalamus is no target
             for j, source_pop in enumerate(self.pops):
                 if self.net_dict['num_synapses'][i][j] >= 0.:
 
@@ -473,8 +479,8 @@ class Network:
                     elif self.net_dict['connect_method'] == 'distr_indegree_exp':
                         conn_dict_rec = {
                             'rule': 'pairwise_bernoulli',
-                            'p': self.net_dict['p0'][i][j] * \
-                                nest.spatial_distributions.exponential(
+                            'p': self.net_dict['p0'][i][j] *
+                            nest.spatial_distributions.exponential(
                                     x=nest.spatial.distance,
                                     beta=self.net_dict['beta'][i][j]),
                             'mask': {'circular': {
@@ -514,8 +520,9 @@ class Network:
                         'weight': nest.math.redraw(
                             nest.random.normal(
                                 mean=self.net_dict['weight_matrix_mean'][i][j],
-                                std=abs(self.net_dict['weight_matrix_mean'][i][j] *
-                                        self.net_dict['weight_rel_std'])),
+                                std=abs(
+                                    self.net_dict['weight_matrix_mean'][i][j] *
+                                    self.net_dict['weight_rel_std'])),
                             min=w_min,
                             max=w_max),
                         'delay': nest.math.redraw(
@@ -528,12 +535,13 @@ class Network:
                     # note that for pairwise_bernoulli repeat_connect determines
                     # the maximum possible number of connections (multapses) for
                     # a pair of neurons
-                    for repeat in np.arange(self.net_dict['repeat_connect'][i][j]):
+                    for repeat in np.arange(
+                            self.net_dict['repeat_connect'][i][j]):
                         nest.Connect(
                             source_pop, target_pop,
                             conn_spec=conn_dict_rec,
                             syn_spec=syn_dict)
-
+        return
 
     def __connect_recording_devices(self):
         """ Connects the recording devices to the mesocircuit."""
@@ -543,16 +551,17 @@ class Network:
         for i, target_pop in enumerate(self.pops):
             if 'spike_recorder' in self.sim_dict['rec_dev']:
                 nest.Connect(target_pop, self.spike_recorders[i])
-            if 'voltmeter' in self.sim_dict['rec_dev'] and i < len(self.pops) - 1:
+            if 'voltmeter' in self.sim_dict['rec_dev'] and i < len(
+                    self.pops) - 1:
                 nest.Connect(self.voltmeters[i], target_pop)
-
+        return
 
     def __connect_poisson_bg_input(self):
         """ Connects the Poisson generators to the cortical populations."""
         if nest.Rank() == 0:
             print('Connecting Poisson generators for background input.')
 
-        for i, target_pop in enumerate(self.pops[:-1]): # not to thalamus
+        for i, target_pop in enumerate(self.pops[:-1]):  # not to thalamus
             conn_dict_poisson = {'rule': 'all_to_all'}
 
             syn_dict_poisson = {
@@ -564,7 +573,7 @@ class Network:
                 self.poisson_bg_input[i], target_pop,
                 conn_spec=conn_dict_poisson,
                 syn_spec=syn_dict_poisson)
-
+        return
 
     def __connect_thalamic_stim_input(self):
         """ Connects input to thalamic populations."""
@@ -585,7 +594,7 @@ class Network:
             nest.Connect(self.spike_pulse_input_th, self.pops[-1],
                          conn_spec=conn_dict_pulse_th,
                          syn_spec=syn_dict_pulse_th)
-
+        return
 
     def __connect_dc_stim_input(self):
         """ Connects the DC generators to the neuronal populations. """
@@ -593,5 +602,6 @@ class Network:
         if nest.Rank() == 0:
             print('Connecting DC generators.')
 
-        for i, target_pop in enumerate(self.pops[:-1]): # not to thalamus
+        for i, target_pop in enumerate(self.pops[:-1]):  # not to thalamus
             nest.Connect(self.dc_stim_input[i], target_pop)
+        return

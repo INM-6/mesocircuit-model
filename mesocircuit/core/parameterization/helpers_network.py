@@ -9,6 +9,7 @@ base parameter dictionaries.
 import numpy as np
 import copy
 
+
 def derive_dependent_parameters(base_net_dict):
     """
     Derives network parameters which depend on the base parameters.
@@ -33,7 +34,7 @@ def derive_dependent_parameters(base_net_dict):
     net_dict['num_pops'] = len(net_dict['populations'])
 
     # shape for connectivity matrices etc.
-    pop_shape = (net_dict['num_pops']-1, net_dict['num_pops'])
+    pop_shape = (net_dict['num_pops'] - 1, net_dict['num_pops'])
 
     # matrices for delays
     if net_dict['delay_type'] == 'normal':
@@ -42,7 +43,7 @@ def derive_dependent_parameters(base_net_dict):
             net_dict['delay_exc_mean'],
             net_dict['delay_inh_mean'],
             net_dict['num_pops'])
-    
+
     elif net_dict['delay_type'] == 'linear':
         # matrix of delay offsets
         net_dict['delay_offset_matrix'] = get_exc_inh_matrix(
@@ -65,8 +66,8 @@ def derive_dependent_parameters(base_net_dict):
     else:
         beta = net_dict['beta_unscaled'] * net_dict['beta_scaling']
     net_dict['beta'] = np.zeros(pop_shape)
-    net_dict['beta'][:,:-1] = beta
-    net_dict['beta'][:,-1] = net_dict['beta_th']
+    net_dict['beta'][:, :-1] = beta
+    net_dict['beta'][:, -1] = net_dict['beta_th']
 
     # matrix of mean PSPs
     # the mean PSP of the connection from L4E to L23E is doubled
@@ -86,7 +87,8 @@ def derive_dependent_parameters(base_net_dict):
 
     # 1mm2 neuron number dependent on the base model
     num_neurons_1mm2 = np.zeros(net_dict['num_pops'])
-    num_neurons_1mm2[:-1] = net_dict['num_neurons_1mm2_' + net_dict['base_model']]
+    num_neurons_1mm2[:-1] = \
+        net_dict['num_neurons_1mm2_' + net_dict['base_model']]
     num_neurons_1mm2[-1] = net_dict['num_neurons_th_1mm2']
 
     # 1mm2 external indegrees dependent on the base model.
@@ -103,53 +105,54 @@ def derive_dependent_parameters(base_net_dict):
     # TODO adjust when parameters are final
     if net_dict['base_model'] == 'PD2014':
         conn_probs_1mm2 = np.zeros(pop_shape)
-        conn_probs_1mm2[:,:-1] = net_dict['conn_probs_1mm2_PD2014']
-        conn_probs_1mm2[:,-1] = net_dict['conn_probs_th_1mm2']
+        conn_probs_1mm2[:, :-1] = net_dict['conn_probs_1mm2_PD2014']
+        conn_probs_1mm2[:, -1] = net_dict['conn_probs_th_1mm2']
 
         # number of synapses of a full-scale 1mm2 network
         num_synapses_1mm2 = num_synapses_from_conn_probs(
             conn_probs_1mm2,
-            num_neurons_1mm2, # sources
-            num_neurons_1mm2[:-1]) # targets, thalamus is only source
+            num_neurons_1mm2,  # sources
+            num_neurons_1mm2[:-1])  # targets, thalamus is only source
 
         indegrees_1mm2 = (num_synapses_1mm2 /
-                          num_neurons_1mm2[:-1][:,np.newaxis])
+                          num_neurons_1mm2[:-1][:, np.newaxis])
 
     elif net_dict['base_model'] == 'SvA2018':
         num_synapses_th_1mm2 = num_synapses_from_conn_probs(
-            net_dict['conn_probs_th_1mm2'][np.newaxis].T, # column needed
-            np.array([num_neurons_1mm2[-1]]), # only thalamus
+            net_dict['conn_probs_th_1mm2'][np.newaxis].T,  # column needed
+            np.array([num_neurons_1mm2[-1]]),  # only thalamus
             num_neurons_1mm2[:-1])
-        
+
         indegrees_th_1mm2 = (num_synapses_th_1mm2 /
-                             num_neurons_1mm2[:-1][:,np.newaxis])
+                             num_neurons_1mm2[:-1][:, np.newaxis])
 
         indegrees_1mm2 = np.zeros(pop_shape)
-        indegrees_1mm2[:,:-1] = net_dict['indegrees_1mm2_SvA2018']
-        indegrees_1mm2[:,-1] = indegrees_th_1mm2.flatten()
-    
+        indegrees_1mm2[:, :-1] = net_dict['indegrees_1mm2_SvA2018']
+        indegrees_1mm2[:, -1] = indegrees_th_1mm2.flatten()
+
     net_dict['indegrees_1mm2'] = np.round(indegrees_1mm2).astype(int)
-                      
+
     # indegrees are scaled only if the extent is > 1 and
     # connect_method is 'fixedindegree_exp' or distr_indegree_exp;
     # otherwise the indegrees from the 1mm2 network are preserved
-    if (net_dict['extent'] > 1. and 
-        net_dict['connect_method'] in ['fixedindegree_exp', 'distr_indegree_exp']):
+    if (net_dict['extent'] > 1. and net_dict['connect_method']
+            in ['fixedindegree_exp', 'distr_indegree_exp']):
         # scale indegrees from disc of 1mm2 to disc of radius extent/2.
         net_dict['K_area_scaling'] = scale_indegrees_to_extent(
             net_dict['extent'], net_dict['beta'])
 
         # elementwise multiplication because K_area_scaling is a matrix
-        full_indegrees = np.multiply(indegrees_1mm2, net_dict['K_area_scaling'])
+        full_indegrees = np.multiply(
+            indegrees_1mm2, net_dict['K_area_scaling'])
 
         # adjust external indegrees to compensate for additional interal indegrees.
         # this does not apply to thalamus
         full_ext_indegrees = adjust_ext_indegrees_to_preserve_mean_input(
-            indegrees_1mm2[:,:-1], full_indegrees[:,:-1],
+            indegrees_1mm2[:, :-1], full_indegrees[:, :-1],
             ext_indegrees_1mm2,
             net_dict['mean_rates_' + net_dict['base_model']],
             net_dict['bg_rate'],
-            PSC_matrix_mean[:,:-1], PSC_ext)
+            PSC_matrix_mean[:, :-1], PSC_ext)
     else:
         full_indegrees = indegrees_1mm2
         full_ext_indegrees = ext_indegrees_1mm2
@@ -174,7 +177,7 @@ def derive_dependent_parameters(base_net_dict):
     # DC input compensates for potentially missing Poisson input
     # not to thalamus
     if net_dict['poisson_input']:
-        DC_amp = np.zeros(net_dict['num_pops']-1)
+        DC_amp = np.zeros(net_dict['num_pops'] - 1)
     else:
         print('DC input compensates for missing Poisson input.')
         DC_amp = dc_input_compensating_poisson(
@@ -204,14 +207,12 @@ def derive_dependent_parameters(base_net_dict):
                                         net_dict['extent'],
                                         net_dict['beta'])
     else:
-        net_dict['repeat_connect'] = np.ones_like(indegrees,dtype=int)
-
+        net_dict['repeat_connect'] = np.ones_like(indegrees, dtype=int)
 
     # store final parameters in dictionary
     net_dict['weight_matrix_mean'] = PSC_matrix_mean
     net_dict['weight_ext'] = PSC_ext
     net_dict['DC_amp'] = DC_amp
-
 
     # absolute radius for thalamic pulses
     if net_dict['thalamic_input'] == 'pulses':
@@ -248,14 +249,19 @@ def scale_indegrees_to_extent(extent, beta):
     radius_area = extent / 2.
 
     K_indegree_scaling = (expression(beta, radius_area) /
-                          expression(beta, radius_1mm2)) 
+                          expression(beta, radius_1mm2))
 
     return K_indegree_scaling
 
 
 def adjust_ext_indegrees_to_preserve_mean_input(
-    indegrees_1mm2, full_indegrees, ext_indegrees_1mm2, mean_rates, bg_rate,
-    PSC_matrix_mean, PSC_ext):
+        indegrees_1mm2,
+        full_indegrees,
+        ext_indegrees_1mm2,
+        mean_rates,
+        bg_rate,
+        PSC_matrix_mean,
+        PSC_ext):
     """
     Computes external indegrees to adjusted to modified internal indegrees to
     preserve the mean input.
@@ -282,10 +288,9 @@ def adjust_ext_indegrees_to_preserve_mean_input(
     full_ext_indegrees
         Adjusted external indegrees.
     """
-    frac_psc = PSC_matrix_mean / PSC_ext # g
+    frac_psc = PSC_matrix_mean / PSC_ext  # g
     frac_rates = mean_rates / bg_rate
     diff_indegrees = indegrees_1mm2 - full_indegrees
-
 
     diff_rec_inputs = np.multiply(frac_psc * frac_rates, diff_indegrees)
     sum_diff_rec_inputs = np.sum(diff_rec_inputs, axis=1)
@@ -295,7 +300,7 @@ def adjust_ext_indegrees_to_preserve_mean_input(
     # TODO could be converted into a unit test
     #full = np.zeros_like(mean_rates)
     #mm2 = np.zeros_like(mean_rates)
-    #for i in np.arange(len(PSC_matrix_mean)): # target
+    # for i in np.arange(len(PSC_matrix_mean)): # target
     #    rec_input_full = 0.
     #    rec_input_1mm2 = 0.
     #    for j in np.arange(len(PSC_matrix_mean[i])): # source
@@ -341,11 +346,11 @@ def zero_distance_conn_prob_exp(num_neurons, indegrees, extent, beta):
     # connection probability inside of mask with radius extent / 2.
     # without spatial profile.
     # pi * (extent/2)**2 / extent**2 = pi /4
-    conn_prob_uniform = indegrees / (num_neurons * np.pi/4.)
+    conn_prob_uniform = indegrees / (num_neurons * np.pi / 4.)
 
     radius = extent / 2.
     p0_raw = (conn_prob_uniform * 0.5 * radius**2 /
-             (beta * (beta - np.exp(-radius / beta) * (beta + radius))))
+              (beta * (beta - np.exp(-radius / beta) * (beta + radius))))
 
     repeat_connect = np.ones_like(indegrees, dtype=int)
     p0 = copy.copy(p0_raw)
@@ -363,7 +368,7 @@ def zero_distance_conn_prob_exp(num_neurons, indegrees, extent, beta):
 def get_exc_inh_matrix(val_exc, val_inh, num_pops):
     """
     Creates a matrix for excitatory and inhibitory values.
-    
+
     The thalamus is assumed as an additional excitatory population,
     meaning that the network has num_pops source populations and num_pops-1
     target populations.
@@ -383,14 +388,14 @@ def get_exc_inh_matrix(val_exc, val_inh, num_pops):
         A matrix of of size ((num_pops-1) x num_pops).
 
     """
-    matrix = np.zeros((num_pops-1, num_pops))
+    matrix = np.zeros((num_pops - 1, num_pops))
     matrix[:, 0:num_pops:2] = val_exc
     matrix[:, 1:num_pops:2] = val_inh
     return matrix
 
 
 def num_synapses_from_conn_probs(
-    conn_probs, num_neurons_source, num_neurons_target):
+        conn_probs, num_neurons_source, num_neurons_target):
     """Computes the total number of synapses between two populations from
     connection probabilities.
 
@@ -543,8 +548,8 @@ def adjust_weights_and_input_to_synapse_scaling(
     PSC_ext_new = PSC_ext / np.sqrt(K_scaling)
 
     # recurrent input of full network without thalamus
-    input_rec = np.sum(mean_PSC_matrix[:,:-1] * full_indegrees[:,:-1] * full_mean_rates,
-                       axis=1)
+    input_rec = np.sum(
+        mean_PSC_matrix[:, :-1] * full_indegrees[:, :-1] * full_mean_rates, axis=1)
 
     DC_amp_new = DC_amp \
         + 0.001 * tau_syn * (1. - np.sqrt(K_scaling)) * input_rec

@@ -6,6 +6,14 @@ compute statistics.
 
 """
 
+from ..helpers import base_class
+from ..helpers import parallelism_time as pt
+import fnmatch
+import re
+import tarfile
+from prettytable import PrettyTable
+from mpi4py import MPI
+import matplotlib.pyplot as plt
 import os
 import warnings
 import glob
@@ -15,19 +23,12 @@ import scipy.sparse as sp
 import scipy.spatial as spatial
 import matplotlib
 matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from mpi4py import MPI
-from prettytable import PrettyTable
-import tarfile
-import re
-import fnmatch
-from ..helpers import parallelism_time as pt
-from ..helpers import base_class
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
 SIZE = COMM.Get_size()
 RANK = COMM.Get_rank()
+
 
 class SpikeAnalysis(base_class.BaseAnalysisPlotting):
     """
@@ -64,7 +65,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         return
 
-
     def preprocess_data(self):
         """
         Converts raw node ids to processed ones, merges raw spike and position
@@ -83,24 +83,23 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # merge spike and position files generated on different threads or
         # processes
         num_spikes = pt.parallelize_by_array(self.X,
-                                        self.__merge_raw_files_X,
-                                        int,
-                                        'spike_recorder')
+                                             self.__merge_raw_files_X,
+                                             int,
+                                             'spike_recorder')
         num_neurons = pt.parallelize_by_array(self.X,
-                                        self.__merge_raw_files_X,
-                                        int,
-                                        'positions')
+                                              self.__merge_raw_files_X,
+                                              int,
+                                              'positions')
         if not (num_neurons == self.N_X).all():
-            raise Exception ('Neuron numbers do not match.')
+            raise Exception('Neuron numbers do not match.')
 
         # minimal analysis as sanity check
         self.__first_glance_at_data(num_spikes)
 
         # preprocess data of each population in parallel
         pt.parallelize_by_array(self.X,
-                           self.__preprocess_data_X)
+                                self.__preprocess_data_X)
         return
-
 
     def compute_statistics(self):
         """
@@ -110,9 +109,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             print('Computing statistics.')
 
         pt.parallelize_by_array(self.X,
-                           self.__compute_statistics_X)
+                                self.__compute_statistics_X)
         return
-
 
     def merge_h5_files_populations(self):
         """
@@ -123,12 +121,11 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             print('Merging .h5 files for all populations.')
 
         pt.parallelize_by_array(self.ana_dict['datatypes_preprocess'],
-                           self.__merge_h5_files_populations_datatype)
+                                self.__merge_h5_files_populations_datatype)
 
         pt.parallelize_by_array(self.ana_dict['datatypes_statistics'],
-                           self.__merge_h5_files_populations_datatype)
+                                self.__merge_h5_files_populations_datatype)
         return
-
 
     def __load_raw_nodeids(self):
         """
@@ -157,7 +154,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             nodeids_raw = None
         nodeids_raw = COMM.bcast(nodeids_raw, root=0)
         return nodeids_raw
-
 
     def __merge_raw_files_X(self, i, X, datatype):
         """
@@ -231,7 +227,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
             # sort the final data
             comb_data = np.sort(
-                comb_data, order=self.ana_dict['write_ascii'][datatype]['sortby'])
+                comb_data,
+                order=self.ana_dict['write_ascii'][datatype]['sortby'])
 
             # number of rows corresponds to
             # 'spike_recorder': number of spikes
@@ -246,7 +243,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                        header='\t '.join(read_dtype['names']),
                        fmt=self.ana_dict['write_ascii'][datatype]['fmt'])
         return num_rows
-
 
     def __first_glance_at_data(self, num_spikes):
         """
@@ -280,7 +276,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             print(overview, '\n')
         return
 
-
     def __preprocess_data_X(self, i, X):
         """
         Inner function to be used as argument of pt.parallelize_by_array()
@@ -308,15 +303,15 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             # 'Empty input file'
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
-                data = np.loadtxt(fn,
-                    dtype=self.ana_dict['read_nest_ascii_dtypes'][datatype])
+                data = np.loadtxt(
+                    fn, dtype=self.ana_dict['read_nest_ascii_dtypes'][datatype])
             data_load.append(data)
         spikes, positions = data_load
 
         # order is important as some datasets rely on previous ones
         datasets = {}
         for datatype in self.ana_dict['datatypes_preprocess']:
-            if i==0:
+            if i == 0:
                 print('  Processing: ' + datatype)
 
             # overwritten for non-sparse datasets
@@ -372,7 +367,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 X, datatype, datasets[datatype], is_sparse, dataset_dtype)
         return
 
-
     def __positions_X(self, X, positions):
         """
         Brings positions in format for writing.
@@ -387,7 +381,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         pos_dic = {'x-position_mm': positions['x-position_mm'],
                    'y-position_mm': positions['y-position_mm']}
         return pos_dic
-
 
     def __time_binned_sptrains_X(self, X, spikes, time_bins, dtype):
         """
@@ -418,7 +411,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         """
         # if no spikes were recorded, return an empty sparse matrix
-        i = np.where(self.X==X)[0][0] # TODO
+        i = np.where(self.X == X)[0][0]  # TODO
         shape = (self.N_X[i], time_bins.size)
 
         if spikes.size == 0:
@@ -437,9 +430,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 shape=shape, dtype=dtype)
         return sptrains_bintime
 
-
-    def __time_and_space_binned_sptrains_X(self,
-        X, positions, sptrains_bintime, dtype):
+    def __time_and_space_binned_sptrains_X(
+            self, X, positions, sptrains_bintime, dtype):
         """
         Computes space-binned spike trains from time-binned spike trains.
 
@@ -472,8 +464,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                             self.space_bins[1:], right=True)
 
         # 2D sparse array with spatial bins flattened to 1D
-        map_y, map_x = np.mgrid[0:self.space_bins.size-1,
-                                0:self.space_bins.size-1]
+        map_y, map_x = np.mgrid[0:self.space_bins.size - 1,
+                                0:self.space_bins.size - 1]
         map_y = map_y.ravel()
         map_x = map_x.ravel()
 
@@ -484,8 +476,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         row = np.zeros(sptrains_coo.nnz)
         j = 0
         for i, n in enumerate(nspikes):
-            [ind] = np.where((map_x == pos_x[i]) & (map_y==pos_y[i]))[0]
-            row[j:j+n] = ind
+            [ind] = np.where((map_x == pos_x[i]) & (map_y == pos_y[i]))[0]
+            row[j:j + n] = ind
             j += n
 
         sptrains_coo = sp.coo_matrix(
@@ -495,12 +487,11 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             assert(sptrains_bintime.sum() == sptrains_coo.tocsr().sum())
         except AssertionError as ae:
             raise ae(
-                'sptrains_bintime.sum()={0} != sptrains_coo.sum()={1}'.format(\
+                'sptrains_bintime.sum()={0} != sptrains_coo.sum()={1}'.format(
                     sptrains_bintime.sum(), sptrains_coo.tocsr().sum()))
 
         sptrains_bintime_binspace = sptrains_coo.tocsr()
         return sptrains_bintime_binspace
-
 
     def __neuron_count_per_spatial_bin_X(self, X, positions):
         """
@@ -524,9 +515,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         pos_hist = pos_hist.astype(int)
         return pos_hist
 
-
-    def __instantaneous_time_and_space_binned_rates_X(self,
-        X, sptrains_bintime_binspace, binsize_time, neuron_count_binspace):
+    def __instantaneous_time_and_space_binned_rates_X(
+            self, X, sptrains_bintime_binspace, binsize_time, neuron_count_binspace):
         """
         Computes the time- and space-binned rates averaged over neurons in a
         spatial bin.
@@ -554,7 +544,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             Rates as sparse matrix in Compressed Sparse Row format.
         """
         # number of spikes in each spatio-temporal bin per second
-        inst_rates = sptrains_bintime_binspace.astype(float) / (binsize_time * 1E-3)
+        inst_rates = \
+            sptrains_bintime_binspace.astype(float) / (binsize_time * 1E-3)
 
         # rates per neuron
         # flatten histogram and avoid division by zero
@@ -563,11 +554,10 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         inst_rates = inst_rates.tolil()
         inst_rates[pos_inds] = (
-            inst_rates[pos_inds].toarray().T /  pos_hist[pos_inds]).T
+            inst_rates[pos_inds].toarray().T / pos_hist[pos_inds]).T
 
         inst_rates = inst_rates.tocsr()
         return inst_rates
-
 
     def __pos_sorting_array_X(self, X, positions):
         """
@@ -590,12 +580,11 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             pos_sorting_arrays = np.argsort(positions['x-position_mm'])
         elif self.ana_dict['sorting_axis'] == 'y':
             pos_sorting_arrays = np.argsort(positions['y-position_mm'])
-        elif self.ana_dict['sorting_axis'] == None:
+        elif self.ana_dict['sorting_axis'] is None:
             pos_sorting_arrays = np.arange(positions.size)
         else:
-            raise Exception ("Sorting axis is not 'x', 'y' or None.")
+            raise Exception("Sorting axis is not 'x', 'y' or None.")
         return pos_sorting_arrays
-
 
     def __compute_statistics_X(self, i, X):
         """
@@ -621,23 +610,28 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         for datatype in self.ana_dict['datatypes_preprocess']:
             datatype_X = datatype + '_' + X
             key = datatype + '_X'
-            fn = os.path.join(self.sim_dict['path_processed_data'], datatype_X + '.h5')
+            fn = os.path.join(
+                self.sim_dict['path_processed_data'],
+                datatype_X + '.h5')
             data = h5py.File(fn, 'r')
             # load .h5 files with sparse data to csr format
-            if type(data[X]) == h5py._hl.group.Group and 'data_row_col' in data[X]:
+            if isinstance(
+                    data[X],
+                    h5py._hl.group.Group) and 'data_row_col' in data[X]:
                 data = self.load_h5_to_sparse_X(X, data)
-            else: data = data[X]
+            else:
+                data = data[X]
 
             # non-temporal data
             if datatype in \
                 ['positions',
                  'neuron_count_binspace',
                  'pos_sorting_arrays']:
-                 d.update({key: data})
+                d.update({key: data})
 
             # remove startup transient from data with simulation resolution
             elif datatype in \
-                ['sptrains']:
+                    ['sptrains']:
                 d.update({key: data[:, self.min_time_index_sim:]})
 
             # remove startup transient from temporally binned data
@@ -654,7 +648,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # compute statistics
         # order is important!
         for datatype in self.ana_dict['datatypes_statistics']:
-            if i==0:
+            if i == 0:
                 print('  Computing: ' + datatype)
 
             if d['sptrains_X'].size == 0:
@@ -685,21 +679,21 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 elif datatype == 'CCfuncs_thalamic_pulses':
                     if self.net_dict['thalamic_input'] == 'pulses' and X != 'TC':
                         # load data from TC
-                        fn_TC = os.path.join(self.sim_dict['path_processed_data'],
+                        fn_TC = os.path.join(
+                            self.sim_dict['path_processed_data'],
                             'sptrains_bintime_binspace_TC.h5')
                         data_TC = h5py.File(fn_TC, 'r')
                         data_TC = self.load_h5_to_sparse_X('TC', data_TC)
                         sptrains_bintime_binspace_TC = \
-                            data_TC[:,self.min_time_index_rs:]
+                            data_TC[:, self.min_time_index_rs:]
                         dataset = self.__compute_cc_funcs_thalamic_pulses(
                             X, d['sptrains_bintime_binspace_X'],
                             sptrains_bintime_binspace_TC)
                     else:
-                        dataset=np.array([])
+                        dataset = np.array([])
 
             self.write_dataset_to_h5_X(X, datatype, dataset, is_sparse=False)
         return
-
 
     def __compute_rates(self, X, sptrains_X, duration):
         """
@@ -717,9 +711,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         """
         count = np.array(sptrains_X.sum(axis=1)).flatten()
-        rates = count * 1.E3 / duration # in 1/s
+        rates = count * 1.E3 / duration  # in 1/s
         return rates
-
 
     def __compute_lvs(self, X, sptrains_X):
         """
@@ -753,7 +746,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         """
         lvs = np.zeros(sptrains_X.shape[0])
-        for i,sptrain in enumerate(sptrains_X):
+        for i, sptrain in enumerate(sptrains_X):
             # inter-spike intervals of spike trains of individual neurons in
             # units of time steps of sptrains_X
             # (for isis in units of ms or s, multiply with the time step)
@@ -766,8 +759,12 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                     np.power(np.diff(isi) / (isi[:-1] + isi[1:]), 2)).mean()
         return lvs
 
-
-    def __compute_ccs_distances(self, X, sptrains_X, binsize_time, positions_X):
+    def __compute_ccs_distances(
+            self,
+            X,
+            sptrains_X,
+            binsize_time,
+            positions_X):
         """
         Computes Pearson correlation coefficients (excluding auto-correlations)
         and distances between correlated neurons.
@@ -785,19 +782,19 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         """
         min_num_neurons = np.min(self.net_dict['num_neurons'])
         if self.ana_dict['ccs_num_neurons'] == 'auto' or \
-            self.ana_dict['ccs_num_neurons'] > min_num_neurons:
+                self.ana_dict['ccs_num_neurons'] > min_num_neurons:
             num_neurons = min_num_neurons
         else:
             num_neurons = self.ana_dict['ccs_num_neurons']
 
         # spike trains and node ids
         spt = sptrains_X.toarray()
-        spt = spt[:,:-1] # discard very last time bin
+        spt = spt[:, :-1]  # discard very last time bin
         num_neurons_data = sptrains_X.shape[0]
 
         # mask out non-spiking neurons
         mask_nrns = np.ones(num_neurons_data, dtype=bool)
-        mask_nrns[np.all(spt==0, axis=1)] = False
+        mask_nrns[np.all(spt == 0, axis=1)] = False
 
         # extract at most num_neurons neurons from spike trains and from
         # positions
@@ -808,7 +805,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # number of spiking neurons included
         num_neurons_spk = np.shape(spt)[0]
 
-        if X=='L23E':
+        if X == 'L23E':
             print('    Using ' + str(num_neurons) + ' neurons in each ' +
                   'population for computing CCs (if no exception given).')
         if num_neurons != num_neurons_spk:
@@ -835,7 +832,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                    'distances_mm': distances}
         return ccs_dic
 
-
     def __compute_psds(self, X, sptrains_X, binsize_time):
         """
         Computes population-rate power spectral densities.
@@ -852,7 +848,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # sampling frequency
         Fs = 1000. / binsize_time
         # number of points of overlap between segments
-        noverlap = int(self.ana_dict['psd_NFFT'] * 3/4)
+        noverlap = int(self.ana_dict['psd_NFFT'] * 3 / 4)
 
         # detrend data
         x = np.array(sptrains_X.sum(axis=0), dtype=float).flatten()
@@ -865,9 +861,11 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 'psds_s^-2_Hz-1': Pxx}
         return psds
 
-
-    def __compute_cc_funcs_thalamic_pulses(self,
-        X, sptrains_bintime_binspace_X, sptrains_bintime_binspace_TC):
+    def __compute_cc_funcs_thalamic_pulses(
+            self,
+            X,
+            sptrains_bintime_binspace_X,
+            sptrains_bintime_binspace_TC):
         """
         Compute distance-dependent cross-correlation functions for thalamic
         pulses.
@@ -895,21 +893,23 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         data0 = sptrains_bintime_binspace_TC.toarray()
         data0_prune = np.sum(data0, axis=0)
         data0_prune[np.nonzero(data0_prune)] = 1
-        data0_prune = data0_prune.astype(float) # were integers up to here
+        data0_prune = data0_prune.astype(float)  # were integers up to here
 
         # determine number of bins along the diagonals to be evaluated
-        dim = int(np.sqrt(data0.shape[0])) # number of spatial bin in data
+        dim = int(np.sqrt(data0.shape[0]))  # number of spatial bin in data
         nbins_diag = self.ana_dict['cc_funcs_nbins_diag']
         if nbins_diag > int(dim / 2):
             nbins_diag = int(dim / 2)
-        if dim%2 != 0: raise Exception
+        if dim % 2 != 0:
+            raise Exception
 
-        if X=='L23E' and nbins_diag != self.ana_dict['cc_funcs_nbins_diag']:
+        if X == 'L23E' and nbins_diag != self.ana_dict['cc_funcs_nbins_diag']:
             print('    Using ' + str(nbins_diag) + ' spatial bins for ' +
                   'computing CCfuncs_thalmus_center.')
 
         # time lag indices and lag values
-        lag_binsize = self.ana_dict['cc_funcs_tau'] / self.ana_dict['binsize_time']
+        lag_binsize = self.ana_dict['cc_funcs_tau'] / \
+            self.ana_dict['binsize_time']
         lag_range = np.arange(-lag_binsize, lag_binsize + 1)
 
         lag_inds = lag_range.astype(int) + int(data0.shape[-1] / 2.)
@@ -924,12 +924,14 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         cc_func = np.zeros((nbins_diag, lags.size))
 
         data1 = sptrains_bintime_binspace_X.toarray().astype(float)
-        dim1 = int(np.sqrt(data1.shape[0])) # number of spatial bins
-        if dim1 != dim: raise Exception
+        dim1 = int(np.sqrt(data1.shape[0]))  # number of spatial bins
+        if dim1 != dim:
+            raise Exception
 
         # indeces of diagonal elements, both diagonals
-        idx_diag_1 = np.reshape([i * dim1 + i for i in range(dim1)], (2,-1))
-        idx_diag_2 = np.reshape([(i+1) * dim1 - (i+1) for i in range(dim1)], (2,-1))
+        idx_diag_1 = np.reshape([i * dim1 + i for i in range(dim1)], (2, -1))
+        idx_diag_2 = np.reshape([(i + 1) * dim1 - (i + 1)
+                                 for i in range(dim1)], (2, -1))
 
         # 4 elements at the same distance from the center
         idx_diag_same_dist = np.array([idx_diag_1[0][::-1],
@@ -940,7 +942,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # go through nbins_diag distances
         for k in np.arange(0, nbins_diag, 1):
             # container
-            cc = np.zeros((4, lags.size)) # 4 diagonal elements at equal distance
+            # 4 diagonal elements at equal distance
+            cc = np.zeros((4, lags.size))
 
             # indices at k diagonal bins distance
             idx_k = idx_diag_same_dist[:, k]
@@ -952,22 +955,22 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 x0 = self.__ztransform(data0_prune)
                 x0 /= x0.size
 
-                x1 = self.__ztransform(data1_prune[j,:])
+                x1 = self.__ztransform(data1_prune[j, :])
 
                 cc[j, ] = np.correlate(x0, x1, 'same')[lag_inds][::-1]
 
             cc_func_mean_k = cc.mean(axis=0)
 
-            # for every distance, subtract baseline (mean value before time lag 0)
+            # for every distance, subtract baseline (mean value before time lag
+            # 0)
             idx_bl = np.arange(0, int(len(lags) / 2.))
             baseline_k = np.mean(cc_func_mean_k[idx_bl])
-            cc_func[k,:] = cc_func_mean_k - baseline_k
+            cc_func[k, :] = cc_func_mean_k - baseline_k
 
         cc_func_dic = {'cc_funcs': cc_func,
                        'distances_mm': distances,
                        'lags_ms': lags}
         return cc_func_dic
-
 
     def __ztransform(self, x):
         '''
@@ -992,7 +995,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             ztrans = (x - x.mean()) / x.std()
         return ztrans
 
-
     def __merge_h5_files_populations_datatype(self, i, datatype):
         """
         Inner function to be used as argument of pt.parallelize_by_array()
@@ -1011,7 +1013,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         print('  Merging .h5 files: ' + datatype)
 
         fn = os.path.join(self.sim_dict['path_processed_data'],
-                         'all_' + datatype + '.h5')
+                          'all_' + datatype + '.h5')
 
         f = h5py.File(fn, 'w')
         for X in self.X:

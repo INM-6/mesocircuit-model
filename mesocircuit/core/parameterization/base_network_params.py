@@ -68,7 +68,8 @@ net_dict = {
         np.array([0.943, 3.026, 4.368, 5.882, 7.733, 8.664, 1.096, 7.851]),
     # TODO recorded with 1mm2 macaqueV1, but probably not final
     'mean_rates_SvA2018':
-        np.array([0.15709281, 1.6874907, 2.4200633, 2.8021822, 3.6009161, 4.2362757, 2.209184, 4.16761]),
+        np.array([0.15709281, 1.6874907, 2.4200633, 2.8021822,
+                  3.6009161, 4.2362757, 2.209184, 4.16761]),
     # mean amplitude of excitatory postsynaptic potential (in mV)
     'PSP_exc_mean': 0.15,
     # relative standard deviation of the weight
@@ -106,7 +107,7 @@ net_dict = {
     # indegree of external connections to the different populations (same order
     # as in 'populations')
     'K_ext_PD2014': np.array([1600, 1500, 2100, 1900, 2000, 1900, 2900, 2100]),
-    'K_ext_SvA2018': 10./8. * np.array([1267, 1251, 1255, 1246, 1430, 1250, 1777, 1254]),
+    'K_ext_SvA2018': 10. / 8. * np.array([1267, 1251, 1255, 1246, 1430, 1250, 1777, 1254]),
     # rate of the Poisson generator (in spikes/s)
     'bg_rate': 8.,
     # delay from the Poisson generator to the network (in ms)
@@ -162,7 +163,7 @@ net_dict = {
     # format:   E->E   I->E
     #           E->I   I->I
     'beta_unscaled': np.tile([[0.232, 0.161],
-                              [0.125, 0.120]], (4,4)),
+                              [0.125, 0.120]], (4, 4)),
     # scaling factor applied to all elements of beta_unscaled.
     # The final beta is beta_unscaled * beta_scaling.
     'beta_scaling': 1.,
@@ -174,7 +175,7 @@ net_dict = {
     'beta_exc_inh': False,
 
     # beta from thalamic population
-    'beta_th': 0.1, 
+    'beta_th': 0.1,
 
     # side length (in mm) of square sheets in which neurons are randomly
     # distributed
@@ -201,7 +202,7 @@ net_dict = {
 
     # thalamic_input = 'pulses'
     # only thalamic neurons within a circle in the center are stimulated.
-    # the radius is th_rel_radius * extent 
+    # the radius is th_rel_radius * extent
     'th_rel_radius': 0.3,
     # time of first pulse (in ms)
     'th_pulse_start': 700.0,
@@ -220,5 +221,4 @@ net_dict = {
     # amplitude of the DC input (in pA); final amplitude is population-specific
     # and will be obtained by multiplication with 'K_ext'
     'dc_amp': 0.3
-    }
-
+}
