@@ -250,10 +250,10 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
             y=np.linspace(-2000, 2000, 11),
             z=np.array([-450, -350]),
         ),
-        X=net_dict['populations'].tolist(),  # add TC!!!
-        Y=net_dict['populations'].tolist(),
+        X=net_dict['populations'].tolist(),
+        Y=(net_dict['populations'][net_dict['populations'] != 'TC']).tolist(),
         N_X=net_dict['num_neurons'],
-        N_Y=net_dict['num_neurons'].tolist(),
+        N_Y=(net_dict['num_neurons'][net_dict['populations'] != 'TC']).tolist(),
         y_in_Y=[
             [['p23'], ['b23', 'nb23']],
             [['p4', 'ss4(L23)', 'ss4(L4)'], ['b4', 'nb4']],
@@ -348,7 +348,10 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         else:
             PS.rand_rot_axis.update({y: ['x', 'z']})
 
-    # additional simulation kwargs, see LFPy.Cell.simulate() docstring
+    # Additional simulation kwargs, see LFPy.Cell.simulate() docstring.
+    # Having rec_imem=True here forces hybridLFPy to record transmembrane
+    # currents and in turn perform transformation to LFPs etc. with recorded
+    # currents as a final step which is faster (but more memory hungry)
     PS.simulationParams = {'rec_imem': True}
 
     # a dict setting the number of cells N_y and geometry
@@ -378,8 +381,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     PS.savelist = []
 
     # need presynaptic cell type to population mapping
-    # PS.x_in_X = [['TCs', 'TCn']] + sum(self.y_in_Y, [])
-    PS.x_in_X = sum(PS.y_in_Y, [])
+    PS.x_in_X = sum(PS.y_in_Y, []) + [['TCs', 'TCn']]
 
     ############################################
     # Compute layer specificity (L_yXL) etc.

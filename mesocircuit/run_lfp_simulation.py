@@ -96,10 +96,10 @@ neuron.load_mechanisms(nmodl_dir)
 path_parameters = sys.argv[1]
 
 dics = []
-for dic in ['sim_dict', 'net_dict', 'stim_dict']:
+for dic in ['sim_dict', 'net_dict']:
     with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
         dics.append(pickle.load(f))
-sim_dict, net_dict, _ = dics  # stim_dict not neeeded here?
+sim_dict, net_dict = dics  # stim_dict not neeeded here?
 
 ##########################################################################
 # set up the file destination
