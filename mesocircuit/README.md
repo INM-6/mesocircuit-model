@@ -8,18 +8,22 @@ We provide a Docker (https://www.docker.com) container build file with codes req
 To get started, install Docker and issue
 
     # build local Dockerfile (obtained by cloning repo, checkout branch etc.)
-    $ docker build -t mesocircuit - < Dockerfile
-    $ docker run -it -p 5000:5000 mesocircuit:latest
+    $ docker build -t <container> - < Dockerfile
+    $ docker run -it -p 5000:5000 <container>:latest
 
 
 The ``--mount`` option can be used to mount a folder on the host to a target folder as:
 
-    $ docker run --mount type=bind,source="$(pwd)",target=/opt -it -p 5000:5000 <image-name>
+    $ docker run --mount type=bind,source="$(pwd)",target=/opt/<target> -it -p 5000:5000 <container>:latest
 
-which mounts the present working dirctory (``$(pwd)``) to the ``/opt`` directory of the container.
+which mounts the present working dirctory (``$(pwd)``) to the ``/opt/<target>`` directory of the container.
 Try mounting the ``mesocircuit`` source directory for example (by setting ``source="<path-to-mesocircuit>"``).
 Various files can then be found in the folder ``/opt/mesocircuit``
 when the container is running.
+
+Python code can be run in parallel by issuing
+
+    $ mpirun -n $(nproc) python <filename> <arguments>
 
 Jupyter notebook servers running from within the
 container can be accessed after invoking them by issuing:
