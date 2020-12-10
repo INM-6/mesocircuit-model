@@ -3,8 +3,8 @@ import numpy as np
 import core.helpers.mesocircuit_framework as mesoframe
 
 #key = 'microcircuit'
-key = 'local_microcircuit'
-#key = 'local_mesocircuit'
+#key = 'local_microcircuit'
+key = 'local_mesocircuit'
 #key = 'local_macaqueV1'
 #key = 'local_mesomacaqueV1'
 
@@ -19,11 +19,10 @@ mesoframe.run_jobs(
     parameterview,
     jobscripts=[
         'network.sh',
-        'analysis_and_plotting.sh',
-#        'analysis.sh',
-#        'plotting.sh',
+        # 'analysis_and_plotting.sh',
+        'analysis.sh',
+        'plotting.sh',
         ],
     run_type='run_locally',
 #    run_type='submit_jureca',
     )
-

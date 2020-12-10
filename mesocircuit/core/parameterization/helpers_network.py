@@ -9,30 +9,32 @@ base parameter dictionaries.
 import numpy as np
 import copy
 
-def derive_dependent_parameters(base_net_dict, base_stim_dict):
+
+def derive_dependent_parameters(base_net_dict):
     """
-    Derives network and stimulus parameters which depend on the base parameters.
+    Derives network parameters which depend on the base parameters.
     Returns the dictionaries which serve as input to the Network class.
+
+    Neuron and synapse numbers of thalamus are treated as a cortical population.
 
     Parameters
     ----------
     base_net_dict
         Dictionary with base network parameters.
-    base_stim_dict
-        Dictionary with base stimulus parameters.
 
     Returns
     -------
     net_dict
         Dictionary containing base and derived network parameters.
-    stim_dict
-        Dictionary containing base and derived stimulus parameters.
     """
     # network parameters
     net_dict = copy.copy(base_net_dict)
 
     # number of cortical populations
     net_dict['num_pops'] = len(net_dict['populations'])
+
+    # shape for connectivity matrices etc.
+    pop_shape = (net_dict['num_pops'] - 1, net_dict['num_pops'])
 
     # matrices for delays
     if net_dict['delay_type'] == 'normal':
@@ -41,7 +43,7 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
             net_dict['delay_exc_mean'],
             net_dict['delay_inh_mean'],
             net_dict['num_pops'])
-    
+
     elif net_dict['delay_type'] == 'linear':
         # matrix of delay offsets
         net_dict['delay_offset_matrix'] = get_exc_inh_matrix(
@@ -57,12 +59,15 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     # decay parameters of exponential profile
     if net_dict['beta_exc_inh']:
         # matrix of decay parameters
-        net_dict['beta'] = get_exc_inh_matrix(
+        beta = get_exc_inh_matrix(
             net_dict['beta_exc_inh'][0],
             net_dict['beta_exc_inh'][1],
             net_dict['num_pops'])
     else:
-        net_dict['beta'] = net_dict['beta_unscaled'] * net_dict['beta_scaling']
+        beta = net_dict['beta_unscaled'] * net_dict['beta_scaling']
+    net_dict['beta'] = np.zeros(pop_shape)
+    net_dict['beta'][:, :-1] = beta
+    net_dict['beta'][:, -1] = net_dict['beta_th']
 
     # matrix of mean PSPs
     # the mean PSP of the connection from L4E to L23E is doubled
@@ -81,8 +86,13 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
     PSC_ext = net_dict['PSP_exc_mean'] * PSC_over_PSP
 
     # 1mm2 neuron number dependent on the base model
-    num_neurons_1mm2 = net_dict['num_neurons_1mm2_' + net_dict['base_model']]
-    # 1mm2 external indegrees dependent on the base model
+    num_neurons_1mm2 = np.zeros(net_dict['num_pops'])
+    num_neurons_1mm2[:-1] = \
+        net_dict['num_neurons_1mm2_' + net_dict['base_model']]
+    num_neurons_1mm2[-1] = net_dict['num_neurons_th_1mm2']
+
+    # 1mm2 external indegrees dependent on the base model.
+    # thalamus does not have external indegrees
     ext_indegrees_1mm2 = net_dict['K_ext_' + net_dict['base_model']]
 
     # linear scaling of neuron numbers with square area
@@ -94,46 +104,61 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
 
     # TODO adjust when parameters are final
     if net_dict['base_model'] == 'PD2014':
+        conn_probs_1mm2 = np.zeros(pop_shape)
+        conn_probs_1mm2[:, :-1] = net_dict['conn_probs_1mm2_PD2014']
+        conn_probs_1mm2[:, -1] = net_dict['conn_probs_th_1mm2']
+
         # number of synapses of a full-scale 1mm2 network
         num_synapses_1mm2 = num_synapses_from_conn_probs(
-            net_dict['conn_probs_1mm2_PD2014'],
-            num_neurons_1mm2,
-            num_neurons_1mm2)
+            conn_probs_1mm2,
+            num_neurons_1mm2,  # sources
+            num_neurons_1mm2[:-1])  # targets, thalamus is only source
 
-        # average indegrees in 1mm2 network
         indegrees_1mm2 = (num_synapses_1mm2 /
-                          num_neurons_1mm2[:,np.newaxis])
+                          num_neurons_1mm2[:-1][:, np.newaxis])
 
     elif net_dict['base_model'] == 'SvA2018':
-        indegrees_1mm2 = net_dict['indegrees_1mm2_SvA2018']
+        num_synapses_th_1mm2 = num_synapses_from_conn_probs(
+            net_dict['conn_probs_th_1mm2'][np.newaxis].T,  # column needed
+            np.array([num_neurons_1mm2[-1]]),  # only thalamus
+            num_neurons_1mm2[:-1])
+
+        indegrees_th_1mm2 = (num_synapses_th_1mm2 /
+                             num_neurons_1mm2[:-1][:, np.newaxis])
+
+        indegrees_1mm2 = np.zeros(pop_shape)
+        indegrees_1mm2[:, :-1] = net_dict['indegrees_1mm2_SvA2018']
+        indegrees_1mm2[:, -1] = indegrees_th_1mm2.flatten()
 
     net_dict['indegrees_1mm2'] = np.round(indegrees_1mm2).astype(int)
-                      
-    # indegrees are scaled only if connect_method is 'fixedindegree_exp' or
-    # distr_indegree_exp;
+
+    # indegrees are scaled only if the extent is > 1 and
+    # connect_method is 'fixedindegree_exp' or distr_indegree_exp;
     # otherwise the indegrees from the 1mm2 network are preserved
-    if (net_dict['extent'] > 1. and 
-        net_dict['connect_method'] in ['fixedindegree_exp', 'distr_indegree_exp']):
+    if (net_dict['extent'] > 1. and net_dict['connect_method']
+            in ['fixedindegree_exp', 'distr_indegree_exp']):
         # scale indegrees from disc of 1mm2 to disc of radius extent/2.
         net_dict['K_area_scaling'] = scale_indegrees_to_extent(
             net_dict['extent'], net_dict['beta'])
 
         # elementwise multiplication because K_area_scaling is a matrix
-        full_indegrees = np.multiply(indegrees_1mm2, net_dict['K_area_scaling'])
+        full_indegrees = np.multiply(
+            indegrees_1mm2, net_dict['K_area_scaling'])
 
-        # adjust external indegrees to compensate for additional interal indegrees
+        # adjust external indegrees to compensate for additional interal indegrees.
+        # this does not apply to thalamus
         full_ext_indegrees = adjust_ext_indegrees_to_preserve_mean_input(
-            indegrees_1mm2, full_indegrees,
+            indegrees_1mm2[:, :-1], full_indegrees[:, :-1],
             ext_indegrees_1mm2,
             net_dict['mean_rates_' + net_dict['base_model']],
             net_dict['bg_rate'],
-            PSC_matrix_mean, PSC_ext)
+            PSC_matrix_mean[:, :-1], PSC_ext)
     else:
         full_indegrees = indegrees_1mm2
         full_ext_indegrees = ext_indegrees_1mm2
     net_dict['full_indegrees'] = np.round(full_indegrees).astype(int)
     net_dict['full_ext_indegrees'] = np.round(full_ext_indegrees).astype(int)
-    full_num_synapses = full_indegrees * full_num_neurons[:, np.newaxis]
+    full_num_synapses = full_indegrees * full_num_neurons[:-1][:, np.newaxis]
     net_dict['full_num_synapses'] = np.round(full_num_synapses).astype(int)
     net_dict['full_num_synapses_sum'] = \
         np.round(np.sum(full_num_synapses)).astype(int)
@@ -150,17 +175,17 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
                                          net_dict['K_scaling']).astype(int)
 
     # DC input compensates for potentially missing Poisson input
+    # not to thalamus
     if net_dict['poisson_input']:
-        DC_amp = np.zeros(net_dict['num_pops'])
+        DC_amp = np.zeros(net_dict['num_pops'] - 1)
     else:
-        if nest.Rank() == 0:
-            print('DC input compensates for missing Poisson input.\n')
+        print('DC input compensates for missing Poisson input.')
         DC_amp = dc_input_compensating_poisson(
             net_dict['bg_rate'], full_ext_indegrees,
             net_dict['neuron_params']['tau_syn'],
             PSC_ext)
 
-    # adjust weights and DC amplitude if the indegree is scaled
+    # adjust weights and DC amplitude if the indegree is scaled.
     if net_dict['K_scaling'] != 1:
         PSC_matrix_mean, PSC_ext, DC_amp = \
             adjust_weights_and_input_to_synapse_scaling(
@@ -182,44 +207,18 @@ def derive_dependent_parameters(base_net_dict, base_stim_dict):
                                         net_dict['extent'],
                                         net_dict['beta'])
     else:
-        net_dict['repeat_connect'] = np.ones_like(indegrees,dtype=int)
-
+        net_dict['repeat_connect'] = np.ones_like(indegrees, dtype=int)
 
     # store final parameters in dictionary
     net_dict['weight_matrix_mean'] = PSC_matrix_mean
     net_dict['weight_ext'] = PSC_ext
     net_dict['DC_amp'] = DC_amp
 
+    # absolute radius for thalamic pulses
+    if net_dict['thalamic_input'] == 'pulses':
+        net_dict['th_radius'] = net_dict['th_rel_radius'] * net_dict['extent']
 
-    # stimulus parameters
-    stim_dict = copy.copy(base_stim_dict)
-
-    # thalamic input
-    if stim_dict['thalamic_input']:
-        # linear scaling of thalamic neuron numbers with area
-        # (note that thalamic neurons are not downscaled with N_scaling)
-        num_th_neurons = stim_dict['num_th_neurons_1mm2'] * area
-        stim_dict['num_th_neurons'] = \
-            np.round(num_th_neurons).astype(int)
-
-        # TODO synapses not finished
-        # number of thalamic synapses
-        num_th_synapses_1mm2 = num_synapses_from_conn_probs(
-            stim_dict['conn_probs_th_1mm2'],
-            stim_dict['num_th_neurons_1mm2'],
-            num_neurons_1mm2)[0]
-
-        # TODO just for first test
-        num_th_synapses = num_th_synapses_1mm2
-
-
-        stim_dict['weight_th'] = stim_dict['PSP_th'] * PSC_over_PSP
-        if net_dict['K_scaling'] != 1:
-            num_th_synapses *= net_dict['K_scaling']
-            stim_dict['weight_th'] /= np.sqrt(net_dict['K_scaling'])
-        stim_dict['num_th_synapses'] = np.round(num_th_synapses).astype(int)
-
-    return net_dict, stim_dict
+    return net_dict
 
 
 def scale_indegrees_to_extent(extent, beta):
@@ -250,14 +249,19 @@ def scale_indegrees_to_extent(extent, beta):
     radius_area = extent / 2.
 
     K_indegree_scaling = (expression(beta, radius_area) /
-                          expression(beta, radius_1mm2)) 
+                          expression(beta, radius_1mm2))
 
     return K_indegree_scaling
 
 
 def adjust_ext_indegrees_to_preserve_mean_input(
-    indegrees_1mm2, full_indegrees, ext_indegrees_1mm2, mean_rates, bg_rate,
-    PSC_matrix_mean, PSC_ext):
+        indegrees_1mm2,
+        full_indegrees,
+        ext_indegrees_1mm2,
+        mean_rates,
+        bg_rate,
+        PSC_matrix_mean,
+        PSC_ext):
     """
     Computes external indegrees to adjusted to modified internal indegrees to
     preserve the mean input.
@@ -265,9 +269,9 @@ def adjust_ext_indegrees_to_preserve_mean_input(
     Parameters
     ----------
     indegrees_1mm2
-        Indegree matrix of the 1mm2 network.
+        Indegree matrix of the 1mm2 network without thalamus.
     full_indegrees
-        Indegree matrix of the full network.
+        Indegree matrix of the full network without thalamus.
     ext_indegrees_1mm2
         External indegrees of the 1mm2 network.
     mean_rates
@@ -275,7 +279,7 @@ def adjust_ext_indegrees_to_preserve_mean_input(
     bg_rate
         Background firing rate (in spikes/s).
     PSC_matrix_mean
-        Weight matrix (in pA).
+        Weight matrix (in pA) without thalamus.
     PSC_ext
         External weight (in pA).
 
@@ -284,9 +288,10 @@ def adjust_ext_indegrees_to_preserve_mean_input(
     full_ext_indegrees
         Adjusted external indegrees.
     """
-    frac_psc = PSC_matrix_mean / PSC_ext # g
+    frac_psc = PSC_matrix_mean / PSC_ext  # g
     frac_rates = mean_rates / bg_rate
     diff_indegrees = indegrees_1mm2 - full_indegrees
+
     diff_rec_inputs = np.multiply(frac_psc * frac_rates, diff_indegrees)
     sum_diff_rec_inputs = np.sum(diff_rec_inputs, axis=1)
 
@@ -295,7 +300,7 @@ def adjust_ext_indegrees_to_preserve_mean_input(
     # TODO could be converted into a unit test
     #full = np.zeros_like(mean_rates)
     #mm2 = np.zeros_like(mean_rates)
-    #for i in np.arange(len(PSC_matrix_mean)): # target
+    # for i in np.arange(len(PSC_matrix_mean)): # target
     #    rec_input_full = 0.
     #    rec_input_1mm2 = 0.
     #    for j in np.arange(len(PSC_matrix_mean[i])): # source
@@ -341,11 +346,11 @@ def zero_distance_conn_prob_exp(num_neurons, indegrees, extent, beta):
     # connection probability inside of mask with radius extent / 2.
     # without spatial profile.
     # pi * (extent/2)**2 / extent**2 = pi /4
-    conn_prob_uniform = indegrees / (num_neurons * np.pi/4.)
+    conn_prob_uniform = indegrees / (num_neurons * np.pi / 4.)
 
     radius = extent / 2.
     p0_raw = (conn_prob_uniform * 0.5 * radius**2 /
-             (beta * (beta - np.exp(-radius / beta) * (beta + radius))))
+              (beta * (beta - np.exp(-radius / beta) * (beta + radius))))
 
     repeat_connect = np.ones_like(indegrees, dtype=int)
     p0 = copy.copy(p0_raw)
@@ -361,7 +366,12 @@ def zero_distance_conn_prob_exp(num_neurons, indegrees, extent, beta):
 
 
 def get_exc_inh_matrix(val_exc, val_inh, num_pops):
-    """ Creates a matrix for excitatory and inhibitory values.
+    """
+    Creates a matrix for excitatory and inhibitory values.
+
+    The thalamus is assumed as an additional excitatory population,
+    meaning that the network has num_pops source populations and num_pops-1
+    target populations.
 
     Parameters
     ----------
@@ -375,37 +385,37 @@ def get_exc_inh_matrix(val_exc, val_inh, num_pops):
     Returns
     -------
     matrix
-        A matrix of of size (num_pops x num_pops).
+        A matrix of of size ((num_pops-1) x num_pops).
 
     """
-    matrix = np.zeros((num_pops, num_pops))
+    matrix = np.zeros((num_pops - 1, num_pops))
     matrix[:, 0:num_pops:2] = val_exc
     matrix[:, 1:num_pops:2] = val_inh
     return matrix
 
 
-def num_synapses_from_conn_probs(conn_probs, popsize1, popsize2):
+def num_synapses_from_conn_probs(
+        conn_probs, num_neurons_source, num_neurons_target):
     """Computes the total number of synapses between two populations from
     connection probabilities.
-
-    Here it is irrelevant which population is source and which target.
 
     Paramters
     ---------
     conn_probs
         Matrix of connection probabilities.
-    popsize1
-        Size of first poulation.
-    popsize2
-        Size of second population.
+    num_neurons_source
+        Sizes of the source poulations.
+    num_neurons_target
+        Sizes of the target populations.
 
     Returns
     -------
     num_synapses
         Matrix of synapse numbers.
     """
-    prod = np.outer(popsize1, popsize2)
+    prod = np.outer(num_neurons_target, num_neurons_source)
     num_synapses = np.log(1. - conn_probs) / np.log((prod - 1.) / prod)
+
     return num_synapses
 
 
@@ -537,9 +547,9 @@ def adjust_weights_and_input_to_synapse_scaling(
     PSC_matrix_new = mean_PSC_matrix / np.sqrt(K_scaling)
     PSC_ext_new = PSC_ext / np.sqrt(K_scaling)
 
-    # recurrent input of full network
-    input_rec = np.sum(mean_PSC_matrix * full_indegrees * full_mean_rates,
-                       axis=1)
+    # recurrent input of full network without thalamus
+    input_rec = np.sum(
+        mean_PSC_matrix[:, :-1] * full_indegrees[:, :-1] * full_mean_rates, axis=1)
 
     DC_amp_new = DC_amp \
         + 0.001 * tau_syn * (1. - np.sqrt(K_scaling)) * input_rec
