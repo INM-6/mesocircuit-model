@@ -31,6 +31,12 @@ plot_dict = {
         # handling of .svg fonts:
         # 'path' (embed characters as paths) or 'none'
         'svg.fonttype': 'none',
+        # font sizes
+        'font.size': 7,
+        # margin around lines
+        'axes.xmargin': 0.0,
+        'axes.ymargin': 0.0,
+
     },
 
     # plot format (use '.eps' for final figures)

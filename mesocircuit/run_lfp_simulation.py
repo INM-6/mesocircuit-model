@@ -47,7 +47,6 @@ from hybridLFPy import PostProcess, CachedTopoNetwork, TopoPopulation
 import pickle
 from core.lfp.periodiclfp import PeriodicLFP
 from core.lfp.lfp_parameters import get_parameters
-from core.lfp.plotting import network_lfp_activity_animation
 from lfpykit import VolumetricCurrentSourceDensity
 from mpi4py import MPI
 
@@ -99,7 +98,7 @@ dics = []
 for dic in ['sim_dict', 'net_dict']:
     with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
         dics.append(pickle.load(f))
-sim_dict, net_dict = dics  # stim_dict not neeeded here?
+sim_dict, net_dict = dics
 
 ##########################################################################
 # set up the file destination
@@ -249,15 +248,6 @@ COMM.Barrier()
 print(('Execution time: %.3f seconds' % (time() - tic)))
 
 
-##########################################################################
-# Create animations from simulation output (offline)
-##########################################################################
-if RANK == 0 and not PROPERRUN:
-    fig = network_lfp_activity_animation(
-        PS, net_dict,
-        networkSim, T=(100, 300),
-        N_X=PS.N_X,
-        save_anim=True)
-    plt.close(fig)
+
 
 COMM.Barrier()
