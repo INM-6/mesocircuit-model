@@ -42,7 +42,24 @@ def run_parallel_functions_sequentially(funcs, filename):
         COMM.Allgather(times_local, times_global)
         logtime_data.append([fun.__name__, times_global])
 
-    print_times(filename, logtime_data)
+    COMM.Barrier()
+        
+    num_ranks = len(logtime_data[0][1]) 
+    rows = num_ranks + 1 # +1 for header
+    cols = len(logtime_data) + 1 # +1 for ranks
+    matrix = np.zeros((rows, cols), dtype='object')
+    matrix[0, 0] = ''
+    for c in np.arange(cols):
+        if c == 0: 
+            matrix[1:, c] = ['rank ' + str(r) for r in np.arange(num_ranks)]
+        else:
+            matrix[0, c] = logtime_data[c - 1][0] # function name
+            times = logtime_data[c - 1][1]
+            matrix[1:,c] = [str(np.around(t, decimals=3)) for t in times]
+
+    title = 'Time measurements in s: ' + filename
+    print_table(matrix, title)
+    
     COMM.Barrier()
     return
 
@@ -88,7 +105,6 @@ def run_serial_functions_in_parallel(funcs, filename):
                     fun()
   
                 end_time = time.time()
-                print(fun.__name__, i, RANK, end_time - start_time)
                 times_local[idx_local] = end_time - start_time
                 idx_local += 1
 
@@ -134,8 +150,6 @@ def print_times_serial(filename, logtime_data):
     if RANK != 0:
         return
 
-    print(logtime_data)
-
     rank_sum = {}
     for r in logtime_data:
         times = np.array(logtime_data[r])[:,1].astype(float)
@@ -152,35 +166,6 @@ def print_times_serial(filename, logtime_data):
         string += '\n'
     string += sep + '\n'
     print(string)
-    return
-
-
-def print_times(filename, logtimes):
-    '''
-    Prints times measured on each MPI rank for each function in logtimes.
-
-    Parameters
-    ----------
-    filename
-        Name of the file which calls the timed functions, e.g., 'run_network.py'.
-    logtimes
-        List with time measurements recorded with timeit().
-    '''
-    if RANK != 0:
-        return
-    
-    x = PrettyTable()
-    x.field_names = [''] + [logtime[0] for logtime in logtimes]
-
-    for r in np.arange(len(logtimes[0][1])):
-        row = ['rank ' + str(r)] + \
-              [np.around(logtime[1][r], decimals=3) for logtime in logtimes]
-        x.add_row(row)
-
-    x.align = 'r'
-
-    print('\nTime measurements in s: ' + filename)
-    print(x, '\n')
     return
 
 
@@ -213,22 +198,41 @@ def parallelize_by_array(array, func, result_dtype=None, *args):
     num_procs = np.min([SIZE, num_its]).astype(int)
     # number of iterations assigned to each rank;
     # Allgather requires equally sized chunks.
-    # if not evenly divisible, num_its_rank * num_procs > num_its such that
-    # the highest rank (= num_procs - 1) has less iterations to perform
-    num_its_rank = np.ceil(num_its / num_procs).astype(int)
+    # maximum number of iterations per rank
+    max_its_rank = np.ceil(num_its / num_procs).astype(int)
 
-    res_local = np.zeros(num_its_rank, dtype=result_dtype)
-    res_global = np.zeros(num_its_rank * SIZE, dtype=result_dtype)
+    res_local = np.zeros(max_its_rank, dtype=result_dtype)
+    res_global = np.zeros(max_its_rank * SIZE, dtype=result_dtype)
 
     COMM.Barrier()
     if RANK < num_procs:
+        idx_local = 0 # MPI-local index
         for i,val in enumerate(array):
-            if RANK == int(i / num_its_rank):
-                res_local[i % num_its_rank] = func(i, val, *args)
+            if RANK == int(i % num_procs):
+                res_local[idx_local] = func(i, val, *args)
+                idx_local += 1
     else:
         pass
     # gather and concatenate MPI-local results
     COMM.Allgather(res_local, res_global)
-    result = res_global[:num_its]
+    result = np.reshape(res_global, (-1, max_its_rank)).flatten(order='F')[:num_its]
     COMM.Barrier() 
     return result  
+
+
+def print_table(matrix, title=''):
+    """
+    Prints a nice table.
+
+    Parameters
+    ----------
+    matrix
+        First row are headers. All entries are formatted strings.
+
+    """
+    if RANK != 0:
+        return
+
+    print(matrix)
+
+    return string
