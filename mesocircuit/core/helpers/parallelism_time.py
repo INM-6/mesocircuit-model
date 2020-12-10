@@ -67,17 +67,17 @@ def run_serial_functions_in_parallel(funcs, filename):
     num_procs = np.min([SIZE, num_its]).astype(int)
     # number of iterations assigned to each rank;
     # Allgather requires equally sized chunks.
-    # if not evenly divisible, num_its_rank * num_procs > num_its such that
-    # the highest rank (= num_procs - 1) has less iterations to perform
-    num_its_rank = np.ceil(num_its / num_procs).astype(int)
+    # maximum number of iterations per rank
+    max_its_rank = np.ceil(num_its / num_procs).astype(int)
 
-    times_local = np.zeros(num_its_rank)
-    times_global = np.zeros(num_its_rank * SIZE)   
+    times_local = np.zeros(max_its_rank)
+    times_global = np.zeros(max_its_rank * SIZE)   
 
     COMM.Barrier()
     if RANK < num_procs:
+        idx_local = 0 # MPI-local index
         for i,func in enumerate(funcs):
-            if RANK == int(i / num_its_rank):
+            if RANK == int(i % num_procs):
                 start_time = time.time()
 
                 if type(func) == list:
@@ -88,11 +88,13 @@ def run_serial_functions_in_parallel(funcs, filename):
                     fun()
   
                 end_time = time.time()
-                times_local[i % num_its_rank] += end_time - start_time
+                print(fun.__name__, i, RANK, end_time - start_time)
+                times_local[idx_local] = end_time - start_time
+                idx_local += 1
 
     # gather and concatenate MPI-local results
     COMM.Allgather(times_local, times_global)
-    times = times_global[:num_its]
+    times = np.reshape(times_global, (-1, max_its_rank)).flatten(order='F')[:num_its]
     COMM.Barrier()
 
     # set up logtime_data structure
@@ -106,19 +108,50 @@ def run_serial_functions_in_parallel(funcs, filename):
         func_names.append(fun.__name__)
     func_names = np.array(func_names)
     
-    logtime_data = []
-    for i in np.arange(num_procs):
-        # string with all functions executed on rank i
-        func_names_rank = func_names[\
-            np.where(np.arange(num_procs) == int(i / num_its_rank))]
-        func_names_rank = ','.join(func_names_rank)
+    logtime_data = {}
+    for rank in np.arange(num_procs):
+        r = 'rank ' + str(rank) 
+        logtime_data[r] = []
+        for i,func_name in enumerate(func_names):
+            if rank == int(i % num_procs):
+                logtime_data[r].append([func_name, times[i]])
 
-        # times are 0 for all but rank i
-        logtime = np.zeros(SIZE)
-        logtime[i] = times[i]
-        logtime_data.append([func_names_rank, list(logtime)])
+    print_times_serial(filename, logtime_data)
+    return
 
-    print_times(filename, logtime_data)
+
+def print_times_serial(filename, logtime_data):
+    """
+    Prints times measured on each MPI rank for each function in logtimes.
+
+    Parameters
+    ----------
+    filename
+        Name of the file which calls the timed functions, e.g., 'run_network.py'.
+    logtimes
+        List with time measurements recorded with timeit().
+    """
+    if RANK != 0:
+        return
+
+    print(logtime_data)
+
+    rank_sum = {}
+    for r in logtime_data:
+        times = np.array(logtime_data[r])[:,1].astype(float)
+        rank_sum[r] = np.sum(times)
+
+    sep = '+' + '-' * 79
+
+    string = '\n' + sep +'\n| Time measurements in s: ' + filename + '\n'
+    for r in logtime_data: # ranks
+        string += sep + '\n| ' + r + ': '
+        string += str(np.around(rank_sum[r], decimals=3))
+        for f in logtime_data[r]: # functions
+            string += '\n|-- ' + f[0] + ': ' + str(np.around(f[1], decimals=3))
+        string += '\n'
+    string += sep + '\n'
+    print(string)
     return
 
 
