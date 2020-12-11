@@ -204,12 +204,8 @@ def parallelize_by_array(array, func, result_dtype=None, *args):
         pass
     # gather and concatenate MPI-local results
     COMM.Allgather(res_local, res_global)
-    result = np.reshape(
-        res_global,
-        (-1,
-         max_its_rank)).flatten(
-        order='F')[
-            :num_its]
+    result = np.reshape(res_global,
+                        (-1, max_its_rank)).flatten(order='F')[:num_its]
     COMM.Barrier()
     return result
 
