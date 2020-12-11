@@ -49,5 +49,5 @@ source $NEST_INSTALL_DIR/bin/nest_vars.sh
 ## Custom Python packages
 
 ```
-pip install --install-option="--prefix=$PY_DIR" parameters prettytable
+pip install --install-option="--prefix=$PY_DIR" parameters
 ```

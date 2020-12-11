@@ -11,7 +11,6 @@ from ..helpers import parallelism_time as pt
 import fnmatch
 import re
 import tarfile
-from prettytable import PrettyTable
 from mpi4py import MPI
 import matplotlib.pyplot as plt
 import os
@@ -257,23 +256,14 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         rates = num_spikes / self.N_X / \
             ((self.sim_dict['t_sim'] + self.sim_dict['t_presim']) / 1000.)
 
-        # collect overview data
-        dtype = {'names': ('population', 'num_neurons', 'rate_s-1'),
-                 'formats': ('U4', 'i4', 'f4')}
-        ov = np.zeros(shape=(len(self.X)), dtype=dtype)
-        ov['population'] = self.X
-        ov['num_neurons'] = self.N_X
-        ov['rate_s-1'] = np.around(rates, decimals=3)
+        matrix = np.zeros((len(self.X) + 1, 3), dtype=object)
+        matrix[0, :] = ['population', 'num_neurons', 'rate_s-1']
+        matrix[1:, 0] = self.X
+        matrix[1:, 1] = self.N_X.astype(str)
+        matrix[1:, 2] = [str(np.around(rate, decimals=3)) for rate in rates]
 
-        # convert to pretty table for printing
-        overview = PrettyTable(ov.dtype.names)
-        for row in ov:
-            overview.add_row(row)
-        overview.align = 'r'
-
-        if RANK == 0:
-            print('\n  First glance at data:')
-            print(overview, '\n')
+        title = 'First glance at data'
+        pt.print_table(matrix, title)
         return
 
     def __preprocess_data_X(self, i, X):

@@ -73,7 +73,6 @@ RUN pip install git+https://github.com/INM-6/hybridLFPy.git@nest3#egg=hybridLFPy
 
 # ---- Install additional dependencies ----
 RUN pip3 install git+https://github.com/NeuralEnsemble/parameters@master
-RUN pip3 install PrettyTable
 
 # Add NEST binary folder to PATH
 ENV PATH /opt/nest/bin:${PATH}
