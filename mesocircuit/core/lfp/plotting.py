@@ -157,7 +157,7 @@ def network_lfp_activity_animation(PS, net_dict, networkSim, T=(
     return fig
 
 
-def plotMorphologyTable(ax, PS):
+def morphology_table(ax, PS):
     '''
     plot an illustration of the different morphology files used to represent
     each cell type
@@ -312,3 +312,78 @@ def plotMorphologyTable(ax, PS):
     ax.text(90, 100, r'Cell count $N_y$:', ha='right', clip_on=False)
 
     ax.axis(ax.axis('equal'))
+
+
+def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=(-200, 200)):
+    '''
+    Arguments
+    ---------
+    ax : matplotlib.axes._subplots.AxesSubplot
+    PS : NeurotNeuroTools.parameters.ParameterSet
+    net_dict: dict
+        network settings
+    ana_dict: dict
+        analysis settings
+    CONTACTPOS : tuple
+        x and y coordinate of electrode contact point in PS.electrodeParams
+    '''
+
+    pos_bins = np.linspace(0, net_dict['extent'],
+                           int(net_dict['extent'] / ana_dict['binsize_space']
+                               ) + 1)
+    pos_bins -= net_dict['extent'] / 2
+    pos_bins *= 1E3  # mm -> µm
+
+    # bin centers:
+    xy = np.meshgrid(pos_bins[:-1], pos_bins[:-1])
+    xy[0] += ana_dict['binsize_space'] / 2 * 1E3
+    xy[1] += ana_dict['binsize_space'] / 2 * 1E3  # mm -> µm
+    # get bin indices for slicing.
+    CONTACT = (PS.electrodeParams['x'] == CONTACTPOS[0]
+               ) & (PS.electrodeParams['y'] == CONTACTPOS[1])
+    BINS = (xy[0] > CONTACTPOS[0] - 200) & (xy[0] < CONTACTPOS[0] + 200) & (
+        xy[1] > CONTACTPOS[1] - 200) & (xy[1] < CONTACTPOS[1] + 200)
+    BINS = BINS.flatten()
+
+    ax.plot(PS.electrodeParams['x'], PS.electrodeParams['y'],
+            'ko', markersize=5)
+    ax.plot(PS.electrodeParams['x'][CONTACT], PS.electrodeParams['y'][CONTACT],
+            'o', markersize=5, mfc='k', mec='k')
+    for i, (x, y) in enumerate(zip(PS.electrodeParams['x'],
+                                   PS.electrodeParams['y'])):
+        ax.text(x, y - 250, '{}'.format(i + 1),
+                color='k',
+                horizontalalignment='center',
+                verticalalignment='bottom',
+                zorder=10)
+    ax.plot(xy[0].flatten()[BINS], xy[1].flatten()[BINS], 's',
+            markersize=5, zorder=-1, mfc='C2', mec='C2')
+    ax.hlines(pos_bins, -2000, 2000, '0.8',
+              clip_on=False, zorder=-2)
+    ax.vlines(pos_bins, -2000, 2000, '0.8',
+              clip_on=False, zorder=-2)
+    ax.axis(ax.axis('equal'))
+    ax.axis('off')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.plot([-1400, -1000], [-2100, -2100], 'k', lw=2, clip_on=False)
+    ax.text(-1200, -2300, '0.4 mm', ha='center')
+
+    ax.plot([1000, 2000], [-2100, -2100], 'k', lw=2, clip_on=False)
+    ax.text(1500, -2300, '1 mm', ha='center')
+
+    # axis cross
+    ax.annotate("", xy=(-2100, -2100), xycoords='data',
+                xytext=(-1600, -2100), textcoords='data',
+                arrowprops=dict(arrowstyle="<|-",
+                                connectionstyle="arc3,rad=0",
+                                facecolor='black'),
+                annotation_clip=False)
+    ax.annotate("", xy=(-2100, -2100), xycoords='data',
+                xytext=(-2100, -1600), textcoords='data',
+                arrowprops=dict(arrowstyle="<|-",
+                                connectionstyle="arc3,rad=0",
+                                facecolor='black'),
+                annotation_clip=False)
+    ax.text(-1700, -2200, 'x', ha='center', va='center')
+    ax.text(-2200, -1700, 'y', ha='center', va='center')
