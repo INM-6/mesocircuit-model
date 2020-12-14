@@ -82,8 +82,8 @@ def derive_dependent_parameters(base_net_dict):
         net_dict['neuron_params']['C_m'],
         net_dict['neuron_params']['tau_m'],
         net_dict['neuron_params']['tau_syn'])
-    PSC_matrix_mean = PSP_matrix_mean * PSC_over_PSP
-    PSC_ext = net_dict['PSP_exc_mean'] * PSC_over_PSP
+    net_dict['full_weight_matrix_mean'] = PSP_matrix_mean * PSC_over_PSP
+    net_dict['full_weight_ext'] = net_dict['PSP_exc_mean'] * PSC_over_PSP
 
     # 1mm2 neuron number dependent on the base model
     num_neurons_1mm2 = np.zeros(net_dict['num_pops'])
@@ -152,7 +152,8 @@ def derive_dependent_parameters(base_net_dict):
             ext_indegrees_1mm2,
             net_dict['mean_rates_' + net_dict['base_model']],
             net_dict['bg_rate'],
-            PSC_matrix_mean[:, :-1], PSC_ext)
+            net_dict['full_weight_matrix_mean'][:, :-1],
+            net_dict['full_weight_ext'])
     else:
         full_indegrees = indegrees_1mm2
         full_ext_indegrees = ext_indegrees_1mm2
@@ -177,26 +178,31 @@ def derive_dependent_parameters(base_net_dict):
     # DC input compensates for potentially missing Poisson input
     # not to thalamus
     if net_dict['poisson_input']:
-        DC_amp = np.zeros(net_dict['num_pops'] - 1)
+        net_dict['full_DC_amp'] = np.zeros(net_dict['num_pops'] - 1)
     else:
         print('DC input compensates for missing Poisson input.')
-        DC_amp = dc_input_compensating_poisson(
+        net_dict['full_DC_amp'] = dc_input_compensating_poisson(
             net_dict['bg_rate'], full_ext_indegrees,
             net_dict['neuron_params']['tau_syn'],
-            PSC_ext)
+            net_dict['full_weight_ext'])
 
     # adjust weights and DC amplitude if the indegree is scaled.
     if net_dict['K_scaling'] != 1:
-        PSC_matrix_mean, PSC_ext, DC_amp = \
+        net_dict['weight_matrix_mean'], net_dict['weight_ext'], net_dict['DC_amp'] = \
             adjust_weights_and_input_to_synapse_scaling(
                 full_indegrees,
                 net_dict['K_scaling'],
-                PSC_matrix_mean, PSC_ext,
+                net_dict['full_weight_matrix_mean'],
+                net_dict['full_weight_ext'],
                 net_dict['neuron_params']['tau_syn'],
                 net_dict['mean_rates_' + net_dict['base_model']],
-                DC_amp,
+                net_dict['full_DC_amp'],
                 net_dict['poisson_input'],
                 net_dict['bg_rate'], full_ext_indegrees)
+    else:
+        net_dict['weight_matrix_mean'] = net_dict['full_weight_matrix_mean']
+        net_dict['weight_ext'] = net_dict['full_weight_ext']
+        net_dict['DC_amp'] = net_dict['full_DC_amp']
 
     # p0 is computed for non-fixed in-degrees
     # connectivity profile: p0 * exp(-r/beta)
@@ -208,11 +214,6 @@ def derive_dependent_parameters(base_net_dict):
                                         net_dict['beta'])
     else:
         net_dict['repeat_connect'] = np.ones_like(indegrees, dtype=int)
-
-    # store final parameters in dictionary
-    net_dict['weight_matrix_mean'] = PSC_matrix_mean
-    net_dict['weight_ext'] = PSC_ext
-    net_dict['DC_amp'] = DC_amp
 
     # absolute radius for thalamic pulses
     if net_dict['thalamic_input'] == 'pulses':
