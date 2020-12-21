@@ -84,8 +84,8 @@ ps_dicts = {
     'local_mesocircuit': {
         **local_sim_ana_plot_dicts,
         'net_dict': {
-            'N_scaling': 0.008,
-            'K_scaling': 0.1,
+            'N_scaling': 0.0625, #0.008,
+            'K_scaling': 1., #0.1,
             },
         },
     }
