@@ -183,7 +183,7 @@ class Network:
         """
         output_path = self.sim_dict["path_raw_data"]
         if nest.Rank() == 0:
-            if output_path:
+            if os.path.isdir(output_path):
                 if method == 'perl':
                     cwd = os.getcwd()
                     os.chdir(output_path)
