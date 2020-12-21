@@ -327,7 +327,6 @@ def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=(-200, 200)):
     CONTACTPOS : tuple
         x and y coordinate of electrode contact point in PS.electrodeParams
     '''
-
     pos_bins = np.linspace(0, net_dict['extent'],
                            int(net_dict['extent'] / ana_dict['binsize_space']
                                ) + 1)
@@ -387,3 +386,67 @@ def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=(-200, 200)):
                 annotation_clip=False)
     ax.text(-1700, -2200, 'x', ha='center', va='center')
     ax.text(-2200, -1700, 'y', ha='center', va='center')
+
+
+def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
+                                 title='LFP', ylabel='$\Phi$ (mV)',
+                                 T=[500, 550], CONTACTPOS=(-200, 200)):
+    '''
+    Arguments
+    ---------
+    ax : matplotlib.axes._subplots.AxesSubplot
+    PS : NeurotNeuroTools.parameters.ParameterSet
+    net_dict: dict
+        network settings
+    ana_dict: dict
+        analysis settings
+    fname: str
+        path to .h5 file
+    title: str
+    ylabel: str
+    CONTACTPOS : tuple
+        x and y coordinate of electrode contact point in PS.electrodeParams
+    '''
+    CONTACT = (PS.electrodeParams['x'] == CONTACTPOS[0]
+               ) & (PS.electrodeParams['y'] == CONTACTPOS[1])
+    f = h5py.File(fname, 'r')
+    srate = f['srate'][()]
+    data = f['data'][()][CONTACT, ].flatten()
+    f.close()
+    tinds = np.arange(T[0] * srate / 1000, T[1] * srate / 1000 + 1).astype(int)
+    tvec = tinds.astype(float) / srate * 1000
+    ax.plot(tvec, data[tinds] - data[tinds].mean(), 'k')
+    ax.set_title(title)
+    ax.set_ylabel(ylabel)
+    ax.set_xticklabels([])
+
+
+def plot_single_channel_csd_data(
+        ax, PS, net_dict, ana_dict, fname,
+        title='CSD',
+        ylabel=r'C ($\frac{\mathrm{nA}}{\mathrm{µm}^3}$)',
+        T=[500, 550],
+        CONTACTPOS=(-200, 200)):
+    # CSD bin edges
+    X, Y, Z = np.meshgrid(PS.CSDParams['x'],
+                          PS.CSDParams['y'],
+                          PS.CSDParams['z'])
+
+    # midpoints (XY-plane)
+    h = np.diff(PS.CSDParams['x'])[0]
+    Xmid = X[:-1, :-1, 0] + h / 2
+    Ymid = Y[:-1, :-1, 0] + h / 2
+
+    # find CSD bin matching contact location
+    CONTACT = (Xmid == CONTACTPOS[0]) & (Ymid == CONTACTPOS[1])
+
+    f = h5py.File(fname, 'r')
+    srate = f['srate'][()]
+    data = f['data'][()][CONTACT, ].flatten()
+    f.close()
+    tinds = np.arange(T[0] * srate / 1000, T[1] * srate / 1000 + 1).astype(int)
+    tvec = tinds.astype(float) / srate * 1000
+    ax.plot(tvec, data[tinds] - data[tinds].mean(), 'k')
+    ax.set_title(title)
+    ax.set_ylabel(ylabel)
+    ax.set_xticklabels([])
