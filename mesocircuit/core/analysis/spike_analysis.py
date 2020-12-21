@@ -22,7 +22,6 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.spatial as spatial
 import matplotlib
-matplotlib.use('Agg')
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
@@ -126,6 +125,28 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         pt.parallelize_by_array(self.ana_dict['datatypes_statistics'],
                                 self.__merge_h5_files_populations_datatype)
         return
+
+    def compute_psd(self, x, Fs, remove_mean=True, noverlap=3/4):
+        """
+        Compute power sprectrum `Pxx` of signal `x` using
+        matplotlib.mlab.psd function
+
+        Parameters
+        ----------
+        x: ndarray
+            1-D array or sequence
+        Fs: float
+            sampling frequency
+        remove_mean: bool
+            if True, remove signal mean (default: True)
+        noverlap: float
+            fraction of NFFT points of overlap between segments
+        """
+        if remove_mean:
+            x = x - x.mean()
+        NFFT = self.ana_dict['psd_NFFT']
+        noverlap = int(noverlap * NFFT)
+        return plt.mlab.psd(x, NFFT=NFFT, Fs=Fs, noverlap=noverlap)
 
     def __load_raw_nodeids(self):
         """
@@ -847,15 +868,12 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         """
         # sampling frequency
         Fs = 1000. / binsize_time
-        # number of points of overlap between segments
-        noverlap = int(self.ana_dict['psd_NFFT'] * 3 / 4)
 
-        # detrend data
+        # compute rate
         x = np.array(sptrains_X.sum(axis=0), dtype=float).flatten()
-        x -= x.mean()
 
-        Pxx, freq = plt.psd(x, NFFT=self.ana_dict['psd_NFFT'],
-                            Fs=Fs, noverlap=noverlap)
+        Pxx, freq = self.compute_psd(x, Fs)
+
         # frequencies (in 1/s), PSDs (in s^{-2} / Hz)
         psds = {'frequencies_s-1': freq,
                 'psds_s^-2_Hz-1': Pxx}
