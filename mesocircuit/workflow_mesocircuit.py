@@ -6,6 +6,7 @@ import core.helpers.mesocircuit_framework as mesoframe
 #key = 'local_microcircuit'
 key = 'local_mesocircuit'
 #key = 'local_macaqueV1'
+#key = 'local_mesomacaqueV1'
 
 
 from parameterspaces import ps_dicts as custom_ps_dicts
@@ -18,9 +19,9 @@ mesoframe.run_jobs(
     parameterview,
     jobscripts=[
         'network.sh',
-        'analysis_and_plotting.sh',
-#        'analysis.sh',
-#        'plotting.sh',
+        #'analysis_and_plotting.sh',
+        'analysis.sh',
+        'plotting.sh',
         'lfp.sh',
         ],
     run_type='run_locally',

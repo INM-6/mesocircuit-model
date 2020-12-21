@@ -6,26 +6,20 @@ import scipy.sparse as sp
 
 class BaseAnalysisPlotting:
 
-    def __init__(self, sim_dict, net_dict, stim_dict, ana_dict):
+    def __init__(self, sim_dict, net_dict, ana_dict):
 
         self.sim_dict = sim_dict
         self.net_dict = net_dict
-        self.stim_dict = stim_dict
         self.ana_dict = ana_dict
 
         # presynaptic populations
         self.X = self.net_dict['populations']
-        if self.stim_dict['thalamic_input']:
-            # thalamic population is treated as a cortical population
-            self.X = np.append(self.X, self.stim_dict['th_name'])
-
-        # postsynaptic populations
-        self.Y = self.net_dict['populations']
+        # postsynaptic populations (without thalamus)
+        self.Y = self.net_dict['populations'][:-1]
 
         # population sizes
         self.N_X = self.net_dict['num_neurons']
-        if self.stim_dict['thalamic_input']:
-            self.N_X = np.append(self.N_X, self.stim_dict['num_th_neurons'])
+        self.N_Y = self.net_dict['num_neurons'][:-1]
 
         # temporal bins for raw and resampled spike trains,
         # pre-simulation and actual simulation are combined
