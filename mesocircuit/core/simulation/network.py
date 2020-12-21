@@ -199,7 +199,7 @@ class Network:
                                 print('Error: {} : {}'.format(p,
                                                               e.strerror))
             else:
-                os.path.mkdir(output_path)
+                os.mkdir(output_path)
         MPI.COMM_WORLD.Barrier()
         return
 
