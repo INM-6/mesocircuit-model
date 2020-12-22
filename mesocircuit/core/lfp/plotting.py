@@ -28,6 +28,12 @@ import numpy as np
 from ..parameterization.base_plotting_params import plot_dict
 import LFPy
 import matplotlib
+from meso_analysis import helperfun
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.optimize import curve_fit
+import scipy.signal as ss
+
+
 
 # import matplotlib.style
 # matplotlib.style.use('classic')
@@ -450,3 +456,231 @@ def plot_single_channel_csd_data(
     ax.set_title(title)
     ax.set_ylabel(ylabel)
     ax.set_xticklabels([])
+
+
+def plot_spectrum(ax, fname,
+                  ylabel=r'$(\mathrm{mV}^2/\mathrm{Hz})$',
+                  title=r'$PSD_\mathrm{LFP}$',
+                  psd_max_freq=500,
+                  TRANSIENT=500,
+                  **kwargs):
+    """
+    Plot average spectrum of multichannel data +- one standard deviation
+
+    Parameters
+    ----------
+    ax: AxesSubplot
+    fname: path
+        Path to signal
+    ylabel: str
+        y-axis label
+    title: str
+        axis title
+    psd_max_freq: float
+        max frequency in plot
+    TRANSIENT: float
+        transient period removed from analysis (ms)
+    **kwargs
+        parameters to plt.mlab.psd
+    """
+    with h5py.File(fname, 'r') as f:
+        Fs = f['srate'][()]
+        T0 = int(Fs * TRANSIENT / 1000)  # t < T0 transient
+        shape = f['data'].shape
+        if len(shape) > 2:
+            # flatten all but last axis
+            data = f['data'][()].reshape((-1, shape[-1]))[:, T0:]
+        else:
+            data = f['data'][()][:, T0:]
+    spectra = []
+    for x in data:
+        Pxx, freqs = plt.mlab.psd(x, Fs=Fs, **kwargs)
+        spectra += [Pxx]
+    spectra = np.c_[spectra]
+
+    # discard high frequencies
+    spectra = spectra[:, freqs <= psd_max_freq]
+    freqs = freqs[freqs <= psd_max_freq]
+
+    ax.loglog(freqs, spectra.mean(axis=0), 'k-', zorder=0)
+    ax.fill_between(freqs,
+                    spectra.mean(axis=0) - spectra.std(axis=0),
+                    spectra.mean(axis=0) + spectra.std(axis=0),
+                    color='gray', zorder=-1)
+    ax.set_ylabel(ylabel)
+    ax.grid('on')
+    ax.set_title(title)
+    ax.axis(ax.axis('tight'))
+
+
+def plot_signal_correlation_or_covariance(
+        ax,
+        PS,
+        data=None,
+        srate=None,
+        edge_wrap=True,
+        extent=4000,
+        TRANSIENT=500,
+        method=np.cov,
+        tbin=5,
+        nbins=51,
+        fit_exp=True):
+    '''
+    Compute and plot covariance and correlation coefficients between pairs
+    of LFP channels as function of distance
+
+    Parameters
+    ----------
+    ax : matplotlib.axes._subplots.AxesSubplot
+    PS : NeuroTools.parameters.ParameterSet
+        LFP prediction parameters
+    data: ndarray, str, None
+        data to be analysed and plotted
+    srate: float
+        data sampling rate (Hz)
+    TRANSIENT: float
+        duration of transient period (ms)
+    method : numpy.cov or numpy.corrcoef
+    tbin : 5
+        temporal binsize of downsampled LFP when computing correlations (ms)
+    nbins : 51
+        number of bins between C.min() and C.max() where C is the correlation
+        or covariance matrix between pairs of channels
+    fit_exp : bool
+        Fit exponential curve to mean data points at each unique distance
+
+    Returns
+    -------
+    axd : matplotlib.axes._axes.Axes
+        axes object of histogram
+    '''
+    # rate of downsampled signal
+    srate_d = 1000 / tbin
+
+    # analysis = dsa.get_network_analysis_object(parameter_set_file, ps_id)
+    if isinstance(data, str) and os.path.isfile(data):
+        with h5py.File(data, 'r') as f:
+            shape = f['data'].shape
+            srate = f['srate'][()]
+            T0 = int(srate * TRANSIENT / 1000)  # t < T0 transient
+            if len(shape) > 2:
+                # flatten all but last axis
+                DATA = f['data'][()].reshape((-1, shape[-1]))[:, T0:]
+            else:
+                DATA = f['data'][()][:, T0:]
+    elif isinstance(data, np.ndarray):
+        DATA = data
+        try:
+            assert(srate > 0.)
+        except AssertionError:
+            raise AssertionError('srate must be a float > 0.')
+    else:
+        raise Exception('data not recognized')
+
+    # downsample data by decimation
+    q = srate / srate_d
+    try:
+        assert(q % int(q) == 0)
+        q = int(q)
+    except AssertionError as ae:
+        raise ae('(tbin*1000) / srate must be even dividable')
+
+    # downsampled DATA
+    DATA_d = ss.decimate(DATA, q=q)
+
+    # position of contacts
+    x = PS.electrodeParams['x'].astype(float)
+    y = PS.electrodeParams['y'].astype(float)
+
+    # distances between pairs of contacts
+    r = np.zeros((x.size, x.size))
+
+    for i in range(len(x)):
+        r[i, ] = helperfun._calc_radial_dist_to_cell(
+            x=x[i], y=y[i], Xpos=np.array(list(zip(x, y))),
+            xextent=extent,
+            yextent=extent,
+            edge_wrap=edge_wrap
+        )
+
+    # # correlation and covariance matrices
+    c = method(DATA_d)
+
+    # mask lower triangle of correlation/covariance matrices
+    mask = np.triu(np.ones(c.shape), k=1).astype(bool)
+
+    if method == np.cov:
+        paneltitle = 'pairwise covariance'
+        ylabel = 'covariance'
+    else:
+        paneltitle = 'pairwise correlation'
+        ylabel = 'corr. coeff.'
+
+    # add entries with NaNs to mask
+    mask[c == np.nan] = False
+
+    # highlight the average value at the different unique distances
+    unique = np.unique(r[mask])
+    mean = []
+    std = []
+    for v in unique:
+        mean += [np.nanmean(c[mask][r[mask] == v])]
+        std += [np.nanstd(c[mask][r[mask] == v])]
+        # mean += [c[mask][r[mask] == v].mean()]
+        # std += [c[mask][r[mask] == v].std()]
+
+    mean = np.array(mean)
+    std = np.array(std)
+
+    ax.errorbar(unique / 1000., mean, yerr=std, xerr=None, fmt='ko-',
+                label=ylabel)
+
+    # set up axes stealing space from main axes
+    divider = make_axes_locatable(ax)
+    axd = divider.append_axes("right", 0.25, pad=0.02)
+
+    bins = np.linspace(np.nanmin(c), np.nanmax(c), nbins)
+    axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
+             color='k')
+
+    # beautify
+    ax.set_ylim((mean - std).min(), (mean + std).max())
+    axd.set_ylim((mean - std).min(), (mean + std).max())
+    axd.set_yticklabels([])
+    axd.set_xticks([0, axd.axis()[1]])
+    axd.set_title('distribution')
+
+    ax.set_ylabel(ylabel, labelpad=0.1)
+    ax.set_xlabel(r'$r$ (mm)', labelpad=0.1)
+    axd.set_xlabel('count (-)', labelpad=0.1)
+    ax.set_title(paneltitle)
+
+    # dsp.remove_axis_junk(axes)
+    # dsp.remove_axis_junk(ax)
+
+    if fit_exp:
+        # fit exponential to values with distance
+        # cost function
+        def func(x, a, b, c):
+            return a * np.exp(-x / b) + c
+        # initial guess
+        p0 = (.1, 100, 0.1)
+        bounds = ([0, 0, 0], [1, 2000, 1])
+
+        popt, pcov = curve_fit(func, r[mask], c[mask], p0=p0, bounds=bounds)
+        # one standard deviation of errors
+        # perr = np.sqrt(np.diag(pcov))
+
+        # coeff of determination:
+        residuals = c[mask] - func(r[mask], popt[0], popt[1], popt[2])
+        ss_res = np.sum(residuals**2)
+        ss_tot = np.sum((c[mask] - np.mean(c[mask]))**2)
+        r_squared = 1 - (ss_res / ss_tot)
+
+        # plot
+        rvec = np.linspace(r[mask].min(), r[mask].max(), 101)
+        ax.plot(rvec / 1000., func(rvec, *popt), 'r-', lw=1.5,
+                label=r'$\beta=({0: .2g},{1: .2g},{2: .2g})$'.format(
+                      popt[0], popt[1] / 1000, popt[2]
+        ) + '\n' + r'$R^2={0: .2g}$'.format(r_squared)
+        )

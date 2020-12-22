@@ -226,7 +226,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         cells_path=os.path.join(path_lfp_data, 'cells'),
         populations_path=os.path.join(path_lfp_data, 'populations'),
         figures_subfolder=os.path.join(path_lfp_data, 'figures'),
-        dt_output=1.,
+        dt_output=0.5,
         electrodeParams=dict(
             # contact locations:
             x=np.meshgrid(np.linspace(-1800, 1800, 10),
@@ -244,12 +244,14 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
             # dendrite line sources, soma as sphere source (Linden2014)
             method='root_as_point',
         ),
+        electrodeFile='PeriodicLFP_sum.h5',
         CSDParams=dict(
             # volumetric bin edges
             x=np.linspace(-2000, 2000, 11),
             y=np.linspace(-2000, 2000, 11),
             z=np.array([-450, -350]),
         ),
+        CSDFile='VolumetricCurrentSourceDensity_sum.h5',
         X=net_dict['populations'].tolist(),
         Y=(net_dict['populations'][net_dict['populations'] != 'TC']).tolist(),
         N_X=net_dict['num_neurons'],
@@ -360,7 +362,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     for y, _, depth, N_y in PS.y_zip_list:
         PS.populationParams.update({
             y: {
-                'number': N_y,
+                'number': 5,  # N_y,
                 'z_min': depth - 25,
                 'z_max': depth + 25,
             }
