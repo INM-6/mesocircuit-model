@@ -133,7 +133,7 @@ class Network:
                      delete_files=True,
                      filepatterns=['*.dat'],
                      mode='w',
-                     method='perl'):
+                     method='safe'):
         '''
         Create tar file of content in `raw_data/<>` and optionally
         delete files matching given pattern.
@@ -149,8 +149,8 @@ class Network:
         mode: String
             tarfile.open file mode. Default: 'w'
         method: str
-            if method=='perl' (default) use faster perl method (Default),
-            if method=='safe' use safer Path.unlink method.
+            if method=='perl' use faster perl method,
+            if method=='safe' (default) use safer Path.unlink method.
         '''
         output_path = self.sim_dict["path_raw_data"]
 
@@ -169,7 +169,7 @@ class Network:
 
         return
 
-    def __wipe(self, pattern='*', method='perl'):
+    def __wipe(self, pattern='*', method='safe'):
         """ Wipe raw output directory from any existing files.
         Will create folder if it does not exist.
 
@@ -178,8 +178,8 @@ class Network:
         pattern: str
             file pattern to remove. Default '*'
         method: str
-            if method=='perl' (default) use faster perl method (Default),
-            if method=='safe' use safer Path.unlink method.
+            if method=='perl' use faster perl method,
+            if method=='safe' (default) use safer Path.unlink method.
         """
         output_path = self.sim_dict["path_raw_data"]
         if nest.Rank() == 0:
@@ -190,7 +190,7 @@ class Network:
                     os.system('perl -e "for(<' + '{}'.format(pattern) +
                               '>){((stat)[9]<(unlink))}"')
                     os.chdir(cwd)
-                elif method == 'path':
+                elif method == 'safe':
                     for p in Path(output_path).glob(pattern):
                         while p.is_file():
                             try:
