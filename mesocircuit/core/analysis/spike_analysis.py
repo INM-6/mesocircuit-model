@@ -126,7 +126,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                                 self.__merge_h5_files_populations_datatype)
         return
 
-    def compute_psd(self, x, Fs, remove_mean=True, noverlap=3/4):
+    def compute_psd(self, x, Fs, detrend='mean', overlap=3/4):
         """
         Compute power sprectrum `Pxx` of signal `x` using
         matplotlib.mlab.psd function
@@ -137,16 +137,15 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             1-D array or sequence
         Fs: float
             sampling frequency
-        remove_mean: bool
-            if True, remove signal mean (default: True)
-        noverlap: float
+        detrend: {'none', 'mean', 'linear'} or callable, default 'mean'
+            detrend data before fft-ing.
+        overlap: float
             fraction of NFFT points of overlap between segments
         """
-        if remove_mean:
-            x = x - x.mean()
         NFFT = self.ana_dict['psd_NFFT']
-        noverlap = int(noverlap * NFFT)
-        return plt.mlab.psd(x, NFFT=NFFT, Fs=Fs, noverlap=noverlap)
+        noverlap = int(overlap * NFFT)
+        return plt.mlab.psd(x, NFFT=NFFT, Fs=Fs,
+                            detrend=detrend, noverlap=noverlap)
 
     def __load_raw_nodeids(self):
         """
