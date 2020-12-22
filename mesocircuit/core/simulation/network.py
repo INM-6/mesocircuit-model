@@ -132,7 +132,8 @@ class Network:
     def tar_raw_data(self,
                      delete_files=True,
                      filepatterns=['*.dat'],
-                     mode='w'):
+                     mode='w',
+                     method='safe'):
         '''
         Create tar file of content in `raw_data/<>` and optionally
         delete files matching given pattern.
@@ -147,6 +148,9 @@ class Network:
             patterns of files being deleted
         mode: String
             tarfile.open file mode. Default: 'w'
+        method: str
+            if method=='perl' use faster perl method,
+            if method=='safe' (default) use safer Path.unlink method.
         '''
         output_path = self.sim_dict["path_raw_data"]
 
@@ -156,32 +160,46 @@ class Network:
             with tarfile.open(fname, mode) as t:
                 t.add(output_path,
                       arcname=os.path.split(output_path)[-1])
+        MPI.COMM_WORLD.Barrier()
 
-            # remove files from <raw_nest_output_path>
-            if delete_files:
-                for pattern in filepatterns:
+        # remove files from <raw_nest_output_path>
+        if delete_files:
+            for pattern in filepatterns:
+                self.__wipe(pattern, method=method)
+
+        return
+
+    def __wipe(self, pattern='*', method='safe'):
+        """ Wipe raw output directory from any existing files.
+        Will create folder if it does not exist.
+
+        Parameters
+        ----------
+        pattern: str
+            file pattern to remove. Default '*'
+        method: str
+            if method=='perl' use faster perl method,
+            if method=='safe' (default) use safer Path.unlink method.
+        """
+        output_path = self.sim_dict["path_raw_data"]
+        if nest.Rank() == 0:
+            if os.path.isdir(output_path):
+                if method == 'perl':
+                    cwd = os.getcwd()
+                    os.chdir(output_path)
+                    os.system('perl -e "for(<' + '{}'.format(pattern) +
+                              '>){((stat)[9]<(unlink))}"')
+                    os.chdir(cwd)
+                elif method == 'safe':
                     for p in Path(output_path).glob(pattern):
                         while p.is_file():
                             try:
                                 p.unlink()
                             except OSError as e:
-                                print('Error: {} : {}'.format(p, e.strerror))
-                # remove raw directory
-                os.rmdir(output_path)
-
-        MPI.COMM_WORLD.Barrier()
-        return
-
-    def __wipe(self):
-        """ Wipe raw output directory from any existing files"""
-        if nest.Rank() == 0:
-            if os.path.isdir(self.sim_dict['path_raw_data']):
-                for p in Path(self.sim_dict['path_raw_data']).glob('*'):
-                    while p.is_file():
-                        try:
-                            p.unlink()
-                        except OSError as e:
-                            print('Error: {} : {}'.format(p, e.strerror))
+                                print('Error: {} : {}'.format(p,
+                                                              e.strerror))
+            else:
+                os.mkdir(output_path)
         MPI.COMM_WORLD.Barrier()
         return
 

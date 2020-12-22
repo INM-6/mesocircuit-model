@@ -18,11 +18,11 @@ parameterview = mesoframe.evaluate_parameterspaces(
 mesoframe.run_jobs(
     parameterview,
     jobscripts=[
-        'network.sh',
+        #'network.sh',
         #'analysis_and_plotting.sh',
-        'analysis.sh',
-        'plotting.sh',
-        'lfp.sh',
+        #'analysis.sh',
+        #'plotting.sh',
+        #'lfp.sh',
         ],
     run_type='run_locally',
 #    run_type='submit_jureca',
