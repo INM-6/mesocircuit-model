@@ -45,6 +45,20 @@ matplotlib.rcParams.update(plot_dict['rcParams'])
 pop_colors = plot_dict['pop_colors']
 
 
+def remove_axis_junk(ax, which=['right', 'top']):
+    '''remove axis lines in list `which` from axes `ax`
+
+    Parameters
+    ----------
+    ax :
+    which: list of strings in ['right', 'top', 'bottom', 'left']
+    '''
+    for loc, spine in ax.spines.items():
+        if loc in which:
+            spine.set_color('none')
+    ax.xaxis.set_ticks_position('bottom')
+    ax.yaxis.set_ticks_position('left')
+
 def network_lfp_activity_animation(PS, net_dict, networkSim, T=(
         500, 700), kernel=np.exp(-np.arange(10) / 2), N_X=None,
         save_anim=True):
@@ -170,7 +184,7 @@ def morphology_table(ax, PS):
 
     Arguments
     ---------
-    ax : matplotlib.figure.axes
+    ax: matplotlib.figure.axes
 
     Returns
     -------
@@ -324,13 +338,13 @@ def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=(-200, 200)):
     '''
     Arguments
     ---------
-    ax : matplotlib.axes._subplots.AxesSubplot
-    PS : NeurotNeuroTools.parameters.ParameterSet
+    ax: matplotlib.axes._subplots.AxesSubplot
+    PS: NeurotNeuroTools.parameters.ParameterSet
     net_dict: dict
         network settings
     ana_dict: dict
         analysis settings
-    CONTACTPOS : tuple
+    CONTACTPOS: tuple
         x and y coordinate of electrode contact point in PS.electrodeParams
     '''
     pos_bins = np.linspace(0, net_dict['extent'],
@@ -395,13 +409,13 @@ def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=(-200, 200)):
 
 
 def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
-                                 title='LFP', ylabel='$\Phi$ (mV)',
+                                 title='LFP', ylabel=r'$\Phi$ (mV)',
                                  T=[500, 550], CONTACTPOS=(-200, 200)):
     '''
     Arguments
     ---------
-    ax : matplotlib.axes._subplots.AxesSubplot
-    PS : NeurotNeuroTools.parameters.ParameterSet
+    ax: matplotlib.axes._subplots.AxesSubplot
+    PS: NeurotNeuroTools.parameters.ParameterSet
     net_dict: dict
         network settings
     ana_dict: dict
@@ -410,7 +424,7 @@ def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
         path to .h5 file
     title: str
     ylabel: str
-    CONTACTPOS : tuple
+    CONTACTPOS: tuple
         x and y coordinate of electrode contact point in PS.electrodeParams
     '''
     CONTACT = (PS.electrodeParams['x'] == CONTACTPOS[0]
@@ -425,6 +439,7 @@ def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
     ax.set_title(title)
     ax.set_ylabel(ylabel)
     ax.set_xticklabels([])
+    remove_axis_junk(ax)
 
 
 def plot_single_channel_csd_data(
@@ -456,6 +471,7 @@ def plot_single_channel_csd_data(
     ax.set_title(title)
     ax.set_ylabel(ylabel)
     ax.set_xticklabels([])
+    remove_axis_junk(ax)
 
 
 def plot_spectrum(ax, fname,
@@ -511,6 +527,7 @@ def plot_spectrum(ax, fname,
     ax.grid('on')
     ax.set_title(title)
     ax.axis(ax.axis('tight'))
+    remove_axis_junk(ax)
 
 
 def plot_signal_correlation_or_covariance(
@@ -531,8 +548,8 @@ def plot_signal_correlation_or_covariance(
 
     Parameters
     ----------
-    ax : matplotlib.axes._subplots.AxesSubplot
-    PS : NeuroTools.parameters.ParameterSet
+    ax: matplotlib.axes._subplots.AxesSubplot
+    PS: NeuroTools.parameters.ParameterSet
         LFP prediction parameters
     data: ndarray, str, None
         data to be analysed and plotted
@@ -540,24 +557,23 @@ def plot_signal_correlation_or_covariance(
         data sampling rate (Hz)
     TRANSIENT: float
         duration of transient period (ms)
-    method : numpy.cov or numpy.corrcoef
-    tbin : 5
+    method: numpy.cov or numpy.corrcoef
+    tbin: 5
         temporal binsize of downsampled LFP when computing correlations (ms)
-    nbins : 51
+    nbins: 51
         number of bins between C.min() and C.max() where C is the correlation
         or covariance matrix between pairs of channels
-    fit_exp : bool
+    fit_exp: bool
         Fit exponential curve to mean data points at each unique distance
 
     Returns
     -------
-    axd : matplotlib.axes._axes.Axes
+    axd: matplotlib.axes._axes.Axes
         axes object of histogram
     '''
     # rate of downsampled signal
     srate_d = 1000 / tbin
 
-    # analysis = dsa.get_network_analysis_object(parameter_set_file, ps_id)
     if isinstance(data, str) and os.path.isfile(data):
         with h5py.File(data, 'r') as f:
             shape = f['data'].shape
@@ -626,8 +642,6 @@ def plot_signal_correlation_or_covariance(
     for v in unique:
         mean += [np.nanmean(c[mask][r[mask] == v])]
         std += [np.nanstd(c[mask][r[mask] == v])]
-        # mean += [c[mask][r[mask] == v].mean()]
-        # std += [c[mask][r[mask] == v].std()]
 
     mean = np.array(mean)
     std = np.array(std)
@@ -641,11 +655,11 @@ def plot_signal_correlation_or_covariance(
 
     bins = np.linspace(np.nanmin(c), np.nanmax(c), nbins)
     axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
-             color='k')
+             color='k', clip_on=False)
 
     # beautify
-    ax.set_ylim((mean - std).min(), (mean + std).max())
-    axd.set_ylim((mean - std).min(), (mean + std).max())
+    ax.set_ylim(bins[0], bins[-1])
+    axd.set_ylim(bins[0], bins[-1])
     axd.set_yticklabels([])
     axd.set_xticks([0, axd.axis()[1]])
     axd.set_title('distribution')
@@ -655,21 +669,20 @@ def plot_signal_correlation_or_covariance(
     axd.set_xlabel('count (-)', labelpad=0.1)
     ax.set_title(paneltitle)
 
-    # dsp.remove_axis_junk(axes)
-    # dsp.remove_axis_junk(ax)
+    remove_axis_junk(ax)
+    remove_axis_junk(axd)
 
+    # fit exponential to values with distance
     if fit_exp:
-        # fit exponential to values with distance
-        # cost function
         def func(x, a, b, c):
+            '''cost function'''
             return a * np.exp(-x / b) + c
+
         # initial guess
         p0 = (.1, 100, 0.1)
         bounds = ([0, 0, 0], [1, 2000, 1])
 
         popt, pcov = curve_fit(func, r[mask], c[mask], p0=p0, bounds=bounds)
-        # one standard deviation of errors
-        # perr = np.sqrt(np.diag(pcov))
 
         # coeff of determination:
         residuals = c[mask] - func(r[mask], popt[0], popt[1], popt[2])
@@ -684,3 +697,126 @@ def plot_signal_correlation_or_covariance(
                       popt[0], popt[1] / 1000, popt[2]
         ) + '\n' + r'$R^2={0: .2g}$'.format(r_squared)
         )
+
+    # ax.legend(loc=3, bbox_to_anchor=(0, -0.5), frameon=False, numpoints=1)
+    ax.legend(loc='best', frameon=False, numpoints=1)
+
+
+def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,
+                    ylabels=True, scalebar=True, vlimround=None,
+                    T=[800, 1000], ylim=[-100, 0], colors='k',
+                    label='', transient=500, rasterized=False):
+    '''
+    on axes plot the summed LFP contributions
+
+    Parameters
+    ----------
+    ax: matplotlib.axes.AxesSubplot
+    PS: ParamsLFP object
+        LFP-simulation parameters
+    fname: str/np.ndarray
+        path to h5 file or ndim=2 numpy.ndarray
+    unit: str
+        scalebar unit
+    scaling_factor: float
+        scaling factor
+    ylabels: bool
+        show labels on y-axis
+    scalebar: bool
+        show scalebar in plot
+    vlimround: None/float
+        override autoscaling of data and scalebar
+    T: list
+        [tstart, tstop], which timeinterval
+    ylim: list of floats
+        see plt.gca().set_ylim
+    color: str/colorspec tuple
+        color of shown lines
+    label: str
+        line labels
+
+
+    Returns
+    -------
+    vlimround: float
+        scalebar scaling factor, i.e., to match up plots
+
+    '''
+    if type(fname) == str and os.path.isfile(fname):
+        with h5py.File(fname, 'r') as f:
+            shape = f['data'].shape
+            srate = f['srate'][()]
+            if len(shape) > 2:
+                # flatten all but last axis
+                data = f['data'][()].reshape((-1, shape[-1]))
+            else:
+                data = f['data'][()]
+
+            tvec = np.arange(data.shape[-1]) * 1000. / srate
+
+            # for mean subtraction
+            datameanaxis1 = data[:, tvec >= transient].mean(axis=1)
+    elif type(fname) == np.ndarray and fname.ndim == 2:
+        data = fname
+        tvec = np.arange(data.shape[1]) * PS.dt_output
+        datameanaxis1 = data[:, tvec >= transient].mean(axis=1)
+    else:
+        errmsg = 'type(fname)={} not str or numpy.ndarray'.format(type(fname))
+        raise Exception(errmsg)
+
+    # slice
+    slica = (tvec <= T[1]) & (tvec >= T[0])
+    data = data[:, slica]
+
+    # subtract mean in each channel
+    dataT = data.T - datameanaxis1
+    data = dataT.T
+
+    zvec = -np.arange(data.shape[0])
+    vlim = abs(data).max()
+    if vlimround is None:
+        vlimround = 2.**np.round(np.log2(vlim)) / scaling_factor
+    else:
+        pass
+
+    yticklabels = []
+    yticks = []
+
+    for i, z in enumerate(zvec):
+        if i == 0:
+            ax.plot(tvec[slica], data[i] / vlimround + z, lw=1.,
+                    rasterized=rasterized, label=label, clip_on=False)
+        else:
+            ax.plot(tvec[slica], data[i] / vlimround + z, lw=1.,
+                    rasterized=rasterized, clip_on=False)
+        if i % 2 == 0:
+            yticklabels.append('%i' % (i+1))
+        else:
+            yticklabels.append('')
+        yticks.append(z)
+
+    if scalebar:
+        ax.plot([tvec[slica][-1]+np.diff(T)*0.02,
+                 tvec[slica][-1]+np.diff(T)*0.02],
+                [-1, -2], lw=2, color='k', clip_on=False)
+        ax.text(tvec[slica][-1]+np.diff(T)*0.04, -1.5,
+                '$2^{' + '{}'.format(int(np.log2(vlimround))
+                                     ) + '}$ ' + '{0}'.format(unit),
+                color='k', rotation='vertical',
+                va='center')
+
+    ax.axis(ax.axis('tight'))
+    ax.yaxis.set_ticks(yticks)
+    if ylabels:
+        ax.yaxis.set_ticklabels(yticklabels)
+        ax.set_ylabel('channel', labelpad=0.0)
+    else:
+        ax.yaxis.set_ticklabels([])
+
+    remove_axis_junk(ax)
+
+    ax.set_xticks(T)
+    ax.set_xlabel(r'$t$ (ms)', labelpad=0.0)
+    ax.set_ylim(ylim)
+
+    return vlimround

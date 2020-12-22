@@ -25,7 +25,7 @@ SIZE = COMM.Get_size()
 RANK = COMM.Get_rank()
 
 class Plotting(base_class.BaseAnalysisPlotting):
-    """ 
+    """
     Provides functions to plot the analyzed data.
 
     All functions that create a figure start with 'fig_'.
@@ -80,7 +80,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         Plots spike raster to gridspec cell.
 
         Neurons are sorted according to sorting_axis applied in
-        all_pos_sorting_arrays. 
+        all_pos_sorting_arrays.
 
         Parameters
         ----------
@@ -113,7 +113,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         """
         nums_shown = []
         yticks = []
-        ax = plt.subplot(gs)   
+        ax = plt.subplot(gs)
         for i,X in enumerate(populations):
             data = self.load_h5_to_sparse_X(X, all_sptrains)
 
@@ -132,7 +132,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 sample_indices = np.zeros(data.shape[0], dtype=bool)
                 sample_indices[::sample_step] = True
                 data = data[sample_indices, :]
-            
+
             # final number of neurons to be shown
             num_neurons = data.shape[0]
 
@@ -183,13 +183,13 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ### column 0: boxcharts
         gs_c0 = gridspec.GridSpecFromSubplotSpec(3, 1, subplot_spec=gs_cols[0,:2],
                                                  hspace=0.5)
-        
+
         # top: FRs
         print('  Plotting boxcharts: rates')
         axes[0] = self.plot_boxcharts(gs_c0[0,0],
             all_FRs, xlabel='', ylabel='FR (spikes/s)',
             xticklabels=False)
-        
+
         # middle: LVs
         print('  Plotting boxcharts: LVs')
         axes[1] = self.plot_boxcharts(gs_c0[1,0],
@@ -206,7 +206,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         # bins used in distribution in [0,1]
         bins_unscaled = (np.arange(0, self.plot_dict['distr_num_bins']+1) /
             self.plot_dict['distr_num_bins'])
-        
+
         # left: FRs
         print('  Plotting distributions: FRs')
         axes[3] = self.plot_layer_panels(gs_cols[0,3:5],
@@ -218,7 +218,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
             ylabel='p (a.u.)')
 
         # middle: LVs
-        print('  Plotting distributions: LVs') 
+        print('  Plotting distributions: LVs')
         axes[4] = self.plot_layer_panels(gs_cols[0,5:7],
             xlabel='LV',
             plotfunc=self.plotfunc_distributions,
@@ -264,7 +264,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         if type(start_time) == str:
             start_time = self.net_dict[start_time]
 
-        start_frame = int(start_time / binsize_time) 
+        start_frame = int(start_time / binsize_time)
         end_frame = start_frame + (nframes - 1) * step
         times = np.arange(start_frame, end_frame+1, step) * binsize_time
 
@@ -439,7 +439,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
             data_plot.append(data_X)
 
         # ignore all warnings, target in particular VisibleDeprecationWarning
-        # (could be removed in some cases with np.array(data_plot, dtype=object)) 
+        # (could be removed in some cases with np.array(data_plot, dtype=object))
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             boxes = ax.boxplot(
@@ -461,7 +461,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax.set_ylabel(ylabel)
         if not xticklabels:
             ax.set_xticklabels([])
-        
+
         ax.yaxis.set_major_locator(MaxNLocator(3))
         return ax
 
@@ -501,7 +501,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
                     y0 = 0
 
                 ax.set_ylim(y0, np.max([ymax, ymax1]) * 1.1)
-                    
+
             if layer_count == len(self.plot_dict['layer_labels']) - 1:
                 ax.set_xlabel(xlabel)
             else:
@@ -524,9 +524,9 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax.set_xlim(bins[0], bins[-1])
         ax.xaxis.set_major_locator(MaxNLocator(nbins=MaxNLocatorNBins))
         ax.set_yticks([])
-        return 
+        return
 
-    
+
     def plotfunc_PSDs(self, ax, X, i, data):
         """
         TODO ax limits and ticklabels
@@ -611,7 +611,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         Saves the current figure to format given in the plotting parameters.
 
         TODO: note that inkscape etc. for conversion are not available on JURECA
-        
+
         Parameters
         ----------
         filename
@@ -635,7 +635,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 plt.savefig(path_fn + prior_ext)
                 cmd = ('inkscape ' + path_fn + '.svg ' +
                        '-E ' + path_fn + '.eps ' +
-                       '--export-ignore-filters --export-ps-level=3' + '\n' +  
+                       '--export-ignore-filters --export-ps-level=3' + '\n' +
                        'rm ' + path_fn + '.svg')
                 os.system(cmd)
 
@@ -652,5 +652,3 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
         plt.close()
         return
-
-

@@ -17,7 +17,7 @@ from core.lfp.lfp_parameters import get_parameters
 from core.lfp.plotting import network_lfp_activity_animation, \
     morphology_table, layout_illustration, plot_single_channel_lfp_data, \
     plot_single_channel_csd_data, plot_spectrum, \
-    plot_signal_correlation_or_covariance
+    plot_signal_correlation_or_covariance, plot_signal_sum
 
 
 # Set some matplotlib defaults
@@ -57,7 +57,6 @@ networkSim = CachedTopoNetwork(**PS.network_params)
 ##########################################################################
 # Create plots and animations
 ##########################################################################
-'''
 # Figure 6
 fig, ax = plt.subplots(1, 1,
                        figsize=(plot_dict['fig_width_2col'],
@@ -73,7 +72,7 @@ fig, ax = plt.subplots(1, 1, figsize=(plot_dict['fig_width_1col'],
                        sharex=True)
 layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=CONTACTPOS)
 
-# Figure 6B : plot LFP in one channel
+# Figure 6B: plot LFP in one channel
 fig, axes = plt.subplots(2, 1, figsize=(plot_dict['fig_width_1col'],
                                         plot_dict['fig_width_1col']))
 T = [sim_dict['t_presim'], sim_dict['t_presim'] + 100]
@@ -108,7 +107,7 @@ for i, (ax, fname, ylabel, title) in enumerate(zip(axes, fnames,
                   psd_max_freq=plot_dict['psd_max_freq'],
                   NFFT=ana_dict['psd_NFFT'],
                   noverlap=int(ana_dict['psd_NFFT'] * 3 // 4),
-                  detrend='mean')'''
+                  detrend='mean')
 
 # Figure 7 spike/LFP/CSD/MUA correlation vs. distance
 fig, axes = plt.subplots(1, 2,
@@ -125,7 +124,20 @@ for ax, data, fit_exp in zip(axes, fnames, [True, False]):
                                           fit_exp=fit_exp)
 
 
-
+# Figure 7 LFP/CSD/MUA time series
+# TODO: MUA
+fig, axes = plt.subplots(1, 2, figsize=(plot_dict['fig_width_2col'],
+                                        plot_dict['fig_width_2col']),
+                         sharex=True, sharey=True)
+fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
+          os.path.join(path_lfp_data, PS.CSDFile)]
+units = ['mV', 'nA/µm3']
+titles = ['LFP', 'CSD']
+for ax, fname, unit, title in zip(axes, fnames, units, titles):
+    ax.set_prop_cycle('color', [plt.cm.gray(i)
+                                for i in np.linspace(0, 200, 10).astype(int)])
+    plot_signal_sum(ax, PS, fname, unit, T=[500, 550])
+    ax.set_title(title)
 
 '''
 fig = network_lfp_activity_animation(
