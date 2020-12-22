@@ -13,6 +13,7 @@ import subprocess
 import operator
 import pickle
 import json
+import yaml
 import hashlib
 import copy
 
@@ -150,6 +151,11 @@ def evaluate_parameterset(ps_id, paramset):
             json_dump = json.dumps(
                 paramset[dic], cls=NumpyEncoder, indent=2, sort_keys=True)
             f.write(json_dump)
+    # parameters for LIF Meanfield Tools
+    lmt_dic = params_for_lif_meanfield_tools(paramset['net_dict'])
+    filename = os.path.join(paramset['sim_dict']['path_parameters'], 'lmt_dict')
+    with open(filename + '.yaml', 'w') as f:
+        yaml.dump(lmt_dic, f, default_flow_style=False)
 
     # write jobscripts
     write_jobscript('network.sh', paramset)
@@ -158,6 +164,62 @@ def evaluate_parameterset(ps_id, paramset):
     write_jobscript('plotting.sh', paramset)
     write_jobscript('analysis_and_plotting.sh', paramset)
     return
+
+
+def params_for_lif_meanfield_tools(net_dict):
+    """
+    Creates a dictionary with parameters for mean-field theoretical analysis
+    with LIF Meanfield Tools (https://github.com/INM-6/lif_meanfield_tools).
+
+    The parameters for the full network are used.
+    Currently the normal delay values are taken independent of which delay type
+    is chosen.
+
+    Parameters
+    ----------
+    net_dict
+        Final network dictionary.
+    """
+    dic = {
+        'label': 'microcircuit', # for correct parameter derivations
+        'populations': net_dict['populations'][:-1].tolist(), # no thalamus
+        'N': net_dict['full_num_neurons'][:-1].tolist(),
+        'C': {'val': net_dict['neuron_params']['C_m'],
+              'unit': 'pF'},
+        'tau_m': {'val': net_dict['neuron_params']['tau_m'],
+                  'unit': 'ms'},
+        'tau_r': {'val': net_dict['neuron_params']['t_ref'],
+                  'unit': 'ms'},
+        'V_0_abs': {'val': net_dict['neuron_params']['V_reset'],
+                    'unit': 'mV'},
+        'V_th_abs': {'val': net_dict['neuron_params']['V_th'],
+                     'unit': 'mV'},
+        'tau_s': {'val': net_dict['neuron_params']['tau_syn'],
+                  'unit': 'ms'},
+        # TODO currently only the values from normally distributed delays are
+        # taken
+        'd_e': {'val': net_dict['delay_exc_mean'],
+                'unit': 'ms'},
+        'd_i': {'val': net_dict['delay_inh_mean'],
+                'unit': 'ms'},
+        'd_e_sd': {'val': net_dict['delay_exc_mean'] * net_dict['delay_rel_std'],
+                   'unit': 'ms'}, 
+        'd_i_sd': {'val': net_dict['delay_inh_mean'] * net_dict['delay_rel_std'],
+                   'unit': 'ms'},
+        'delay_dist': 'none',
+        # use L23E -> L23E
+        'w': {'val': net_dict['full_weight_matrix_mean'][0][0].tolist(),
+              'unit': 'pA'},
+        'K': net_dict['full_indegrees'][:,:-1].tolist(),
+        'g': - net_dict['g'],
+        'nu_ext': {'val': net_dict['bg_rate'],
+                   'unit': 'Hz'},
+        'K_ext': net_dict['full_ext_indegrees'].tolist(),
+        'nu_e_ext': {'val': np.zeros(8).tolist(),
+                     'unit': 'Hz'},
+        'nu_i_ext': {'val': np.zeros(8).tolist(),
+                     'unit': 'Hz'}}
+    return dic
 
 
 def write_jobscript(jsname, paramset):
