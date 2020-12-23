@@ -8,6 +8,7 @@ compute statistics.
 
 from ..helpers import base_class
 from ..helpers import parallelism_time as pt
+from .. import stats
 import fnmatch
 import re
 import tarfile
@@ -15,7 +16,6 @@ from mpi4py import MPI
 import matplotlib.pyplot as plt
 import os
 import warnings
-import glob
 import h5py
 import numpy as np
 import scipy.sparse as sp
@@ -942,10 +942,10 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
             for j in range(len(idx_k)):
                 # correlated entries
-                x0 = self.__ztransform(data0_prune)
+                x0 = stats.ztransform(data0_prune)
                 x0 /= x0.size
 
-                x1 = self.__ztransform(data1_prune[j, :])
+                x1 = stats.ztransform(data1_prune[j, :])
 
                 cc[j, ] = np.correlate(x0, x1, 'same')[lag_inds][::-1]
 
@@ -962,28 +962,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                        'lags_ms': lags}
         return cc_func_dic
 
-    def __ztransform(self, x):
-        '''
-        Returns signal with zero mean and standard deviation of 1.
-        If a signal with zero standard deviation is supplied, a zero vector
-        is returned.
-
-        Parameters
-        ----------
-        x
-            Signal.
-
-        Returns
-        -------
-        ztrans
-            Z-transformed data.
-
-        '''
-        if x.std() == 0:
-            ztrans = np.zeros_like(x)
-        else:
-            ztrans = (x - x.mean()) / x.std()
-        return ztrans
 
     def __merge_h5_files_populations_datatype(self, i, datatype):
         """
