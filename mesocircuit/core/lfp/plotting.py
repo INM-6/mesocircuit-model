@@ -524,7 +524,7 @@ def plot_spectrum(ax, fname,
                     spectra.mean(axis=0) + spectra.std(axis=0),
                     color='gray', zorder=-1)
     ax.set_ylabel(ylabel)
-    ax.grid('on')
+    ax.grid(True)
     ax.set_title(title)
     ax.axis(ax.axis('tight'))
     remove_axis_junk(ax)
