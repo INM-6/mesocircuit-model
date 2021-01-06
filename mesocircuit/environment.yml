@@ -4,6 +4,7 @@ channels:
   - defaults
 dependencies:
   - python>=3.7,<3.9
+  - autopep8
   - c-compiler
   - cxx-compiler
   - cmake

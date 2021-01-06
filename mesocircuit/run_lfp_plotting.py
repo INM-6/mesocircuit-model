@@ -14,11 +14,8 @@ import numpy as np
 from hybridLFPy import CachedTopoNetwork
 from core.parameterization.base_plotting_params import plot_dict
 from core.lfp.lfp_parameters import get_parameters
-from core.lfp.plotting import network_lfp_activity_animation, \
-    morphology_table, layout_illustration, plot_single_channel_lfp_data, \
-    plot_single_channel_csd_data, plot_spectrum, \
-    plot_signal_correlation_or_covariance, plot_signal_sum, \
-    plot_coherence_vs_frequency
+import core.lfp.plotting as lfpplt
+from core.lfp.compute_mua import write_mua_file
 
 
 # Set some matplotlib defaults
@@ -55,52 +52,25 @@ PS = get_parameters(path_lfp_data=path_lfp_data,
 ##########################################################################
 networkSim = CachedTopoNetwork(**PS.network_params)
 
+
+##########################################################################
+# Compute MUA signal and write to file
+##########################################################################
+if not os.path.isfile(os.path.join(path_lfp_data, PS.MUAFile)):
+    write_mua_file(sim_dict, net_dict, ana_dict,
+                   PS, path_lfp_data, networkSim)
+
+
 ##########################################################################
 # Create plots and animations
 ##########################################################################
-
-# precompute MUA as spike rate per spatiotemporal bin
-from core.analysis.spike_analysis import SpikeAnalysis
-import h5py
-from core.helpers.io import load_h5_to_sparse_X
-
-sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
-# monkey patch spatial bin edges to match electrode grid
-sana.space_bins = PS.MUA_bin_edges
-
-MUA = None
-for X in PS.Y_MUA:
-    positions = {
-        'x-position_mm': networkSim.positions[X][:, 0],
-        'y-position_mm': networkSim.positions[X][:, 1]
-    }
-
-    with h5py.File(os.path.join(sim_dict['path_processed_data'],
-                                'all_sptrains_bintime.h5'), 'r') as f:
-        sptrains_bintime = load_h5_to_sparse_X(X, f)
-    tmp = sana._time_and_space_binned_sptrains_X(
-        X, positions, sptrains_bintime,
-        dtype=np.uint16)
-    if MUA is None:
-        MUA = tmp
-    else:
-        MUA = MUA + tmp
-# convert from #spikes to #spike_analysis/s
-MUA = MUA * 1000 / ana_dict['binsize_time']
-
-# write file
-with h5py.File(os.path.join(path_lfp_data, PS.MUAFile), 'w') as f:
-    f['data'] = MUA.todense()
-    f['srate'] = 1000 / ana_dict['binsize_time']
-
-
 
 # Figure 6
 fig, ax = plt.subplots(1, 1,
                        figsize=(plot_dict['fig_width_2col'],
                                 plot_dict['fig_width_2col'] * 0.5))
 fig.subplots_adjust(left=0.13, right=1, bottom=0.0, top=1.)
-morphology_table(ax, PS)
+lfpplt.morphology_table(ax, PS)
 
 
 # Figure 7A
@@ -108,31 +78,30 @@ CONTACTPOS = (-200, 200)
 fig, ax = plt.subplots(1, 1, figsize=(plot_dict['fig_width_1col'],
                                       plot_dict['fig_width_1col']),
                        sharex=True)
-layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=CONTACTPOS)
+lfpplt.layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=CONTACTPOS)
 
 # Figure 7B: plot LFP in one channel
 fig, axes = plt.subplots(3, 1, figsize=(plot_dict['fig_width_1col'],
                                         plot_dict['fig_width_1col']))
 T = [sim_dict['t_presim'], sim_dict['t_presim'] + 100]
 fname = os.path.join(path_lfp_data, PS.electrodeFile)
-plot_single_channel_lfp_data(axes[0], PS, net_dict, ana_dict, fname,
-                             T=T, CONTACTPOS=CONTACTPOS)
+lfpplt.plot_single_channel_lfp_data(axes[0], PS, net_dict, ana_dict, fname,
+                                    T=T, CONTACTPOS=CONTACTPOS)
 
 # Figure 7C: plot CSD in same channel
 fname = os.path.join(path_lfp_data, PS.CSDFile)
-plot_single_channel_csd_data(axes[1], PS, net_dict, ana_dict, fname,
-                             T=T, CONTACTPOS=CONTACTPOS)
+lfpplt.plot_single_channel_csd_data(axes[1], PS, net_dict, ana_dict, fname,
+                                    T=T, CONTACTPOS=CONTACTPOS)
 
 # Figure 7D: plot MUA in same channel
 fname = os.path.join(path_lfp_data, PS.MUAFile)
-plot_single_channel_lfp_data(axes[2], PS, net_dict, ana_dict, fname,
-                             T=T, CONTACTPOS=CONTACTPOS,
-                             title='MUA', ylabel=r'$s^{-1}$')
+lfpplt.plot_single_channel_lfp_data(axes[2], PS, net_dict, ana_dict, fname,
+                                    T=T, CONTACTPOS=CONTACTPOS,
+                                    title='MUA', ylabel=r'$s^{-1}$')
 axes[2].set_xlabel('t (ms)')
 
 
 # Figure 8 LFP/CSD/MUA power spectra
-# TODO: add MUA
 fig, axes = plt.subplots(1, 3, figsize=(plot_dict['fig_width_2col'],
                                         plot_dict['fig_width_1col']),
                          sharex=True)
@@ -146,11 +115,12 @@ ylabels = [r'$(\mathrm{mV}^2/\mathrm{Hz})$',
 titles = [r'$PSD_\mathrm{LFP}$', r'$PSD_\mathrm{CSD}$', r'MUA']
 for i, (ax, fname, ylabel, title) in enumerate(zip(axes, fnames,
                                                    ylabels, titles)):
-    plot_spectrum(ax, fname, ylabel, title,
-                  psd_max_freq=plot_dict['psd_max_freq'],
-                  NFFT=ana_dict['psd_NFFT'],
-                  noverlap=int(ana_dict['psd_NFFT'] * 3 // 4),
-                  detrend='mean')
+    lfpplt.plot_spectrum(
+        ax, fname, ylabel, title,
+        psd_max_freq=plot_dict['psd_max_freq'],
+        NFFT=ana_dict['psd_NFFT'],
+        noverlap=int(ana_dict['psd_NFFT'] * 3 // 4),
+        detrend='mean')
 
 # Figure 8 spike/LFP/CSD/MUA correlation vs. distance
 fig, axes = plt.subplots(1, 3,
@@ -161,15 +131,14 @@ fig, axes = plt.subplots(1, 3,
 fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
           os.path.join(path_lfp_data, PS.CSDFile),
           os.path.join(path_lfp_data, PS.MUAFile)]
-for ax, data, fit_exp in zip(axes, fnames, [True, False, True]):
-    plot_signal_correlation_or_covariance(ax=ax, PS=PS, data=data,
-                                          extents=[net_dict['extent']*1E3] * 2,
-                                          method=np.corrcoef,
-                                          fit_exp=fit_exp)
-
+for ax, data, fit_exp in zip(axes, fnames, [True, True, True]):
+    lfpplt.plot_signal_correlation_or_covariance(
+        ax=ax, PS=PS, data=data,
+        extents=[net_dict['extent'] * 1E3] * 2,
+        method=np.corrcoef,
+        fit_exp=fit_exp)
 
 # Figure 8 LFP/CSD/MUA time series
-# TODO: MUA
 fig, axes = plt.subplots(1, 3, figsize=(plot_dict['fig_width_2col'],
                                         plot_dict['fig_width_2col']),
                          sharex=True, sharey=True)
@@ -181,13 +150,11 @@ titles = ['LFP', 'CSD', 'MUA']
 for ax, fname, unit, title in zip(axes, fnames, units, titles):
     ax.set_prop_cycle('color', [plt.cm.gray(i)
                                 for i in np.linspace(0, 200, 10).astype(int)])
-    plot_signal_sum(ax, PS, fname, unit, T=[500, 550])
+    lfpplt.plot_signal_sum(ax, PS, fname, unit, T=[500, 550])
     ax.set_title(title)
 
 
-
 # Figure 9: LFP/CSD/MUA coherences
-# TODO: MUA
 fig, axes = plt.subplots(1, 3, figsize=(plot_dict['fig_width_2col'],
                                         plot_dict['fig_width_1col']),
                          sharex=True, sharey=True)
@@ -197,22 +164,22 @@ fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
 titles = ['LFP', 'CSD', 'MUA']
 
 for ax, fname, title in zip(axes, fnames, titles):
-    plot_coherence_vs_frequency(
-            ax, PS, fname, title,
-            colors=plt.get_cmap('viridis', 5),
-            NFFT=256,
-            noverlap=196,
-            method='mlab',
-            tbin=0.5,
-            TRANSIENT=sim_dict['t_presim'])
+    lfpplt.plot_coherence_vs_frequency(
+        ax, PS, fname, title,
+        colors=plt.get_cmap('viridis', 5),
+        NFFT=256,
+        noverlap=196,
+        method='mlab',
+        tbin=0.5,
+        TRANSIENT=sim_dict['t_presim'])
 
-'''
-fig = network_lfp_activity_animation(
+
+'''fig = lfpplt.network_lfp_activity_animation(
     PS, net_dict,
     networkSim, T=(100, 300),
     N_X=PS.N_X,
-    save_anim=False)
-# plt.close(fig)
-'''
+    save_anim=True)
+# plt.close(fig)'''
+
 
 plt.show()

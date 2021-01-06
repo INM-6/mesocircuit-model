@@ -688,21 +688,25 @@ def plot_signal_correlation_or_covariance(
         p0 = (.1, 100, 0.1)
         bounds = ([0, 0, 0], [1, 2000, 1])
 
-        popt, pcov = curve_fit(func, r[mask], c[mask], p0=p0, bounds=bounds)
+        try:
+            popt, pcov = curve_fit(func, r[mask], c[mask],
+                                   p0=p0, bounds=bounds)
 
-        # coeff of determination:
-        residuals = c[mask] - func(r[mask], popt[0], popt[1], popt[2])
-        ss_res = np.sum(residuals**2)
-        ss_tot = np.sum((c[mask] - np.mean(c[mask]))**2)
-        r_squared = 1 - (ss_res / ss_tot)
+            # coeff of determination:
+            residuals = c[mask] - func(r[mask], popt[0], popt[1], popt[2])
+            ss_res = np.sum(residuals**2)
+            ss_tot = np.sum((c[mask] - np.mean(c[mask]))**2)
+            r_squared = 1 - (ss_res / ss_tot)
 
-        # plot
-        rvec = np.linspace(r[mask].min(), r[mask].max(), 101)
-        ax.plot(rvec / 1000., func(rvec, *popt), 'r-', lw=1.5,
-                label=r'$\beta=({0: .2g},{1: .2g},{2: .2g})$'.format(
-                      popt[0], popt[1] / 1000, popt[2]
-        ) + '\n' + r'$R^2={0: .2g}$'.format(r_squared)
-        )
+            # plot
+            rvec = np.linspace(r[mask].min(), r[mask].max(), 101)
+            ax.plot(rvec / 1000., func(rvec, *popt), 'r-', lw=1.5,
+                    label=r'$\beta=({0: .2g},{1: .2g},{2: .2g})$'.format(
+                          popt[0], popt[1] / 1000, popt[2]
+            ) + '\n' + r'$R^2={0: .2g}$'.format(r_squared)
+            )
+        except ValueError:
+            print('Could not fit exponential function')
 
     # ax.legend(loc=3, bbox_to_anchor=(0, -0.5), frameon=False, numpoints=1)
     ax.legend(loc='best', frameon=False, numpoints=1)
