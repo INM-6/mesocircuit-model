@@ -58,6 +58,43 @@ networkSim = CachedTopoNetwork(**PS.network_params)
 ##########################################################################
 # Create plots and animations
 ##########################################################################
+
+# precompute MUA as spike rate per spatiotemporal bin
+from core.analysis.spike_analysis import SpikeAnalysis
+import h5py
+from core.helpers.io import load_h5_to_sparse_X
+
+sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+# monkey patch spatial bin edges to match electrode grid
+sana.space_bins = PS.MUA_bin_edges
+
+MUA = None
+for X in PS.Y_MUA:
+    positions = {
+        'x-position_mm': networkSim.positions[X][:, 0],
+        'y-position_mm': networkSim.positions[X][:, 1]
+    }
+
+    with h5py.File(os.path.join(sim_dict['path_processed_data'],
+                                'all_sptrains_bintime.h5'), 'r') as f:
+        sptrains_bintime = load_h5_to_sparse_X(X, f)
+    tmp = sana._time_and_space_binned_sptrains_X(
+        X, positions, sptrains_bintime,
+        dtype=np.uint16)
+    if MUA is None:
+        MUA = tmp
+    else:
+        MUA = MUA + tmp
+# convert from #spikes to #spike_analysis/s
+MUA = MUA * 1000 / ana_dict['binsize_time']
+
+# write file
+with h5py.File(os.path.join(path_lfp_data, PS.MUAFile), 'w') as f:
+    f['data'] = MUA.todense()
+    f['srate'] = 1000 / ana_dict['binsize_time']
+
+
+
 # Figure 6
 fig, ax = plt.subplots(1, 1,
                        figsize=(plot_dict['fig_width_2col'],
@@ -74,7 +111,7 @@ fig, ax = plt.subplots(1, 1, figsize=(plot_dict['fig_width_1col'],
 layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=CONTACTPOS)
 
 # Figure 7B: plot LFP in one channel
-fig, axes = plt.subplots(2, 1, figsize=(plot_dict['fig_width_1col'],
+fig, axes = plt.subplots(3, 1, figsize=(plot_dict['fig_width_1col'],
                                         plot_dict['fig_width_1col']))
 T = [sim_dict['t_presim'], sim_dict['t_presim'] + 100]
 fname = os.path.join(path_lfp_data, PS.electrodeFile)
@@ -87,21 +124,26 @@ plot_single_channel_csd_data(axes[1], PS, net_dict, ana_dict, fname,
                              T=T, CONTACTPOS=CONTACTPOS)
 
 # Figure 7D: plot MUA in same channel
-# TODO!!
-axes[1].set_xlabel('t (ms)')
+fname = os.path.join(path_lfp_data, PS.MUAFile)
+plot_single_channel_lfp_data(axes[2], PS, net_dict, ana_dict, fname,
+                             T=T, CONTACTPOS=CONTACTPOS,
+                             title='MUA', ylabel=r'$s^{-1}$')
+axes[2].set_xlabel('t (ms)')
 
 
 # Figure 8 LFP/CSD/MUA power spectra
 # TODO: add MUA
-fig, axes = plt.subplots(1, 2, figsize=(plot_dict['fig_width_2col'],
+fig, axes = plt.subplots(1, 3, figsize=(plot_dict['fig_width_2col'],
                                         plot_dict['fig_width_1col']),
                          sharex=True)
 
 fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
-          os.path.join(path_lfp_data, PS.CSDFile)]
+          os.path.join(path_lfp_data, PS.CSDFile),
+          os.path.join(path_lfp_data, PS.MUAFile)]
 ylabels = [r'$(\mathrm{mV}^2/\mathrm{Hz})$',
-           r'$((\frac{\mathrm{nA}}{\mathrm{µm}^3})^2/\mathrm{Hz}})$']
-titles = [r'$PSD_\mathrm{LFP}$', r'$PSD_\mathrm{CSD}$']
+           r'$((\frac{\mathrm{nA}}{\mathrm{µm}^3})^2/\mathrm{Hz}})$',
+           r'$(s^{-1})$']
+titles = [r'$PSD_\mathrm{LFP}$', r'$PSD_\mathrm{CSD}$', r'MUA']
 for i, (ax, fname, ylabel, title) in enumerate(zip(axes, fnames,
                                                    ylabels, titles)):
     plot_spectrum(ax, fname, ylabel, title,
@@ -111,29 +153,31 @@ for i, (ax, fname, ylabel, title) in enumerate(zip(axes, fnames,
                   detrend='mean')
 
 # Figure 8 spike/LFP/CSD/MUA correlation vs. distance
-fig, axes = plt.subplots(1, 2,
+fig, axes = plt.subplots(1, 3,
                          figsize=(plot_dict['fig_width_2col'],
                                   plot_dict['fig_width_1col']),
                          sharex=True)
 
 fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
-          os.path.join(path_lfp_data, PS.CSDFile)]
-for ax, data, fit_exp in zip(axes, fnames, [True, False]):
+          os.path.join(path_lfp_data, PS.CSDFile),
+          os.path.join(path_lfp_data, PS.MUAFile)]
+for ax, data, fit_exp in zip(axes, fnames, [True, False, True]):
     plot_signal_correlation_or_covariance(ax=ax, PS=PS, data=data,
-                                          extent=net_dict['extent']*1E3,
+                                          extents=[net_dict['extent']*1E3] * 2,
                                           method=np.corrcoef,
                                           fit_exp=fit_exp)
 
 
 # Figure 8 LFP/CSD/MUA time series
 # TODO: MUA
-fig, axes = plt.subplots(1, 2, figsize=(plot_dict['fig_width_2col'],
+fig, axes = plt.subplots(1, 3, figsize=(plot_dict['fig_width_2col'],
                                         plot_dict['fig_width_2col']),
                          sharex=True, sharey=True)
 fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
-          os.path.join(path_lfp_data, PS.CSDFile)]
-units = ['mV', 'nA/µm3']
-titles = ['LFP', 'CSD']
+          os.path.join(path_lfp_data, PS.CSDFile),
+          os.path.join(path_lfp_data, PS.MUAFile)]
+units = ['mV', 'nA/µm3', '1/s']
+titles = ['LFP', 'CSD', 'MUA']
 for ax, fname, unit, title in zip(axes, fnames, units, titles):
     ax.set_prop_cycle('color', [plt.cm.gray(i)
                                 for i in np.linspace(0, 200, 10).astype(int)])
@@ -144,12 +188,13 @@ for ax, fname, unit, title in zip(axes, fnames, units, titles):
 
 # Figure 9: LFP/CSD/MUA coherences
 # TODO: MUA
-fig, axes = plt.subplots(1, 2, figsize=(plot_dict['fig_width_2col'],
+fig, axes = plt.subplots(1, 3, figsize=(plot_dict['fig_width_2col'],
                                         plot_dict['fig_width_1col']),
                          sharex=True, sharey=True)
 fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
-          os.path.join(path_lfp_data, PS.CSDFile)]
-titles = ['LFP', 'CSD']
+          os.path.join(path_lfp_data, PS.CSDFile),
+          os.path.join(path_lfp_data, PS.MUAFile)]
+titles = ['LFP', 'CSD', 'MUA']
 
 for ax, fname, title in zip(axes, fnames, titles):
     plot_coherence_vs_frequency(

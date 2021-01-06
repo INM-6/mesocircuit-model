@@ -39,7 +39,7 @@ class BaseAnalysisPlotting:
                                       self.sim_dict['sim_resolution'])
         self.min_time_index_rs = int(self.ana_dict['t_transient'] / \
                                      self.ana_dict['binsize_time'])
-        
+
         # time over which statistics are computed (without transient)
         self.time_statistics = \
             self.sim_dict['t_presim'] + \
@@ -90,7 +90,7 @@ class BaseAnalysisPlotting:
                                  maxshape = (None, None))
             group.create_dataset('shape',
                                  data=d.shape,
-                                 maxshape= (None,))            
+                                 maxshape= (None,))
         else:
             if type(dataset) == dict:
                 group = f.create_group(X)
@@ -115,23 +115,3 @@ class BaseAnalysisPlotting:
         f.flush()
         f.close()
         return
-
-
-    def load_h5_to_sparse_X(self, X, h5data):
-        """
-        Loads sparse matrix stored in COOrdinate format in HDF5.
-
-        Parameters
-        ----------
-        X
-            Group name for datasets
-            'data', 'row', 'col' vectors of equal length
-            'shape' : shape of array tuple
-        h5data
-            Open .h5 file.
-        """
-        data_X = sp.coo_matrix((h5data[X]['data_row_col'][()][:, 0],
-                                (h5data[X]['data_row_col'][()][:, 1],
-                                h5data[X]['data_row_col'][()][:, 2])),
-                                shape=h5data[X]['shape'][()])
-        return data_X.tocsr()
