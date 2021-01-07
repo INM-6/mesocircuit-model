@@ -26,6 +26,7 @@ import h5py
 import numpy as np
 # import sys
 from ..parameterization.base_plotting_params import plot_dict
+from .. import stats
 import LFPy
 import matplotlib
 from meso_analysis import helperfun
@@ -58,6 +59,7 @@ def remove_axis_junk(ax, which=['right', 'top']):
             spine.set_color('none')
     ax.xaxis.set_ticks_position('bottom')
     ax.yaxis.set_ticks_position('left')
+
 
 def network_lfp_activity_animation(PS, net_dict, networkSim, T=(
         500, 700), kernel=np.exp(-np.arange(10) / 2), N_X=None,
@@ -524,7 +526,7 @@ def plot_spectrum(ax, fname,
                     spectra.mean(axis=0) + spectra.std(axis=0),
                     color='gray', zorder=-1)
     ax.set_ylabel(ylabel)
-    ax.grid('on')
+    ax.grid(True)
     ax.set_title(title)
     ax.axis(ax.axis('tight'))
     remove_axis_junk(ax)
@@ -536,7 +538,7 @@ def plot_signal_correlation_or_covariance(
         data=None,
         srate=None,
         edge_wrap=True,
-        extent=4000,
+        extents=[4000, 4000],
         TRANSIENT=500,
         method=np.cov,
         tbin=5,
@@ -555,6 +557,10 @@ def plot_signal_correlation_or_covariance(
         data to be analysed and plotted
     srate: float
         data sampling rate (Hz)
+    edge_wrap: bool
+        whether or not to assume periodic boundaries (default: True)
+    extents: iterable
+        length two list/tuple/ndarray with layer extents (µm)
     TRANSIENT: float
         duration of transient period (ms)
     method: numpy.cov or numpy.corrcoef
@@ -614,8 +620,8 @@ def plot_signal_correlation_or_covariance(
     for i in range(len(x)):
         r[i, ] = helperfun._calc_radial_dist_to_cell(
             x=x[i], y=y[i], Xpos=np.array(list(zip(x, y))),
-            xextent=extent,
-            yextent=extent,
+            xextent=extents[0],
+            yextent=extents[1],
             edge_wrap=edge_wrap
         )
 
@@ -682,21 +688,25 @@ def plot_signal_correlation_or_covariance(
         p0 = (.1, 100, 0.1)
         bounds = ([0, 0, 0], [1, 2000, 1])
 
-        popt, pcov = curve_fit(func, r[mask], c[mask], p0=p0, bounds=bounds)
+        try:
+            popt, pcov = curve_fit(func, r[mask], c[mask],
+                                   p0=p0, bounds=bounds)
 
-        # coeff of determination:
-        residuals = c[mask] - func(r[mask], popt[0], popt[1], popt[2])
-        ss_res = np.sum(residuals**2)
-        ss_tot = np.sum((c[mask] - np.mean(c[mask]))**2)
-        r_squared = 1 - (ss_res / ss_tot)
+            # coeff of determination:
+            residuals = c[mask] - func(r[mask], popt[0], popt[1], popt[2])
+            ss_res = np.sum(residuals**2)
+            ss_tot = np.sum((c[mask] - np.mean(c[mask]))**2)
+            r_squared = 1 - (ss_res / ss_tot)
 
-        # plot
-        rvec = np.linspace(r[mask].min(), r[mask].max(), 101)
-        ax.plot(rvec / 1000., func(rvec, *popt), 'r-', lw=1.5,
-                label=r'$\beta=({0: .2g},{1: .2g},{2: .2g})$'.format(
-                      popt[0], popt[1] / 1000, popt[2]
-        ) + '\n' + r'$R^2={0: .2g}$'.format(r_squared)
-        )
+            # plot
+            rvec = np.linspace(r[mask].min(), r[mask].max(), 101)
+            ax.plot(rvec / 1000., func(rvec, *popt), 'r-', lw=1.5,
+                    label=r'$\beta=({0: .2g},{1: .2g},{2: .2g})$'.format(
+                          popt[0], popt[1] / 1000, popt[2]
+            ) + '\n' + r'$R^2={0: .2g}$'.format(r_squared)
+            )
+        except ValueError:
+            print('Could not fit exponential function')
 
     # ax.legend(loc=3, bbox_to_anchor=(0, -0.5), frameon=False, numpoints=1)
     ax.legend(loc='best', frameon=False, numpoints=1)
@@ -712,7 +722,7 @@ def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,
     Parameters
     ----------
     ax: matplotlib.axes.AxesSubplot
-    PS: ParamsLFP object
+    PS: NeuroTools.parameters.ParameterSet
         LFP-simulation parameters
     fname: str/np.ndarray
         path to h5 file or ndim=2 numpy.ndarray
@@ -820,3 +830,189 @@ def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,
     ax.set_ylim(ylim)
 
     return vlimround
+
+
+def get_data_coherence(data_x, data_y,
+                       srate,
+                       positions_x, positions_y,
+                       edge_wrap=True,
+                       extents=[4000, 4000],
+                       tbin=5, NFFT=256, noverlap=192, method='mlab',
+                       phase_coherence=False):
+    """
+    Compute coherence between pairs of signals
+
+    Parameters
+    ----------
+    PS: NeuroTools.parameters.ParameterSet
+        LFP prediction parameters
+    data_x: ndarray
+        input data
+    data_y: ndarray
+        input data
+    srate: float
+        data sampling rate (Hz)
+    positions_x, positions_y: ndarray
+        positions of data points on xy-plane (µm)
+    edge_wrap: bool
+        whether or not to assume periodic boundaries (default: True)
+    extents: iterable
+        length two list/tuple/ndarray with layer extents (µm)
+    tbin: 5
+        temporal binsize of downsampled LFP when computing correlations (ms)
+    NFFT: int
+        number of FFT points
+    noverlap: int
+        segment overlap
+    method: str
+        which library to use ['mlab' (default), 'scipy']
+    phase_coherence: bool
+        If true, return phase coherence
+    """
+    # rate of downsampled signal
+    srate_d = 1000 / tbin
+
+    # downsample data by decimation
+    q = srate / srate_d
+    try:
+        assert(q % int(q) == 0)
+        q = int(q)
+    except AssertionError as ae:
+        raise ae('(tbin*1000) / srate must be even dividable')
+
+    # downsampled data
+    if q > 1:
+        data_x_d = ss.decimate(data_x, q=q)
+        data_y_d = ss.decimate(data_y, q=q)
+    else:
+        data_x_d = data_x
+        data_y_d = data_y
+
+    # z-transform data
+    data_x_d = stats.ztransform(data_x_d)
+    data_y_d = stats.ztransform(data_y_d)
+
+    # position of data points
+    x = positions_x
+    y = positions_y
+
+    # distances between pairs of contacts
+    r = np.zeros((x.size, y.size))
+
+    for i in range(len(x)):
+        r[i, ] = helperfun._calc_radial_dist_to_cell(
+            x=x[i], y=y[i],
+            Xpos=np.array(list(zip(x, y))),
+            xextent=extents[0],
+            yextent=extents[1],
+            edge_wrap=edge_wrap,
+        )
+    r = np.round(r, decimals=10)
+
+    if phase_coherence:
+        c = np.zeros((x.size, y.size, NFFT // 2 + 1)).astype('complex')
+    else:
+        c = np.zeros((x.size, y.size, NFFT // 2 + 1))
+    if method == 'mlab':
+        for i in range(x.size):
+            Pxx, freqs = plt.mlab.psd(data_x_d[i, ],
+                                      NFFT=NFFT, Fs=srate_d,
+                                      noverlap=noverlap)
+            for j in range(y.size):
+                # fill in upper triangle
+                if i <= j:
+                    Pyy, _ = plt.mlab.psd(data_y_d[j, ],
+                                          NFFT=NFFT, Fs=srate_d,
+                                          noverlap=noverlap)
+                    Pxy, _ = plt.mlab.csd(data_x_d[i, ], data_y_d[j, ],
+                                          NFFT=NFFT, Fs=srate_d,
+                                          noverlap=noverlap)
+                    if phase_coherence:
+                        c[i, j, ] = np.divide(Pxy, np.abs(Pxy))
+                    else:
+                        c[i, j, ] = np.sqrt(
+                            np.divide(np.absolute(Pxy)**2, Pxx * Pyy))
+    elif method == 'scipy':
+        for i in range(x.size):
+            freqs, Pxx = ss.welch(data_x_d[i, ],
+                                  nperseg=NFFT, fs=srate_d,
+                                  noverlap=noverlap)
+            for j in range(y.size):
+                # fill in upper triangle
+                if i <= j:
+                    _, Pyy = ss.welch(data_y_d[j, ],
+                                      nperseg=NFFT, fs=srate_d,
+                                      noverlap=noverlap)
+                    _, Pxy = ss.csd(data_x_d[i, ], data_y_d[j, ],
+                                    nperseg=NFFT, fs=srate_d,
+                                    noverlap=noverlap)
+                    if phase_coherence:
+                        raise NotImplementedError
+                    else:
+                        c[i, j, ] = np.sqrt(
+                            np.divide(np.absolute(Pxy)**2, Pxx * Pyy))
+
+    # mask lower triangle of correlation/covariance matrices, mask
+    # autocoherences/autocorrelatiosn
+    mask = np.triu(np.ones((x.size, y.size)), k=1).astype(bool)
+
+    return r, c, freqs, mask
+
+
+def plot_coherence_vs_frequency(
+        ax, PS, fname, title,
+        colors=plt.get_cmap('viridis', 5),
+        NFFT=256,
+        noverlap=196,
+        method='mlab',
+        tbin=0.5,
+        TRANSIENT=500):
+    with h5py.File(fname, 'r') as f:
+        Fs = f['srate'][()]
+        T0 = int(Fs * TRANSIENT / 1000)  # t < T0 transient
+        shape = f['data'].shape
+        if len(shape) > 2:
+            # flatten all but last axis
+            data = f['data'][()].reshape((-1, shape[-1]))[:, T0:]
+        else:
+            data = f['data'][()][:, T0:]
+
+    ax.set_title(
+        r'$\langle\gamma_\mathrm{%s}\rangle (f)$' %
+        (title + r'{\:}' + title))
+
+    data_x = data
+    data_y = data
+
+    for phase_coherence in [False, ]:
+        r, c, chfreqs, mask = get_data_coherence(
+            data_x=data_x, data_y=data_y, srate=Fs,
+            positions_x=PS.electrodeParams['x'],
+            positions_y=PS.electrodeParams['y'],
+            tbin=tbin, NFFT=NFFT, noverlap=noverlap,
+            method=method,
+            phase_coherence=phase_coherence)
+        unique = np.unique(r[mask])
+        j = 0
+        for d in unique[unique == np.round(unique, decimals=1)]:
+            if d == 0:
+                continue
+            if phase_coherence:
+                mean = np.abs(c[mask][r[mask] == d].mean(axis=0))
+                finds = chfreqs <= 500.
+                ax.plot(chfreqs[finds], mean[finds], ':', lw=1, alpha=1,
+                        label='_nolabel_',
+                        color=colors(j))
+            else:
+                mean = c[mask][r[mask] == d].mean(axis=0)
+                finds = chfreqs <= 500.
+                ax.plot(chfreqs[finds], mean[finds], '-', lw=1, alpha=1,
+                        label='{} mm'.format(d),
+                        color=colors(j))
+            j += 1
+    # if i == 0:
+    ax.set_ylabel('coherence')
+    ax.legend(loc='best', frameon=False, )
+    # ax.set_xlim(0, 500)
+    remove_axis_junk(ax)
+    ax.set_xlabel('$f$ (Hz)')

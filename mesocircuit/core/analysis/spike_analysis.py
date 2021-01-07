@@ -8,6 +8,8 @@ compute statistics.
 
 from ..helpers import base_class
 from ..helpers import parallelism_time as pt
+from ..helpers.io import load_h5_to_sparse_X
+from .. import stats
 import fnmatch
 import re
 import tarfile
@@ -15,12 +17,10 @@ from mpi4py import MPI
 import matplotlib.pyplot as plt
 import os
 import warnings
-import glob
 import h5py
 import numpy as np
 import scipy.sparse as sp
 import scipy.spatial as spatial
-import matplotlib
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
@@ -347,7 +347,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
             # time-binned and space-binned spike trains
             elif datatype == 'sptrains_bintime_binspace':
-                datasets[datatype] = self.__time_and_space_binned_sptrains_X(
+                datasets[datatype] = self._time_and_space_binned_sptrains_X(
                     X, datasets['positions'], datasets['sptrains_bintime'],
                     dtype=np.uint16)
 
@@ -440,7 +440,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 shape=shape, dtype=dtype)
         return sptrains_bintime
 
-    def __time_and_space_binned_sptrains_X(
+    def _time_and_space_binned_sptrains_X(
             self, X, positions, sptrains_bintime, dtype):
         """
         Computes space-binned spike trains from time-binned spike trains.
@@ -628,7 +628,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             if isinstance(
                     data[X],
                     h5py._hl.group.Group) and 'data_row_col' in data[X]:
-                data = self.load_h5_to_sparse_X(X, data)
+                data = load_h5_to_sparse_X(X, data)
             else:
                 data = data[X]
 
@@ -693,7 +693,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                             self.sim_dict['path_processed_data'],
                             'sptrains_bintime_binspace_TC.h5')
                         data_TC = h5py.File(fn_TC, 'r')
-                        data_TC = self.load_h5_to_sparse_X('TC', data_TC)
+                        data_TC = load_h5_to_sparse_X('TC', data_TC)
                         sptrains_bintime_binspace_TC = \
                             data_TC[:, self.min_time_index_rs:]
                         dataset = self.__compute_cc_funcs_thalamic_pulses(
@@ -959,10 +959,10 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
             for j in range(len(idx_k)):
                 # correlated entries
-                x0 = self.__ztransform(data0_prune)
+                x0 = stats.ztransform(data0_prune)
                 x0 /= x0.size
 
-                x1 = self.__ztransform(data1_prune[j, :])
+                x1 = stats.ztransform(data1_prune[j, :])
 
                 cc[j, ] = np.correlate(x0, x1, 'same')[lag_inds][::-1]
 
@@ -979,28 +979,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                        'lags_ms': lags}
         return cc_func_dic
 
-    def __ztransform(self, x):
-        '''
-        Returns signal with zero mean and standard deviation of 1.
-        If a signal with zero standard deviation is supplied, a zero vector
-        is returned.
-
-        Parameters
-        ----------
-        x
-            Signal.
-
-        Returns
-        -------
-        ztrans
-            Z-transformed data.
-
-        '''
-        if x.std() == 0:
-            ztrans = np.zeros_like(x)
-        else:
-            ztrans = (x - x.mean()) / x.std()
-        return ztrans
 
     def __merge_h5_files_populations_datatype(self, i, datatype):
         """
