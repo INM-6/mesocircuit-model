@@ -35,7 +35,6 @@ from scipy.optimize import curve_fit
 import scipy.signal as ss
 
 
-
 # import matplotlib.style
 # matplotlib.style.use('classic')
 
@@ -752,7 +751,7 @@ def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,
         scalebar scaling factor, i.e., to match up plots
 
     '''
-    if type(fname) == str and os.path.isfile(fname):
+    if isinstance(fname, str) and os.path.isfile(fname):
         with h5py.File(fname, 'r') as f:
             shape = f['data'].shape
             srate = f['srate'][()]
@@ -766,7 +765,7 @@ def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,
 
             # for mean subtraction
             datameanaxis1 = data[:, tvec >= transient].mean(axis=1)
-    elif type(fname) == np.ndarray and fname.ndim == 2:
+    elif isinstance(fname, np.ndarray) and fname.ndim == 2:
         data = fname
         tvec = np.arange(data.shape[1]) * PS.dt_output
         datameanaxis1 = data[:, tvec >= transient].mean(axis=1)
@@ -800,16 +799,16 @@ def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,
             ax.plot(tvec[slica], data[i] / vlimround + z, lw=1.,
                     rasterized=rasterized, clip_on=False)
         if i % 2 == 0:
-            yticklabels.append('%i' % (i+1))
+            yticklabels.append('%i' % (i + 1))
         else:
             yticklabels.append('')
         yticks.append(z)
 
     if scalebar:
-        ax.plot([tvec[slica][-1]+np.diff(T)*0.02,
-                 tvec[slica][-1]+np.diff(T)*0.02],
+        ax.plot([tvec[slica][-1] + np.diff(T) * 0.02,
+                 tvec[slica][-1] + np.diff(T) * 0.02],
                 [-1, -2], lw=2, color='k', clip_on=False)
-        ax.text(tvec[slica][-1]+np.diff(T)*0.04, -1.5,
+        ax.text(tvec[slica][-1] + np.diff(T) * 0.04, -1.5,
                 '$2^{' + '{}'.format(int(np.log2(vlimround))
                                      ) + '}$ ' + '{0}'.format(unit),
                 color='k', rotation='vertical',
@@ -1016,3 +1015,142 @@ def plot_coherence_vs_frequency(
     # ax.set_xlim(0, 500)
     remove_axis_junk(ax)
     ax.set_xlabel('$f$ (Hz)')
+
+
+def plot_data_coherence(ax,
+                        PS,
+                        fname,
+                        tbin=5,
+                        TRANSIENT=500,
+                        NFFT=256, noverlap=192,
+                        ylabel='coherence',
+                        cmap='viridis',
+                        max_inds=np.array([]),
+                        nfreqs=5, method='mlab', phase_coherence=False,
+                        marker='o',
+                        fit_exp=True):
+    '''
+    Compute and plot mean coherence between pairs
+    of data channels as function of distance
+
+    Parameters
+    ----------
+    ax: matplotlib.axes._subplots.AxesSubplot
+    # analysis: object
+    # parameter_set_file: str
+    #     path to sli parameter file
+    # ps_id: str
+    #     parameterset hash
+    PS: NeuroTools.parameters.ParameterSet
+        LFP prediction parameters
+    fname: string
+        data file
+    TRANSIENT: float
+        transient period
+    tbin: 5
+        temporal binsize of downsampled LFP when computing correlations in ms
+    NFFT: int
+        see plt.cohere
+    noverlap: int
+        see plt.cohere
+    cmap: str or matplotlib.colors.LinearSegmentedColormap
+        colormap name or colormap object
+    max_inds: ndarray
+        array indices on frequency axis used to extract coherences
+    nfreqs: int
+        number of frequencies to show
+    phase_coherence: bool
+        Whether or not to compute phase coherence (sets all real parts to 1)
+
+    Returns
+    -------
+
+
+    '''
+    colors = plt.get_cmap(cmap, nfreqs)
+    '''r, c, freqs, mask = get_data_coherence(
+        analysis=analysis, PS=PS,
+        data_x=data_x, data_y=data_y,
+        srate=srate,
+        tbin=tbin, NFFT=NFFT, noverlap=noverlap, method=method,
+        phase_coherence=phase_coherence)'''
+
+    with h5py.File(fname, 'r') as f:
+        Fs = f['srate'][()]
+        T0 = int(Fs * TRANSIENT / 1000)  # t < T0 transient
+        shape = f['data'].shape
+        if len(shape) > 2:
+            # flatten all but last axis
+            data = f['data'][()].reshape((-1, shape[-1]))[:, T0:]
+        else:
+            data = f['data'][()][:, T0:]
+
+    data_x = data
+    data_y = data
+
+    r, c, freqs, mask = get_data_coherence(
+        data_x=data_x, data_y=data_y, srate=Fs,
+        positions_x=PS.electrodeParams['x'],
+        positions_y=PS.electrodeParams['y'],
+        tbin=tbin, NFFT=NFFT, noverlap=noverlap,
+        method=method,
+        phase_coherence=phase_coherence)
+
+    # highlight the average value at the different unique distances
+    unique = np.unique(r[mask])
+    for j, i in enumerate(max_inds[:nfreqs]):
+        # container
+        mean = []
+        if phase_coherence:
+            for v in unique:
+                mean += [np.abs(c[mask][r[mask] == v][:, i].mean())]
+            line = ax.plot(unique, mean, marker + ':', markersize=5, alpha=1,
+                           color=colors(j),
+                           label='_nolabel_',
+                           )
+        else:
+            for v in unique:
+                mean += [c[mask][r[mask] == v][:, i].mean()]
+            line = ax.plot(unique, mean, marker, markersize=5, alpha=1,
+                           color=colors(j),
+                           label='_nolabel_',
+                           )
+
+        # beautify
+        ax.set_ylabel(ylabel, labelpad=0.0)
+        ax.set_xlabel('$r$ (mm)', labelpad=0.0)
+
+        # fit exponential to values with distance
+        # cost function
+        def func(x, a, b, c):
+            return a * np.exp(-x / b) + c
+        # initial guess
+        p0 = (0.1, 100, 0.1)
+        bounds = ([0, 0, 0], [1, 2000, 1])
+
+        if phase_coherence:
+            pass
+        elif fit_exp:
+            try:
+                popt, pcov = curve_fit(
+                    func, unique, mean, p0=p0, bounds=bounds)
+                # coeff of determination:
+                residuals = mean - func(unique, popt[0], popt[1], popt[2])
+                ss_res = np.sum(residuals**2)
+                ss_tot = np.sum((mean - np.mean(mean))**2)
+                r_squared = 1 - (ss_res / ss_tot)
+                print('f={}, R2={}'.format(freqs[i], r_squared))
+                # plot
+                rvec = np.linspace(r[mask].min(), r[mask].max(), 101)
+                ax.plot(
+                    rvec, func(rvec, *popt), '-',
+                    color=plt.getp(line[0], 'mfc'),
+                    lw=2,
+                    label=r'$f={0: .1f} \mathrm{{Hz}}, \beta=({1: .2g},{2: .2g},{3: .2g})$'.format(
+                        freqs[i], popt[0], popt[1], popt[2])
+                    )
+            except RuntimeError:
+                pass
+        else:
+            pass
+        ax.axis(ax.axis('tight'))
