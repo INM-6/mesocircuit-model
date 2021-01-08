@@ -173,6 +173,44 @@ for ax, fname, title in zip(axes, fnames, titles):
         tbin=0.5,
         TRANSIENT=sim_dict['t_presim'])
 
+# Figure 9: LFP/CSD/MUA coherence with distance
+fig, axes = plt.subplots(1, 3, figsize=(plot_dict['fig_width_2col'],
+                                        plot_dict['fig_width_1col']),
+                         sharex=True, sharey=True)
+fit_exps = [True, True, False]
+for ax, fname, title, fit_exp in zip(axes, fnames, titles, fit_exps):
+    lfpplt.plot_coherence_vs_distance(
+        ax, PS, fname,
+        max_inds=np.array([2, 6, 16, 26, 38]),
+        NFFT=256, noverlap=196,
+        method='mlab', tbin=0.5,
+        fit_exp=fit_exp,
+        phase_coherence=False)
+    if fit_exp:
+        ax.legend(loc=1, fontsize=6, frameon=False,
+                  bbox_to_anchor=(1.15, 1.05))
+    ax.set_title(title)
+
+
+# Figure 9: LFP/CSD/MUA coherence with frequency and distance
+fig, axes = plt.subplots(1, 3, figsize=(plot_dict['fig_width_2col'],
+                                        plot_dict['fig_width_1col']),
+                         sharex=True, sharey=True)
+fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
+          os.path.join(path_lfp_data, PS.CSDFile),
+          os.path.join(path_lfp_data, PS.MUAFile)]
+titles = ['LFP', 'CSD', 'MUA']
+
+for ax, fname, title in zip(axes, fnames, titles):
+    lfpplt.plot_coherence_vs_distance_vs_frequency(
+        fig, ax, PS, fname,
+        NFFT=256,
+        noverlap=196,
+        method='mlab',
+        tbin=0.5,
+        TRANSIENT=sim_dict['t_presim']
+    )
+
 
 '''fig = lfpplt.network_lfp_activity_animation(
     PS, net_dict,
