@@ -1017,18 +1017,22 @@ def plot_coherence_vs_frequency(
     ax.set_xlabel('$f$ (Hz)')
 
 
-def plot_data_coherence(ax,
-                        PS,
-                        fname,
-                        tbin=5,
-                        TRANSIENT=500,
-                        NFFT=256, noverlap=192,
-                        ylabel='coherence',
-                        cmap='viridis',
-                        max_inds=np.array([]),
-                        nfreqs=5, method='mlab', phase_coherence=False,
-                        marker='o',
-                        fit_exp=True):
+def plot_coherence_vs_distance(
+        ax,
+        PS,
+        fname,
+        tbin=5,
+        TRANSIENT=500,
+        NFFT=256,
+        noverlap=192,
+        ylabel='coherence',
+        cmap='viridis',
+        max_inds=np.array([]),
+        nfreqs=5,
+        method='mlab',
+        phase_coherence=False,
+        marker='o',
+        fit_exp=True):
     '''
     Compute and plot mean coherence between pairs
     of data channels as function of distance
@@ -1036,23 +1040,19 @@ def plot_data_coherence(ax,
     Parameters
     ----------
     ax: matplotlib.axes._subplots.AxesSubplot
-    # analysis: object
-    # parameter_set_file: str
-    #     path to sli parameter file
-    # ps_id: str
-    #     parameterset hash
     PS: NeuroTools.parameters.ParameterSet
         LFP prediction parameters
     fname: string
         data file
     TRANSIENT: float
-        transient period
+        transient period (default: 500 ms)
     tbin: 5
         temporal binsize of downsampled LFP when computing correlations in ms
     NFFT: int
         see plt.cohere
     noverlap: int
         see plt.cohere
+    ylabel: str
     cmap: str or matplotlib.colors.LinearSegmentedColormap
         colormap name or colormap object
     max_inds: ndarray
@@ -1061,6 +1061,10 @@ def plot_data_coherence(ax,
         number of frequencies to show
     phase_coherence: bool
         Whether or not to compute phase coherence (sets all real parts to 1)
+    marker: str
+        matplotlib marker symbol
+    fit_exp: bool
+        whether or not to fit exponential to observations
 
     Returns
     -------
@@ -1068,12 +1072,6 @@ def plot_data_coherence(ax,
 
     '''
     colors = plt.get_cmap(cmap, nfreqs)
-    '''r, c, freqs, mask = get_data_coherence(
-        analysis=analysis, PS=PS,
-        data_x=data_x, data_y=data_y,
-        srate=srate,
-        tbin=tbin, NFFT=NFFT, noverlap=noverlap, method=method,
-        phase_coherence=phase_coherence)'''
 
     with h5py.File(fname, 'r') as f:
         Fs = f['srate'][()]
@@ -1146,11 +1144,77 @@ def plot_data_coherence(ax,
                     rvec, func(rvec, *popt), '-',
                     color=plt.getp(line[0], 'mfc'),
                     lw=2,
-                    label=r'$f={0: .1f} \mathrm{{Hz}}, \beta=({1: .2g},{2: .2g},{3: .2g})$'.format(
-                        freqs[i], popt[0], popt[1], popt[2])
-                    )
+                    label=(r'$f={0: .1f} \mathrm{{Hz}}, '.format(freqs[i]) +
+                           r'\beta=({0: .2g},{1: .2g},{2: .2g})$'.format(
+                               popt[0], popt[1], popt[2]))
+                )
             except RuntimeError:
                 pass
         else:
             pass
         ax.axis(ax.axis('tight'))
+
+
+def plot_coherence_vs_distance_vs_frequency(
+        fig, ax,
+        PS,
+        fname,
+        tbin=5,
+        TRANSIENT=500,
+        NFFT=256,
+        noverlap=192,
+        cmap='viridis',
+        max_inds=np.array([]),
+        nfreqs=5,
+        method='mlab',
+        phase_coherence=False,
+        marker='o',
+        fit_exp=True):
+
+    with h5py.File(fname, 'r') as f:
+        Fs = f['srate'][()]
+        T0 = int(Fs * TRANSIENT / 1000)  # t < T0 transient
+        shape = f['data'].shape
+        if len(shape) > 2:
+            # flatten all but last axis
+            data = f['data'][()].reshape((-1, shape[-1]))[:, T0:]
+        else:
+            data = f['data'][()][:, T0:]
+
+    data_x = data
+    data_y = data
+
+    r, c, chfreqs, mask = get_data_coherence(
+        data_x=data_x, data_y=data_y, srate=Fs,
+        positions_x=PS.electrodeParams['x'],
+        positions_y=PS.electrodeParams['y'],
+        tbin=tbin, NFFT=NFFT, noverlap=noverlap,
+        method=method,
+        phase_coherence=phase_coherence)
+
+    unique = np.unique(r[mask])
+    means = []
+    for d in unique:
+        if d == 0:
+            continue
+        means += [c[mask][r[mask] == d].mean(axis=0)]
+    means = np.array(means).T
+    im = ax.pcolormesh(
+        unique,
+        chfreqs,
+        means,
+        vmin=0,
+        vmax=0.5,
+        cmap='viridis')
+
+    ax.set_ylabel('f (Hz)', labelpad=0)
+    ax.set_xlabel(r'$r$ (mm)', labelpad=0)
+    ax.axis(ax.axis('tight'))
+    ax.set_ylim(0, 500)
+
+    rect = np.array(ax.get_position().bounds)
+    rect[0] += rect[2] + 0.01  # left
+    rect[2] = 0.01  # width
+    cax = fig.add_axes(rect)
+    cbar = plt.colorbar(im, cax=cax)
+    cbar.set_label('coherence', labelpad=0)
