@@ -327,11 +327,26 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         ]
 
     # Number of neurons of each cell type (N_y); 1-d array
+    # make sure that the number of units sum_{y \in Y} N_y == N_Y
+    PS.N_y = np.array([], dtype=int)
+    for layer, y_in_Y in enumerate(PS.y_in_Y):
+        for pop, cell_types in enumerate(y_in_Y):
+            N_y = []
+            for k, _ in enumerate(cell_types):
+                N_y += [int(np.round([PS.N_Y[layer * 2 + pop] *
+                            PS.F_yY[layer][pop][k]]))]
+            if np.sum(N_y) != PS.N_Y[layer * 2 + pop]:
+                N_y[k] += PS.N_Y[layer * 2 + pop] - np.sum(N_y)
+            PS.N_y = np.r_[PS.N_y, N_y]
+
+    assert(np.sum(PS.N_Y) == np.sum(PS.N_y)), 'sum(N_y) != sum(N_Y)'
+
+    '''
     PS.N_y = np.round(
         np.array([PS.N_Y[layer * 2 + pop] * PS.F_yY[layer][pop][k]
                   for layer, y_in_Y in enumerate(PS.y_in_Y)
                   for pop, cell_types in enumerate(y_in_Y)
-                  for k, _ in enumerate(cell_types)])).astype(int)
+                  for k, _ in enumerate(cell_types)])).astype(int)'''
     # PS.N_y *= PSET.density
     # PS.N_y = PS.N_y.astype(int)
 
