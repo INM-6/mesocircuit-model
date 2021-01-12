@@ -47,7 +47,7 @@ from hybridLFPy import PostProcess, CachedTopoNetwork, TopoPopulation
 import pickle
 from core.lfp.periodiclfp import PeriodicLFP
 from core.lfp.lfp_parameters import get_parameters
-from lfpykit import VolumetricCurrentSourceDensity
+from lfpykit import CurrentDipoleMoment, VolumetricCurrentSourceDensity
 from mpi4py import MPI
 
 #################################################
@@ -155,6 +155,7 @@ if PROPERRUN:
     probes = []
     probes.append(PeriodicLFP(cell=None, **PS.electrodeParams))
     probes.append(VolumetricCurrentSourceDensity(cell=None, **PS.CSDParams))
+    probes.append(CurrentDipoleMoment(cell=None))
 
 ##############################################################################
 # Create multicompartment neuron populations for LFP predictions
