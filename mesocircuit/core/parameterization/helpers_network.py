@@ -403,7 +403,11 @@ def get_exc_inh_matrix(val_exc, val_inh, num_pops):
     return matrix
 
 
-def get_delay_lin_effective(extent, beta, delay_offset_matrix, prop_speed_matrix):
+def get_delay_lin_effective(
+        extent,
+        beta,
+        delay_offset_matrix,
+        prop_speed_matrix):
     """
     Computes the effective mean and standard deviation of the linear delay.
 
@@ -419,7 +423,7 @@ def get_delay_lin_effective(extent, beta, delay_offset_matrix, prop_speed_matrix
         Matrix of delay offsets (in ms).
     prop_speed_matrix
         Matrix of propagation speeds (in mm/ms).
-    
+
     Returns
     -------
     delay_lin_eff_mean_matrix
@@ -437,7 +441,7 @@ def get_delay_lin_effective(extent, beta, delay_offset_matrix, prop_speed_matrix
         return np.exp(-r / b)
 
     def integrand(r, R, b, variable):
-        atan = 4. * scipy.arctan(np.sqrt((2.*R - r) / (2.*R + r)))
+        atan = 4. * scipy.arctan(np.sqrt((2. * R - r) / (2. * R + r)))
         return variable * connfunc(r, b) * r * (atan - np.sin(atan))
 
     def integrand_delay_mean(r, R, b, d0, v):
@@ -449,17 +453,17 @@ def get_delay_lin_effective(extent, beta, delay_offset_matrix, prop_speed_matrix
     def integrand_conn_norm(r, R, b):
         return integrand(r, R, b, 1)
 
-    R = extent / 2. # radius of circle
-    limits = [0., R] # integral bounds
+    R = extent / 2.  # radius of circle
+    limits = [0., R]  # integral bounds
     num_pops = len(delay_offset_matrix)
 
     delay_lin_eff_mean_matrix = np.zeros((num_pops, num_pops))
     delay_lin_eff_std_matrix = np.zeros((num_pops, num_pops))
     for i in np.arange(num_pops):
         for j in np.arange(num_pops):
-            d0 = delay_offset_matrix[i,j]
-            v = prop_speed_matrix[i,j]
-            b = beta[i,j]
+            d0 = delay_offset_matrix[i, j]
+            v = prop_speed_matrix[i, j]
+            b = beta[i, j]
 
             I_delay_mean = scipy.integrate.quad(integrand_delay_mean,
                                                 limits[0],
@@ -482,8 +486,8 @@ def get_delay_lin_effective(extent, beta, delay_offset_matrix, prop_speed_matrix
             dvar = I_delay_var / I_conn_norm
             dstd = np.sqrt(dvar)
 
-            delay_lin_eff_mean_matrix[i,j] = dmean
-            delay_lin_eff_std_matrix[i,j] = dstd
+            delay_lin_eff_mean_matrix[i, j] = dmean
+            delay_lin_eff_std_matrix[i, j] = dstd
     return delay_lin_eff_mean_matrix, delay_lin_eff_std_matrix
 
 
