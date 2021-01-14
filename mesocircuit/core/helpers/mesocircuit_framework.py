@@ -179,6 +179,19 @@ def params_for_lif_meanfield_tools(net_dict):
     net_dict
         Final network dictionary.
     """
+    if net_dict['delay_type'] == 'normal':
+        d_e_mean = net_dict['delay_exc_mean']
+        d_i_mean = net_dict['delay_inh_mean']
+        d_e_sd = d_e_mean *  net_dict['delay_rel_std']
+        d_i_sd = d_i_mean *  net_dict['delay_rel_std']
+
+    elif net_dict['delay_type'] == 'linear':
+        # get columns from exc. or inh. sources and average
+        d_e_mean = float(np.mean(net_dict['delay_lin_eff_mean'][:,::2]))
+        d_i_mean = float(np.mean(net_dict['delay_lin_eff_mean'][:,1::2]))
+        d_e_sd = float(np.mean(net_dict['delay_lin_eff_std'][:,::2]))
+        d_i_sd = float(np.mean(net_dict['delay_lin_eff_std'][:,1::2]))
+
     dic = {
         'label': 'microcircuit', # for correct parameter derivations
         'populations': net_dict['populations'][:-1].tolist(), # no thalamus
@@ -195,15 +208,13 @@ def params_for_lif_meanfield_tools(net_dict):
                      'unit': 'mV'},
         'tau_s': {'val': net_dict['neuron_params']['tau_syn'],
                   'unit': 'ms'},
-        # TODO currently only the values from normally distributed delays are
-        # taken
-        'd_e': {'val': net_dict['delay_exc_mean'],
+        'd_e': {'val': d_e_mean,
                 'unit': 'ms'},
-        'd_i': {'val': net_dict['delay_inh_mean'],
+        'd_i': {'val': d_i_mean,
                 'unit': 'ms'},
-        'd_e_sd': {'val': net_dict['delay_exc_mean'] * net_dict['delay_rel_std'],
+        'd_e_sd': {'val': d_e_sd,
                    'unit': 'ms'}, 
-        'd_i_sd': {'val': net_dict['delay_inh_mean'] * net_dict['delay_rel_std'],
+        'd_i_sd': {'val': d_i_sd,
                    'unit': 'ms'},
         'delay_dist': 'none',
         # use L23E -> L23E

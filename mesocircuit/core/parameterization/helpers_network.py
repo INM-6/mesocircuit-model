@@ -7,6 +7,7 @@ base parameter dictionaries.
 """
 
 import numpy as np
+import scipy
 import copy
 
 
@@ -36,6 +37,19 @@ def derive_dependent_parameters(base_net_dict):
     # shape for connectivity matrices etc.
     pop_shape = (net_dict['num_pops'] - 1, net_dict['num_pops'])
 
+    # decay parameters of exponential profile
+    if net_dict['beta_exc_inh']:
+        # matrix of decay parameters
+        beta = get_exc_inh_matrix(
+            net_dict['beta_exc_inh'][0],
+            net_dict['beta_exc_inh'][1],
+            net_dict['num_pops'])
+    else:
+        beta = net_dict['beta_unscaled'] * net_dict['beta_scaling']
+    net_dict['beta'] = np.zeros(pop_shape)
+    net_dict['beta'][:, :-1] = beta
+    net_dict['beta'][:, -1] = net_dict['beta_th']
+
     # matrices for delays
     if net_dict['delay_type'] == 'normal':
         # matrix of mean delays
@@ -55,19 +69,13 @@ def derive_dependent_parameters(base_net_dict):
             net_dict['prop_speed_exc_inh'][0],
             net_dict['prop_speed_exc_inh'][1],
             net_dict['num_pops'])
-
-    # decay parameters of exponential profile
-    if net_dict['beta_exc_inh']:
-        # matrix of decay parameters
-        beta = get_exc_inh_matrix(
-            net_dict['beta_exc_inh'][0],
-            net_dict['beta_exc_inh'][1],
-            net_dict['num_pops'])
-    else:
-        beta = net_dict['beta_unscaled'] * net_dict['beta_scaling']
-    net_dict['beta'] = np.zeros(pop_shape)
-    net_dict['beta'][:, :-1] = beta
-    net_dict['beta'][:, -1] = net_dict['beta_th']
+        # mean delays derived from linear parameters
+        net_dict['delay_lin_eff_mean'], net_dict['delay_lin_eff_std'] = \
+            get_delay_lin_effective(
+                net_dict['extent'],
+                net_dict['beta'],
+                net_dict['delay_offset_matrix'],
+                net_dict['prop_speed_matrix'])
 
     # matrix of mean PSPs
     # the mean PSP of the connection from L4E to L23E is doubled
@@ -393,6 +401,90 @@ def get_exc_inh_matrix(val_exc, val_inh, num_pops):
     matrix[:, 0:num_pops:2] = val_exc
     matrix[:, 1:num_pops:2] = val_inh
     return matrix
+
+
+def get_delay_lin_effective(extent, beta, delay_offset_matrix, prop_speed_matrix):
+    """
+    Computes the effective mean and standard deviation of the linear delay.
+
+    Noise is not accounted for.
+
+    Parameters
+    ----------
+    extent
+        Side length (in mm) of square sheets where neurons are distributed.
+    beta
+        Matrix of decay parameters of exponential spatial profile (in mm).
+    delay_offset_matrix
+        Matrix of delay offsets (in ms).
+    prop_speed_matrix
+        Matrix of propagation speeds (in mm/ms).
+    
+    Returns
+    -------
+    delay_lin_eff_mean_matrix
+        Matrix of effective mean delays (in ms).
+    delay_lin_eff_std_matrix
+        Matrix of effective standard deviation of delays (in ms).
+    """
+
+    # linear distance dependence of delay
+    def delayfunc(r, d0, v):
+        return d0 + r / v
+
+    # exponential distance dependence of connectivity
+    def connfunc(r, b):
+        return np.exp(-r / b)
+
+    def integrand(r, R, b, variable):
+        atan = 4. * scipy.arctan(np.sqrt((2.*R - r) / (2.*R + r)))
+        return variable * connfunc(r, b) * r * (atan - np.sin(atan))
+
+    def integrand_delay_mean(r, R, b, d0, v):
+        return integrand(r, R, b, delayfunc(r, d0, v))
+
+    def integrand_delay_var(r, R, b, d0, v, dmean):
+        return integrand(r, R, b, (delayfunc(r, d0, v) - dmean)**2)
+
+    def integrand_conn_norm(r, R, b):
+        return integrand(r, R, b, 1)
+
+    R = extent / 2. # radius of circle
+    limits = [0., R] # integral bounds
+    num_pops = len(delay_offset_matrix)
+
+    delay_lin_eff_mean_matrix = np.zeros((num_pops, num_pops))
+    delay_lin_eff_std_matrix = np.zeros((num_pops, num_pops))
+    for i in np.arange(num_pops):
+        for j in np.arange(num_pops):
+            d0 = delay_offset_matrix[i,j]
+            v = prop_speed_matrix[i,j]
+            b = beta[i,j]
+
+            I_delay_mean = scipy.integrate.quad(integrand_delay_mean,
+                                                limits[0],
+                                                limits[1],
+                                                args=(R, b, d0, v))[0]
+
+            # normalization
+            I_conn_norm = scipy.integrate.quad(integrand_conn_norm,
+                                               limits[0],
+                                               limits[1],
+                                               args=(R, b))[0]
+
+            dmean = I_delay_mean / I_conn_norm
+
+            I_delay_var = scipy.integrate.quad(integrand_delay_var,
+                                               limits[0],
+                                               limits[1],
+                                               args=(R, b, d0, v, dmean))[0]
+
+            dvar = I_delay_var / I_conn_norm
+            dstd = np.sqrt(dvar)
+
+            delay_lin_eff_mean_matrix[i,j] = dmean
+            delay_lin_eff_std_matrix[i,j] = dstd
+    return delay_lin_eff_mean_matrix, delay_lin_eff_std_matrix
 
 
 def num_synapses_from_conn_probs(
