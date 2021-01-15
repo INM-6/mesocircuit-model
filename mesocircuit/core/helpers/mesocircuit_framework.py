@@ -301,7 +301,7 @@ def write_jobscript(jsname, paramset):
             '#SBATCH --output={}\n'.format(stdout) +
             '#SBATCH --error={}\n'.format(stdout) +
             '#SBATCH --time={}\n'.format(dic['wallclock_time']) +
-            '#SBATCH --partition=batch\n\n' +
+            '#SBATCH --partition=dc-cpu\n\n' +
             'export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}\n\n')
 
         jobscript += sbatch
