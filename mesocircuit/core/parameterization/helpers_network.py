@@ -152,19 +152,24 @@ def derive_dependent_parameters(base_net_dict):
         # elementwise multiplication because K_area_scaling is a matrix
         full_indegrees = np.multiply(
             indegrees_1mm2, net_dict['K_area_scaling'])
-
-        # adjust external indegrees to compensate for additional interal indegrees.
-        # this does not apply to thalamus
-        full_ext_indegrees = adjust_ext_indegrees_to_preserve_mean_input(
-            indegrees_1mm2[:, :-1], full_indegrees[:, :-1],
-            ext_indegrees_1mm2,
-            net_dict['mean_rates_' + net_dict['base_model']],
-            net_dict['bg_rate'],
-            net_dict['full_weight_matrix_mean'][:, :-1],
-            net_dict['full_weight_ext'])
     else:
         full_indegrees = indegrees_1mm2
-        full_ext_indegrees = ext_indegrees_1mm2
+
+    # scale indegrees
+    if len(net_dict['indegree_scaling']) > 0:
+        for source, target, factor in net_dict['indegree_scaling']:
+            full_indegrees[int(target)][int(source)] *= factor
+
+    # adjust external indegrees to compensate for changed interal indegrees.
+    # this does not apply to thalamus
+    full_ext_indegrees = adjust_ext_indegrees_to_preserve_mean_input(
+        indegrees_1mm2[:, :-1], full_indegrees[:, :-1],
+        ext_indegrees_1mm2,
+        net_dict['mean_rates_' + net_dict['base_model']],
+        net_dict['bg_rate'],
+        net_dict['full_weight_matrix_mean'][:, :-1],
+        net_dict['full_weight_ext'])
+
     net_dict['full_indegrees'] = np.round(full_indegrees).astype(int)
     net_dict['full_ext_indegrees'] = np.round(full_ext_indegrees).astype(int)
     full_num_synapses = full_indegrees * full_num_neurons[:-1][:, np.newaxis]

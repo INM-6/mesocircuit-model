@@ -57,6 +57,9 @@ net_dict = {
     # connection probabilities from thalamus
     'conn_probs_th_1mm2':
         np.array([0.0, 0.0, 0.0983, 0.0619, 0.0, 0.0, 0.0512, 0.0196]),
+    # scaling factors for indegrees.
+    # entries have the format: [source, target, factor]
+    'indegree_scaling': np.array([]),
     # mean rates of the different populations in the non-scaled version of the
     # mesocircuit (in spikes/s; same order as in 'populations');
     # necessary for the scaling of the network.
