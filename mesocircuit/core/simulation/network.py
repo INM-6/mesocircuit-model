@@ -114,8 +114,6 @@ class Network:
         nest.SetKernelStatus({'data_prefix': 'presim_'})
         nest.Simulate(t_presim)
 
-        self.__write_spikes(fname='presim_spike_recorder.h5')
-
         return
 
     def simulate(self, t_sim):
@@ -133,7 +131,7 @@ class Network:
         nest.SetKernelStatus({'data_prefix': 'sim_'})
         nest.Simulate(t_sim)
 
-        self.__write_spikes(fname='sim_spike_recorder.h5')
+        self.__write_spikes(fname='spike_recorder.h5')
 
         return
 
@@ -180,7 +178,7 @@ class Network:
         MPI.COMM_WORLD.Barrier()
         return
 
-    def __write_spikes(self, fname='sim_spikes.h5'):
+    def __write_spikes(self, fname='spike_recorder.h5'):
         """
         Write recorded spikes from memory to HDF5 file
 
@@ -193,9 +191,8 @@ class Network:
         fn = os.path.join(self.sim_dict['path_raw_data'], fname)
         if nest.Rank() == 0:
             f = h5py.File(fn, 'w')
-        for i, (label, pop, sr) in enumerate(zip(self.net_dict['populations'],
-                                                 self.pops,
-                                                 self.spike_recorders)):
+        for i, (label, sr) in enumerate(zip(self.net_dict['populations'],
+                                            self.spike_recorders)):
             events = nest.GetStatus(sr)[0]['events']
             names = ['nodeid', 'time_ms']
             formats = ['i4', 'f8']
