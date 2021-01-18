@@ -91,8 +91,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                                              int,
                                              'spike_recorder')
 
-
-        '''
+        """
         # merge spike and position files generated on different threads or
         # processes
         num_spikes = pt.parallelize_by_array(self.X,
@@ -103,7 +102,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                                               self.__merge_raw_files_X,
                                               int,
                                               'positions')
-        '''
+        """
         if not (num_neurons == self.N_X).all():
             raise Exception('Neuron numbers do not match.')
 
@@ -156,7 +155,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # raw node ids: tuples of first and last id of each population;
         # only rank 0 reads from file and broadcasts the data
         if RANK == 0:
-            '''with tarfile.open(self.sim_dict['path_raw_data'] + '.tar', 'r'
+            """
+            with tarfile.open(self.sim_dict['path_raw_data'] + '.tar', 'r'
                               ) as f:
                 fname = os.path.join(
                     os.path.split(self.sim_dict['path_raw_data'])[-1],
@@ -164,14 +164,14 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 content = f.extractfile(fname)
                 if content is not None:
                     nodeids_raw = np.loadtxt(content, dtype=int)
-            '''
+            """
             fn = os.path.join(self.sim_dict['path_raw_data'],
                               self.sim_dict['fname_nodeids'])
             nodeids_raw = np.loadtxt(fn, dtype=int)
         else:
             nodeids_raw = None
         nodeids_raw = COMM.bcast(nodeids_raw, root=0)
-        
+
         return nodeids_raw
 
     def __convert_raw_file_X(self, i, X, datatype):
@@ -201,7 +201,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             datatype = 'positions': number of neurons per population
         """
         fname = os.path.join(self.sim_dict['path_raw_data'],
-                             '{}.h5'.format(datatype)
+                             '{}.h5'.format(datatype))
         with h5py.File(fname, 'r') as f:
             raw_data = f[X][()]
         sortby = self.ana_dict['write_ascii'][datatype]['sortby']
