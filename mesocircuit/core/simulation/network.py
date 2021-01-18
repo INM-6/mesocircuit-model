@@ -114,7 +114,7 @@ class Network:
         nest.SetKernelStatus({'data_prefix': 'presim_'})
         nest.Simulate(t_presim)
 
-        self.__write_spikes(fname='presim_spikes.h5')
+        self.__write_spikes(fname='presim_spike_recorder.h5')
 
         return
 
@@ -133,7 +133,7 @@ class Network:
         nest.SetKernelStatus({'data_prefix': 'sim_'})
         nest.Simulate(t_sim)
 
-        self.__write_spikes(fname='sim_spikes.h5')
+        self.__write_spikes(fname='sim_spike_recorder.h5')
 
         return
 

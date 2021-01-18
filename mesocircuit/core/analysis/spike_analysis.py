@@ -212,7 +212,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                                  'positions.h5')
         elif datatype == 'spike_recorder':
             fname = os.path.join(self.sim_dict['path_raw_data'],
-                                 'sim_spikes.h5')
+                                 'sim_spike_recorder.h5')
         with h5py.File(fname, 'r') as f:
             raw_data = f[X][()]
         sortby = self.ana_dict['write_ascii'][datatype]['sortby']
