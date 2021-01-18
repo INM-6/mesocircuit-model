@@ -197,12 +197,12 @@ class Network:
                                                  self.pops,
                                                  self.spike_recorders)):
             events = nest.GetStatus(sr)[0]['events']
-            names = ['senders', 'times']
+            names = ['nodeid', 'time_ms']
             formats = ['i4', 'f8']
             data = np.recarray((events['senders'].size),
                                names=names, formats=formats)
-            for n in names:
-                data[n] = events[n]
+            data['nodeid'] = events['senders']
+            data['time_ms'] = events['times']
 
             DATA = GathervRecordArray(data)
 
