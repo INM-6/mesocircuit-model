@@ -198,7 +198,7 @@ class Network:
                                                  self.spike_recorders)):
             events = nest.GetStatus(sr)[0]['events']
             names = ['senders', 'times']
-            formats = ['i8', 'f8']
+            formats = ['i4', 'f8']
             data = np.recarray((events['senders'].size),
                                names=names, formats=formats)
             for n in names:
@@ -365,13 +365,14 @@ class Network:
             nodes = nest.GetLocalNodeCollection(pop)
             pos = np.array(nest.GetPosition(nodes))
 
-            names = ['nodes', 'x_position_mm', 'y_position_mm']
-            formats = ['i8', 'f8', 'f8']
+            # see ana_dict['read_nest_ascii_dtypes']['positions']
+            names = ['nodeid', 'x-position_mm', 'y-position_mm']
+            formats = ['i4', 'f8', 'f8']
 
             data = np.recarray((len(nodes), ), names=names, formats=formats)
-            data.nodes = nodes
-            data.x_position_mm = pos[:, 0]
-            data.y_position_mm = pos[:, 1]
+            data['nodeid'] = nodes
+            data['x-position_mm'] = pos[:, 0]
+            data['y-position_mm'] = pos[:, 1]
 
             DATA = GathervRecordArray(data)
 
