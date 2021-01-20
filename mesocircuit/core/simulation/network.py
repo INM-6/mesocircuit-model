@@ -384,12 +384,18 @@ class Network:
             nest.DumpLayerNodes(pop, fn.format(''))
 
             # read in data from this RANK
-            if MPI.COMM_WORLD.Get_size() == 1:
+            SIZE = MPI.COMM_WORLD.Get_size()
+            if SIZE == 1:
                 fn = fn.format('')
             else:
-                fn = fn.format('-' + str(nest.Rank()))
+                # figure out formatting
+                digits = int(np.ceil(np.log10(SIZE)))
+                fn = fn.format('-%.{}i'.format(digits) % nest.Rank())
             data = np.loadtxt(fn, dtype=list(zip(names, formats)))
-            os.unlink(fn)
+            try:
+                os.unlink(fn)
+            except OSError:
+                pass
 
             '''
             # DON'T REMOVE
