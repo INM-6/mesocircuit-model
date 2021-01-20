@@ -358,18 +358,48 @@ class Network:
         if nest.Rank() == 0:
             f = h5py.File(fn, 'w')
         for i, (label, pop) in enumerate(zip(self.net_dict['populations'],
-                                             self.pops)):
-            nodes = nest.GetLocalNodeCollection(pop)
-            pos = np.array(nest.GetPosition(nodes))
 
+                                             self.pops)):
+            '''
+            # DON'T REMOVE
+            # until https://github.com/nest/nest-simulator/issues/1892
+            # has been resolved:
+            nodes = nest.GetLocalNodeCollection(pop)
+            if len(nodes) > 1:
+                pos = np.array(nest.GetPosition(nodes))
+            elif len(nodes) == 1:
+                pos = np.array(nest.GetPosition(nodes)).reshape((1, 2))
+            else:
+                pos = np.zeros((0, 2))
+            '''
             # see ana_dict['read_nest_ascii_dtypes']['positions']
+            # as ana_dict is not loaded here
             names = ['nodeid', 'x-position_mm', 'y-position_mm']
             formats = ['i4', 'f8', 'f8']
 
+            # temporary fix as DumpLayerNodes is O(100) faster than GetPosition
+            fn = os.path.join(
+                self.sim_dict['path_raw_data'],
+                'positions_' + self.net_dict['populations'][i] + '{}.dat')
+            nest.DumpLayerNodes(pop, fn.format(''))
+
+            # read in data from this RANK
+            if MPI.COMM_WORLD.Get_size() == 1:
+                fn = fn.format('')
+            else:
+                fn = fn.format('-' + str(nest.Rank()))
+            data = np.loadtxt(fn, dtype=list(zip(names, formats)))
+            os.unlink(fn)
+
+            '''
+            # DON'T REMOVE
+            # until https://github.com/nest/nest-simulator/issues/1892
+            # has been resolved:
             data = np.recarray((len(nodes), ), names=names, formats=formats)
             data['nodeid'] = nodes
             data['x-position_mm'] = pos[:, 0]
             data['y-position_mm'] = pos[:, 1]
+            '''
 
             DATA = GathervRecordArray(data)
 
