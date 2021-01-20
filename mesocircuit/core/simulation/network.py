@@ -131,6 +131,7 @@ class Network:
         nest.SetKernelStatus({'data_prefix': 'sim_'})
         nest.Simulate(t_sim)
 
+        # dump recorded spikes to HDF5 file
         self.__write_spikes(fname='spike_recorder.h5')
 
         return
@@ -360,7 +361,7 @@ class Network:
         for i, (label, pop) in enumerate(zip(self.net_dict['populations'],
 
                                              self.pops)):
-
+            # extract layer nodes and positions on this RANK
             nodes = nest.GetLocalNodeCollection(pop)
             if len(nodes) > 1:
                 pos = np.array(nest.GetPosition(nodes))
@@ -374,34 +375,16 @@ class Network:
             names = ['nodeid', 'x-position_mm', 'y-position_mm']
             formats = ['i4', 'f8', 'f8']
 
-            # # temp. fix as DumpLayerNodes is O(100) faster than GetPosition
-            # # with NEST @ master
-            # fn = os.path.join(
-            #     self.sim_dict['path_raw_data'],
-            #     'positions_' + self.net_dict['populations'][i] + '{}.dat')
-            # nest.DumpLayerNodes(pop, fn.format(''))
-            #
-            # # read in data from this RANK
-            # SIZE = MPI.COMM_WORLD.Get_size()
-            # if SIZE == 1:
-            #     fn = fn.format('')
-            # else:
-            #     # figure out formatting
-            #     digits = int(np.ceil(np.log10(SIZE)))
-            #     fn = fn.format('-%.{}i'.format(digits) % nest.Rank())
-            # data = np.loadtxt(fn, dtype=list(zip(names, formats)))
-            # try:
-            #     os.unlink(fn)
-            # except OSError:
-            #     pass
-
+            # construct record arrau
             data = np.recarray((len(nodes), ), names=names, formats=formats)
             data['nodeid'] = nodes
             data['x-position_mm'] = pos[:, 0]
             data['y-position_mm'] = pos[:, 1]
 
+            # Gather to RANK 0
             DATA = GathervRecordArray(data)
 
+            # write
             if nest.Rank() == 0:
                 f[label] = DATA
 

@@ -44,7 +44,6 @@ functions = [
     net.connect,
     [net.presimulate, [sim_dict['t_presim']]],
     [net.simulate, [sim_dict['t_sim']]],
-    # net.tar_raw_data,
 ]
 
 pt.run_parallel_functions_sequentially(functions, os.path.basename(__file__))

@@ -91,18 +91,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                                              int,
                                              'spike_recorder')
 
-        """
-        # merge spike and position files generated on different threads or
-        # processes
-        num_spikes = pt.parallelize_by_array(self.X,
-                                             self.__merge_raw_files_X,
-                                             int,
-                                             'spike_recorder')
-        num_neurons = pt.parallelize_by_array(self.X,
-                                              self.__merge_raw_files_X,
-                                              int,
-                                              'positions')
-        """
         if not (num_neurons == self.N_X).all():
             raise Exception('Neuron numbers do not match.')
 
@@ -155,16 +143,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # raw node ids: tuples of first and last id of each population;
         # only rank 0 reads from file and broadcasts the data
         if RANK == 0:
-            """
-            with tarfile.open(self.sim_dict['path_raw_data'] + '.tar', 'r'
-                              ) as f:
-                fname = os.path.join(
-                    os.path.split(self.sim_dict['path_raw_data'])[-1],
-                    self.sim_dict['fname_nodeids'])
-                content = f.extractfile(fname)
-                if content is not None:
-                    nodeids_raw = np.loadtxt(content, dtype=int)
-            """
             fn = os.path.join(self.sim_dict['path_raw_data'],
                               self.sim_dict['fname_nodeids'])
             nodeids_raw = np.loadtxt(fn, dtype=int)
