@@ -315,6 +315,7 @@ class Network:
                                          self.net_dict['num_neurons'][i],
                                          positions=positions)
                 population.set(
+                    tau_m=self.net_dict['neuron_params']['tau_m'],
                     tau_syn_ex=self.net_dict['neuron_params']['tau_syn'],
                     tau_syn_in=self.net_dict['neuron_params']['tau_syn'],
                     E_L=self.net_dict['neuron_params']['E_L'],

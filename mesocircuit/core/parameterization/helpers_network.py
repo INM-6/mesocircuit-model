@@ -10,6 +10,9 @@ import numpy as np
 import scipy
 import copy
 
+import nest  # only used for Siegert integration
+nest.set_verbosity(30)  # error messages and above
+
 
 def derive_dependent_parameters(base_net_dict):
     """
@@ -160,15 +163,25 @@ def derive_dependent_parameters(base_net_dict):
         for source, target, factor in net_dict['indegree_scaling']:
             full_indegrees[int(target)][int(source)] *= factor
 
-    # adjust external indegrees to compensate for changed interal indegrees.
+    # adjust external in-degrees to compensate for changed interal in-degrees.
     # this does not apply to thalamus
-    full_ext_indegrees = adjust_ext_indegrees_to_preserve_mean_input(
-        indegrees_1mm2[:, :-1], full_indegrees[:, :-1],
-        ext_indegrees_1mm2,
-        net_dict['mean_rates_' + net_dict['base_model']],
-        net_dict['bg_rate'],
-        net_dict['full_weight_matrix_mean'][:, :-1],
-        net_dict['full_weight_ext'])
+    if net_dict['adjust_K_ext_Siegert']:
+        full_ext_indegrees = adjust_ext_indegrees_Siegert(
+            indegrees_1mm2[:, :-1], full_indegrees[:, :-1],
+            ext_indegrees_1mm2,
+            net_dict['mean_rates_' + net_dict['base_model']],
+            net_dict['bg_rate'],
+            net_dict['full_weight_matrix_mean'][:, :-1],
+            net_dict['full_weight_ext'],
+            net_dict['neuron_params'])
+    else:
+        full_ext_indegrees = adjust_ext_indegrees_basic(
+            indegrees_1mm2[:, :-1], full_indegrees[:, :-1],
+            ext_indegrees_1mm2,
+            net_dict['mean_rates_' + net_dict['base_model']],
+            net_dict['bg_rate'],
+            net_dict['full_weight_matrix_mean'][:, :-1],
+            net_dict['full_weight_ext'])
 
     net_dict['full_indegrees'] = np.round(full_indegrees).astype(int)
     net_dict['full_ext_indegrees'] = np.round(full_ext_indegrees).astype(int)
@@ -268,7 +281,196 @@ def scale_indegrees_to_extent(extent, beta):
     return K_indegree_scaling
 
 
-def adjust_ext_indegrees_to_preserve_mean_input(
+def adjust_ext_indegrees_Siegert(
+        indegrees_1mm2,
+        full_indegrees,
+        ext_indegrees_1mm2,
+        mean_rates,
+        bg_rate,
+        PSC_matrix_mean,
+        PSC_ext,
+        neuron_params):
+    """
+    Computes external in-degrees to adjust for modified internal in-degrees by
+    a Siegert firing-rate integration.
+
+    Parameters
+    ----------
+    indegrees_1mm2
+        Indegree matrix of the 1mm2 network without thalamus.
+    full_indegrees
+        Indegree matrix of the full network without thalamus.
+    ext_indegrees_1mm2
+        External indegrees of the 1mm2 network.
+    mean_rates
+        Mean firing rates of each population (in spikes/s).
+    bg_rate
+        Background firing rate (in spikes/s).
+    PSC_matrix_mean
+        Weight matrix (in pA) without thalamus.
+    PSC_ext
+        External weight (in pA).
+    neuron_params
+        Neuron parameters.
+
+    Returns
+    -------
+    full_ext_indegrees
+        Adjusted external indegrees.
+    """
+    print('  Adjusting external in-degrees by Siegert firing-rate integration.')
+
+    def rate_difference(
+            ext_indegrees,
+            full_indegrees,
+            bg_rate,
+            PSC_matrix_mean,
+            PSC_ext,
+            neuron_params,
+            target_rates):
+        """
+        Computes the rate difference between the target rates and the current
+        rates obtained by Siegert integration.
+        """
+        current_rates = integrate_firing_rates_Siegert_nest(
+            full_indegrees,
+            ext_indegrees,
+            bg_rate,
+            PSC_matrix_mean,
+            PSC_ext,
+            neuron_params)
+        return target_rates - current_rates
+
+    # best guess are the ad-hoc adjusted in-degrees
+    ext_indegrees_guess = adjust_ext_indegrees_basic(
+        indegrees_1mm2,
+        full_indegrees,
+        ext_indegrees_1mm2,
+        mean_rates,
+        bg_rate,
+        PSC_matrix_mean,
+        PSC_ext)
+
+    # optimize external indegrees, starting from the guess
+    full_ext_indegrees = scipy.optimize.fsolve(
+        rate_difference,
+        ext_indegrees_guess,
+        args=(full_indegrees,
+              bg_rate,
+              PSC_matrix_mean,
+              PSC_ext,
+              neuron_params,
+              mean_rates))
+
+    print(
+        '    Full external in-degrees:\n' +
+        '      basic:   {}\n'.format(
+            np.round(ext_indegrees_guess).astype(int)) +
+        '      Siegert: {}'.format(
+            np.round(full_ext_indegrees).astype(int)))
+    return full_ext_indegrees
+
+
+def integrate_firing_rates_Siegert_nest(
+        full_indegrees,
+        full_ext_indegrees,
+        bg_rate,
+        PSC_matrix_mean,
+        PSC_ext,
+        neuron_params):
+    """
+    Uses NEST's siegert_neuron model to integrate firing rates.
+
+    Parameters
+    ----------
+    full_indegrees
+        Indegree matrix of the full network without thalamus.
+    full_ext_indegrees
+        Full external indegrees.
+    bg_rate
+        Background firing rate (in spikes/s).
+    PSC_matrix_mean
+        Weight matrix (in pA) without thalamus.
+    PSC_ext
+        External weight (in pA).
+    neuron_params
+        Neuron parameters.
+
+    Returns
+    -------
+    rates
+        Integrated firing rates (in spikes/s).
+    """
+    dt = 0.1  # ms
+    t_sim = 50.  # ms
+
+    nest.ResetKernel()
+    nest.SetKernelStatus({'resolution': dt})
+
+    # create
+    pops = []
+    drive = []
+    recorders = []
+    for i in np.arange(len(full_ext_indegrees)):
+        # cortical neuronal populations
+        population = nest.Create('siegert_neuron')
+        population.set(
+            tau_m=neuron_params['tau_m'],
+            tau_syn=neuron_params['tau_syn'],
+            t_ref=neuron_params['t_ref'],
+            theta=neuron_params['V_th'] - neuron_params['E_L'],
+            V_reset=neuron_params['V_reset'] - neuron_params['E_L'])
+        # external input
+        dr = nest.Create(
+            'siegert_neuron',
+            params={'mean': bg_rate * full_ext_indegrees[i]})
+        # recorder
+        multimeter = nest.Create(
+            'multimeter',
+            params={'record_from': ['rate'], 'interval': dt})
+
+        pops.append(population)
+        drive.append(dr)
+        recorders.append(multimeter)
+
+    # connect
+    tau_m = neuron_params['tau_m'] * 1e-3  # s
+    tau_s = neuron_params['tau_syn'] * 1e-3  # s
+    C_m = neuron_params['C_m']  # pF
+    J_ext = tau_s / C_m * PSC_ext * 1e3  # mV
+
+    for i, target_pop in enumerate(pops):
+        # external input
+        syn_dict_ext = {'drift_factor': tau_m * J_ext,
+                        'diffusion_factor': tau_m * J_ext**2,
+                        'synapse_model': 'diffusion_connection'}
+        nest.Connect(drive[i], target_pop, 'all_to_all', syn_dict_ext)
+
+        # recorder
+        nest.Connect(recorders[i], target_pop)
+
+        # recurrent connections
+        for j, source_pop in enumerate(pops):
+            J = tau_s / C_m * PSC_matrix_mean[i][j] * 1e3  # mV
+            K = full_indegrees[i][j]
+
+            syn_dict = {'drift_factor': tau_m * K * J,
+                        'diffusion_factor': tau_m * K * J**2,
+                        'synapse_model': 'diffusion_connection'}
+            nest.Connect(source_pop, target_pop, 'all_to_all', syn_dict)
+
+    # simulate
+    nest.Simulate(t_sim)
+
+    # get rates
+    rates = []
+    for r in recorders:
+        rate = r.events['rate']
+        rates.append(rate[-1])  # rate from last simulated time step
+    return rates
+
+
+def adjust_ext_indegrees_basic(
         indegrees_1mm2,
         full_indegrees,
         ext_indegrees_1mm2,
@@ -277,8 +479,10 @@ def adjust_ext_indegrees_to_preserve_mean_input(
         PSC_matrix_mean,
         PSC_ext):
     """
-    Computes external indegrees to adjusted to modified internal indegrees to
-    preserve the mean input.
+    Computes external in-degrees to adjust for modified internal in-degrees to
+    roughly preserve the mean input.
+
+    For firing-rate integration, consider adjust_ext_indegrees_Siegert().
 
     Parameters
     ----------

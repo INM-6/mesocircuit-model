@@ -111,6 +111,9 @@ net_dict = {
     # as in 'populations')
     'K_ext_PD2014': np.array([1600, 1500, 2100, 1900, 2000, 1900, 2900, 2100]),
     'K_ext_SvA2018': 10. / 8. * np.array([1267, 1251, 1255, 1246, 1430, 1250, 1777, 1254]),
+    # whether to adjust external indegrees to changes of internal ones with
+    # Siegert integration; if False: simple mean-field adjustment is used
+    'adjust_K_ext_Siegert': True,
     # rate of the Poisson generator (in spikes/s)
     'bg_rate': 8.,
     # delay from the Poisson generator to the network (in ms)
