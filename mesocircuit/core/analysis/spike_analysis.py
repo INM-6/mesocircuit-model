@@ -79,16 +79,18 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # load raw nodeids
         self.nodeids_raw = self.__load_raw_nodeids()
 
-        # merge spike and position files generated on different threads or
-        # processes
-        num_spikes = pt.parallelize_by_array(self.X,
-                                             self.__merge_raw_files_X,
-                                             int,
-                                             'spike_recorder')
+        # write position .dat files with preprocessed node ids:
         num_neurons = pt.parallelize_by_array(self.X,
-                                              self.__merge_raw_files_X,
+                                              self.__convert_raw_file_X,
                                               int,
                                               'positions')
+
+        # write spike .dat files with preprocessed node ids:
+        num_spikes = pt.parallelize_by_array(self.X,
+                                             self.__convert_raw_file_X,
+                                             int,
+                                             'spike_recorder')
+
         if not (num_neurons == self.N_X).all():
             raise Exception('Neuron numbers do not match.')
 
@@ -141,18 +143,64 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # raw node ids: tuples of first and last id of each population;
         # only rank 0 reads from file and broadcasts the data
         if RANK == 0:
-            with tarfile.open(self.sim_dict['path_raw_data'] + '.tar', 'r'
-                              ) as f:
-                fname = os.path.join(
-                    os.path.split(self.sim_dict['path_raw_data'])[-1],
-                    self.sim_dict['fname_nodeids'])
-                content = f.extractfile(fname)
-                if content is not None:
-                    nodeids_raw = np.loadtxt(content, dtype=int)
+            fn = os.path.join(self.sim_dict['path_raw_data'],
+                              self.sim_dict['fname_nodeids'])
+            nodeids_raw = np.loadtxt(fn, dtype=int)
         else:
             nodeids_raw = None
         nodeids_raw = COMM.bcast(nodeids_raw, root=0)
+
         return nodeids_raw
+
+    def __convert_raw_file_X(self, i, X, datatype):
+        """
+        Inner function to be used as argument of pt.parallelize_by_array()
+        with array=self.X.
+        Corresponding outer function: self.__preprocess_data()
+
+        Processes raw network output files (positions, spikes) on HDF5 format.
+
+        Parameters
+        ----------
+        i: int
+            Iterator of populations
+            (to be set by outer parallel function).
+        X: str
+            Population names
+            (to be set by outer parallel function).
+        datatype: str
+            Options are 'spike_recorder' and 'positions'.
+
+        Returns
+        -------
+        num_rows
+            An array with the number of rows in the final files.
+            datatype = 'spike_recorder': number of spikes per population.
+            datatype = 'positions': number of neurons per population
+        """
+        fname = os.path.join(self.sim_dict['path_raw_data'],
+                             '{}.h5'.format(datatype))
+        with h5py.File(fname, 'r') as f:
+            raw_data = f[X][()]
+        sortby = self.ana_dict['write_ascii'][datatype]['sortby']
+        argsort = np.argsort(raw_data[sortby])
+        raw_data = raw_data[argsort]
+        raw_data['nodeid'] -= self.nodeids_raw[i][0]
+
+        dtype = self.ana_dict['read_nest_ascii_dtypes'][datatype]
+        comb_data = np.empty(raw_data.size, dtype=dtype)
+        for name in dtype['names']:
+            comb_data[name] = raw_data[name]
+
+        # write processed file (ASCII format)
+        fn = os.path.join(
+            self.sim_dict['path_processed_data'],
+            datatype + '_' + X + '.dat')
+        np.savetxt(fn, comb_data, delimiter='\t',
+                   header='\t '.join(dtype['names']),
+                   fmt=self.ana_dict['write_ascii'][datatype]['fmt'])
+
+        return comb_data.size
 
     def __merge_raw_files_X(self, i, X, datatype):
         """
@@ -179,7 +227,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             (to be set by outer parallel function).
         X
             Population names
-            (to be set by outer parralel function).
+            (to be set by outer parallel function).
         datatype
             Options are 'spike_recorder' and 'positions'.
 
