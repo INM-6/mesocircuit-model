@@ -59,7 +59,10 @@ functions = [
      [pl, d['all_inst_rates_bintime_binspace']]],
 
     [figures.crosscorrelation_funcs_thalamic_pulses,
-     [pl, d['all_CCfuncs_thalamic_pulses']]]
+     [pl, d['all_CCfuncs_thalamic_pulses']]],
+
+    [figures.instantaneous_firing_rates,
+     [pl, d['all_sptrains_bintime']]],
 ]
 
 pt.run_serial_functions_in_parallel(functions, os.path.basename(__file__))
