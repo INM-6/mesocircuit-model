@@ -179,3 +179,31 @@ def crosscorrelation_funcs_thalamic_pulses(plot, all_CCfuncs_thalamic_pulses):
         all_CCfuncs_thalamic_pulses)
     plot.savefig('crosscorrelation_funcs_thalamic_pulses')
     return
+
+
+def instantaneous_firing_rates(plot, all_sptrains_bintime):
+    """
+    Creates a figure with histograms of instantaneous firing rates.
+    """
+    print('Plotting instantaneous firing rates.')
+
+    if plot.net_dict['thalamic_input']:
+        pops = plot.X
+    else:
+        pops = plot.Y
+
+    fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 5.))
+    gs = gridspec.GridSpec(1, 1)
+    gs.update(top=0.98, bottom=0.1, left=0.17, right=0.92)
+    ax = plot.plot_population_panels(
+        gs[0, 0],
+        plotfunc=plot.plotfunc_instantaneous_rates,
+        populations=pops,
+        xlabel='time (ms)',
+        ylabel=r'$\nu (s^{-1})$',
+        sptrains=all_sptrains_bintime,
+        time_step=plot.ana_dict['binsize_time'],
+        time_interval=plot.plot_dict['raster_time_interval'])
+
+    plot.savefig('instantaneous_rates')
+    return
