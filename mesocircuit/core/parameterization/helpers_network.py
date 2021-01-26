@@ -43,12 +43,12 @@ def derive_dependent_parameters(base_net_dict):
         beta = get_exc_inh_matrix(
             net_dict['beta_exc_inh'][0],
             net_dict['beta_exc_inh'][1],
-            net_dict['num_pops'])
+            net_dict['num_pops'])[:, :-1] # thalamic value separate
     else:
         beta = net_dict['beta_unscaled'] * net_dict['beta_scaling']
     net_dict['beta'] = np.zeros(pop_shape)
-    net_dict['beta'] = beta
-    net_dict['beta'][:, -1] = net_dict['beta_th'] # overwrite thalamic value
+    net_dict['beta'][:, :-1] = beta
+    net_dict['beta'][:, -1] = net_dict['beta_th']
 
     # matrices for delays
     if net_dict['delay_type'] == 'normal':
