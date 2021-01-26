@@ -31,19 +31,19 @@ def derive_dependent_parameters(base_net_dict):
     # network parameters
     net_dict = copy.copy(base_net_dict)
 
-    # number of cortical populations
+    # total number of populations (last one is TC)
     net_dict['num_pops'] = len(net_dict['populations'])
 
     # shape for connectivity matrices etc.
     pop_shape = (net_dict['num_pops'] - 1, net_dict['num_pops'])
 
     # decay parameters of exponential profile
-    if net_dict['beta_exc_inh']:
+    if np.all(net_dict['beta_exc_inh']):
         # matrix of decay parameters
         beta = get_exc_inh_matrix(
             net_dict['beta_exc_inh'][0],
             net_dict['beta_exc_inh'][1],
-            net_dict['num_pops'])
+            net_dict['num_pops'])[:, :-1] # thalamic value separate
     else:
         beta = net_dict['beta_unscaled'] * net_dict['beta_scaling']
     net_dict['beta'] = np.zeros(pop_shape)
