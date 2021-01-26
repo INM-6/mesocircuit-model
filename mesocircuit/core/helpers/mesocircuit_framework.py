@@ -218,7 +218,7 @@ def params_for_lif_meanfield_tools(net_dict):
                    'unit': 'ms'},
         'd_i_sd': {'val': d_i_sd,
                    'unit': 'ms'},
-        'delay_dist': 'none',
+        'delay_dist': 'gaussian', # not exact, but better than none
         # use L23E -> L23E
         'w': {'val': net_dict['full_weight_matrix_mean'][0][0].tolist(),
               'unit': 'pA'},
