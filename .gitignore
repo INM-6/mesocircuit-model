@@ -5,6 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
+*.o
+*.c
 
 # Distribution / packaging
 .Python
@@ -142,3 +144,9 @@ cython_debug/
 *~
 .DS_Store
 *.orig
+*.h5
+*.hdf5
+*.pkl
+*.dat
+mesocircuit/data
+x86_64
