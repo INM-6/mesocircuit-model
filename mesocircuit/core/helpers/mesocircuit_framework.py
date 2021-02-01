@@ -153,7 +153,9 @@ def evaluate_parameterset(ps_id, paramset):
             f.write(json_dump)
     # parameters for LIF Meanfield Tools
     lmt_dic = params_for_lif_meanfield_tools(paramset['net_dict'])
-    filename = os.path.join(paramset['sim_dict']['path_parameters'], 'lmt_dict')
+    filename = os.path.join(
+        paramset['sim_dict']['path_parameters'],
+        'lmt_dict')
     with open(filename + '.yaml', 'w') as f:
         yaml.dump(lmt_dic, f, default_flow_style=False)
 
@@ -180,9 +182,22 @@ def params_for_lif_meanfield_tools(net_dict):
     net_dict
         Final network dictionary.
     """
+    if net_dict['delay_type'] == 'normal':
+        d_e_mean = net_dict['delay_exc_mean']
+        d_i_mean = net_dict['delay_inh_mean']
+        d_e_sd = d_e_mean * net_dict['delay_rel_std']
+        d_i_sd = d_i_mean * net_dict['delay_rel_std']
+
+    elif net_dict['delay_type'] == 'linear':
+        # get columns from exc. or inh. sources and average
+        d_e_mean = float(np.mean(net_dict['delay_lin_eff_mean'][:, ::2]))
+        d_i_mean = float(np.mean(net_dict['delay_lin_eff_mean'][:, 1::2]))
+        d_e_sd = float(np.mean(net_dict['delay_lin_eff_std'][:, ::2]))
+        d_i_sd = float(np.mean(net_dict['delay_lin_eff_std'][:, 1::2]))
+
     dic = {
-        'label': 'microcircuit', # for correct parameter derivations
-        'populations': net_dict['populations'][:-1].tolist(), # no thalamus
+        'label': 'microcircuit',  # for correct parameter derivations
+        'populations': net_dict['populations'][:-1].tolist(),  # no thalamus
         'N': net_dict['full_num_neurons'][:-1].tolist(),
         'C': {'val': net_dict['neuron_params']['C_m'],
               'unit': 'pF'},
@@ -196,21 +211,19 @@ def params_for_lif_meanfield_tools(net_dict):
                      'unit': 'mV'},
         'tau_s': {'val': net_dict['neuron_params']['tau_syn'],
                   'unit': 'ms'},
-        # TODO currently only the values from normally distributed delays are
-        # taken
-        'd_e': {'val': net_dict['delay_exc_mean'],
+        'd_e': {'val': d_e_mean,
                 'unit': 'ms'},
-        'd_i': {'val': net_dict['delay_inh_mean'],
+        'd_i': {'val': d_i_mean,
                 'unit': 'ms'},
-        'd_e_sd': {'val': net_dict['delay_exc_mean'] * net_dict['delay_rel_std'],
-                   'unit': 'ms'}, 
-        'd_i_sd': {'val': net_dict['delay_inh_mean'] * net_dict['delay_rel_std'],
+        'd_e_sd': {'val': d_e_sd,
                    'unit': 'ms'},
-        'delay_dist': 'none',
+        'd_i_sd': {'val': d_i_sd,
+                   'unit': 'ms'},
+        'delay_dist': 'gaussian', # not exact, but better than none
         # use L23E -> L23E
         'w': {'val': net_dict['full_weight_matrix_mean'][0][0].tolist(),
               'unit': 'pA'},
-        'K': net_dict['full_indegrees'][:,:-1].tolist(),
+        'K': net_dict['full_indegrees'][:, :-1].tolist(),
         'g': - net_dict['g'],
         'nu_ext': {'val': net_dict['bg_rate'],
                    'unit': 'Hz'},
@@ -259,7 +272,7 @@ def write_jobscript(jsname, paramset):
         else:
             run_cmd = ''
     elif dic['computer'] == 'jureca':
-        run_cmd = 'srun '
+        run_cmd = 'srun --mpi=pmi2 '
 
     # define executable
     executable = [run_cmd + 'python3 -u ' + os.path.join(os.getcwd(), py) + ' ' +
@@ -292,7 +305,7 @@ def write_jobscript(jsname, paramset):
             '#SBATCH --output={}\n'.format(stdout) +
             '#SBATCH --error={}\n'.format(stdout) +
             '#SBATCH --time={}\n'.format(dic['wallclock_time']) +
-            '#SBATCH --partition=batch\n\n' +
+            '#SBATCH --partition=dc-cpu\n\n' +
             'export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}\n\n')
 
         jobscript += sbatch

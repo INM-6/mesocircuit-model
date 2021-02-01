@@ -10,8 +10,10 @@ import os
 import numpy as np
 from pathlib import Path
 import tarfile
+import h5py
 import nest
 from mpi4py import MPI
+from ..helpers.mpiops import GathervRecordArray
 
 
 class Network:
@@ -111,6 +113,7 @@ class Network:
 
         nest.SetKernelStatus({'data_prefix': 'presim_'})
         nest.Simulate(t_presim)
+
         return
 
     def simulate(self, t_sim):
@@ -127,6 +130,10 @@ class Network:
 
         nest.SetKernelStatus({'data_prefix': 'sim_'})
         nest.Simulate(t_sim)
+
+        # dump recorded spikes to HDF5 file
+        self.__write_spikes(fname='spike_recorder.h5')
+
         return
 
     def tar_raw_data(self,
@@ -196,10 +203,54 @@ class Network:
                             try:
                                 p.unlink()
                             except OSError as e:
-                                print('Error: {} : {}'.format(p,
-                                                              e.strerror))
-            else:
-                os.mkdir(output_path)
+                                print('Error: {} : {}'.format(p, e.strerror))
+                # remove raw directory
+                os.rmdir(output_path)
+
+        MPI.COMM_WORLD.Barrier()
+        return
+
+    def __write_spikes(self, fname='spike_recorder.h5'):
+        """
+        Write recorded spikes from memory to HDF5 file
+
+        Parameters
+        ----------
+        fname: str
+            Output file name. Path to raw data folder will be prepended
+
+        """
+        fn = os.path.join(self.sim_dict['path_raw_data'], fname)
+        if nest.Rank() == 0:
+            f = h5py.File(fn, 'w')
+        for i, (label, sr) in enumerate(zip(self.net_dict['populations'],
+                                            self.spike_recorders)):
+            events = nest.GetStatus(sr)[0]['events']
+            names = ['nodeid', 'time_ms']
+            formats = ['i4', 'f8']
+            data = np.recarray((events['senders'].size),
+                               names=names, formats=formats)
+            data['nodeid'] = events['senders']
+            data['time_ms'] = events['times']
+
+            DATA = GathervRecordArray(data)
+
+            if nest.Rank() == 0:
+                f[label] = DATA
+
+        if nest.Rank() == 0:
+            f.close()
+
+    def __wipe(self):
+        """ Wipe raw output directory from any existing files"""
+        if nest.Rank() == 0:
+            if os.path.isdir(self.sim_dict['path_raw_data']):
+                for p in Path(self.sim_dict['path_raw_data']).glob('*'):
+                    while p.is_file():
+                        try:
+                            p.unlink()
+                        except OSError as e:
+                            print('Error: {} : {}'.format(p, e.strerror))
         MPI.COMM_WORLD.Barrier()
         return
 
@@ -295,6 +346,7 @@ class Network:
                                          self.net_dict['num_neurons'][i],
                                          positions=positions)
                 population.set(
+                    tau_m=self.net_dict['neuron_params']['tau_m'],
                     tau_syn_ex=self.net_dict['neuron_params']['tau_syn'],
                     tau_syn_in=self.net_dict['neuron_params']['tau_syn'],
                     E_L=self.net_dict['neuron_params']['E_L'],
@@ -334,13 +386,43 @@ class Network:
                     f.write('{} {}\n'.format(pop[0].global_id,
                                              pop[-1].global_id))
 
-        # write MPI-local positions to file
-        # rank is automatically appended to file name
-        for i, pop in enumerate(self.pops):
-            fn = os.path.join(
-                self.sim_dict['path_raw_data'],
-                'positions_' + self.net_dict['populations'][i] + '.dat')
-            nest.DumpLayerNodes(pop, fn)
+        # Gather and write all positions to HDF5 file
+        fn = os.path.join(self.sim_dict['path_raw_data'], 'positions.h5')
+        if nest.Rank() == 0:
+            f = h5py.File(fn, 'w')
+        for i, (label, pop) in enumerate(zip(self.net_dict['populations'],
+
+                                             self.pops)):
+            # extract layer nodes and positions on this RANK
+            nodes = nest.GetLocalNodeCollection(pop)
+            if len(nodes) > 1:
+                pos = np.array(nest.GetPosition(nodes))
+            elif len(nodes) == 1:
+                pos = np.array(nest.GetPosition(nodes)).reshape((1, 2))
+            else:
+                pos = np.zeros((0, 2))
+
+            # see ana_dict['read_nest_ascii_dtypes']['positions']
+            # as ana_dict is not loaded here
+            names = ['nodeid', 'x-position_mm', 'y-position_mm']
+            formats = ['i4', 'f8', 'f8']
+
+            # construct record arrau
+            data = np.recarray((len(nodes), ), names=names, formats=formats)
+            data['nodeid'] = nodes
+            data['x-position_mm'] = pos[:, 0]
+            data['y-position_mm'] = pos[:, 1]
+
+            # Gather to RANK 0
+            DATA = GathervRecordArray(data)
+
+            # write
+            if nest.Rank() == 0:
+                f[label] = DATA
+
+        if nest.Rank() == 0:
+            f.close()
+
         return
 
     def __create_recording_devices(self):
@@ -358,7 +440,7 @@ class Network:
             if nest.Rank() == 0:
                 print('  Creating spike recorders.')
 
-            sd_dict = {'record_to': 'ascii'}
+            sd_dict = {'record_to': 'memory'}
             self.spike_recorders = nest.Create('spike_recorder',
                                                n=self.net_dict['num_pops'],
                                                params=sd_dict)
