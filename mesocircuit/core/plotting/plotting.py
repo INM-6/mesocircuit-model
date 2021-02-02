@@ -235,11 +235,74 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                          MaxNLocatorNBins=2)
 
         # column 4: PSDs
-        print('  Plotting PSDs.')
+        print('  Plotting PSDs')
         axes[6] = self.plot_layer_panels(gs_cols[0, 10:],
                                          xlabel='f (Hz)', ylabel='PSD (s$^{-2}$/Hz)',
                                          plotfunc=self.plotfunc_PSDs,
                                          data=all_PSDs)
+        return axes
+
+    def plot_theory_overview(self, gs, working_point, frequencies, power,
+                             sensitvity_amplitude, sensitivity_frequency,
+                             sensitivity_popidx_freq):
+        """
+        """
+        axes = [0] * 5
+        gs_cols = gridspec.GridSpecFromSubplotSpec(1, 12, subplot_spec=gs,
+                                                   wspace=0.5)
+
+        # column 0: barcharts
+        gs_c0 = gridspec.GridSpecFromSubplotSpec(
+            3, 1, subplot_spec=gs_cols[0, :2], hspace=0.5)
+
+        # top: FRs
+        print('  Plotting barcharts: rates')
+        axes[0] = self.plot_barcharts(gs_c0[0, 0],
+                                      working_point['firing_rates'].magnitude,
+                                      xlabel='', ylabel='FR (spikes/s)',
+                                      xticklabels=False)
+
+        # middle: mean input
+        print('  Plotting barcharts: mean input')
+        axes[1] = self.plot_barcharts(gs_c0[1, 0],
+                                      working_point['mean_input'].magnitude,
+                                      xlabel='', ylabel=r'$\mu$ (mV)',
+                                      xticklabels=False)
+
+        # bottom: standard deviation of input
+        print('  Plotting boxcharts: standard deviation of inupt')
+        axes[2] = self.plot_barcharts(gs_c0[2, 0],
+                                      working_point['std_input'].magnitude,
+                                      xlabel='', ylabel=r'$\sigma$ (mV)')
+
+       # column 1: PSDs
+        print('  Plotting power')
+        axes[3] = self.plot_layer_panels(gs_cols[0, 4:6],
+                                         xlabel=r'$f$ (Hz)', ylabel='power',
+                                         plotfunc=self.plotfunc_theory_power_spectra,
+                                         data=[frequencies, power])
+
+        gs_c2 = gridspec.GridSpecFromSubplotSpec(
+            2, 1, subplot_spec=gs_cols[7:], hspace=0.3)
+
+        # column 2: sensitivity measure
+        print('  Plotting sensitivity measure')
+        freq = '({} Hz)'.format(sensitivity_popidx_freq[1].astype(int))
+        axes[4] = plt.subplot(gs_c2[0])
+        self.plot_matrix(ax=axes[4],
+                         data=sensitvity_amplitude,
+                         title=r'$\,Z^\mathrm{amp}$ ' + freq,
+                         xlabel='', ylabel='targets',
+                         xticklabels=[],
+                         yticklabels=self.plot_dict['pop_labels'][:-1])
+
+        self.plot_matrix(ax=plt.subplot(gs_c2[1]),
+                         data=sensitivity_frequency,
+                         title=r'$\,Z^\mathrm{freq}$ ' + freq,
+                         xlabel='sources', ylabel='targets',
+                         xticklabels=self.plot_dict['pop_labels'][:-1],
+                         yticklabels=self.plot_dict['pop_labels'][:-1],
+                         xticklabelrotation=True)
         return axes
 
     def plot_spatial_snapshots(self,
@@ -470,6 +533,33 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax.yaxis.set_major_locator(MaxNLocator(3))
         return ax
 
+    def plot_barcharts(self, gs, data, xlabel='', ylabel='',
+                       xticklabels=True):
+        """
+        TODO
+        """
+        ax = plt.subplot(gs)
+        for loc in ['top', 'right']:
+            ax.spines[loc].set_color('none')
+
+        if len(data) != len(self.Y):
+            raise Exception
+        xs = np.arange(len(data))
+        ax.bar(x=xs,
+               height=data,
+               color=self.plot_dict['pop_colors'][:-1])
+
+        ax.set_xticks(xs)
+        ax.set_xticklabels(self.plot_dict['pop_labels'][:-1])
+        plt.xticks(rotation=90)
+        if not xticklabels:
+            ax.set_xticklabels([])
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+
+        ax.yaxis.set_major_locator(MaxNLocator(3))
+        return ax
+
     def plot_layer_panels(self, gs, plotfunc, xlabel='', ylabel='', **kwargs):
         """
         Generic function to plot four vertically arranged panels, one for each
@@ -554,6 +644,24 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 ax.set_ylabel(ylabel)
                 ax_label = ax
         return ax_label
+
+    def plot_matrix(self, ax, data, title='', xlabel='', ylabel='',
+                    xticklabels=[], yticklabels=[], xticklabelrotation=False,
+                    cmap='coolwarm', vmin=-1, vmax=1):
+        """
+        """
+        ax.imshow(data, cmap=cmap, vmin=vmin, vmax=vmax)
+
+        ax.set_title(title)
+        ax.set_xticks((np.arange(len(data))))
+        ax.set_yticks((np.arange(len(data[0]))))
+        ax.set_xticklabels(xticklabels)
+        ax.set_yticklabels(yticklabels)
+        if xticklabelrotation:
+            plt.xticks(rotation=90)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        return
 
     def plotfunc_distributions(self, ax, X, i, bins, data, MaxNLocatorNBins):
         """
@@ -662,6 +770,21 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
         ax.set_xlim(times[0], times[-1])
         ax.set_ylim(bottom=0)
+        return
+
+    def plotfunc_theory_power_spectra(self, ax, X, i, data):
+        """
+        TODO
+        """
+        frequencies = data[0].magnitude
+        power = data[1][i].magnitude
+
+        ax.plot(frequencies, power,
+                linewidth=matplotlib.rcParams['lines.linewidth'],
+                color=self.plot_dict['pop_colors'][i])
+
+        ax.set_yscale('log')
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=3))
         return
 
     def add_label(self, ax, label, offset=[0, 0],
