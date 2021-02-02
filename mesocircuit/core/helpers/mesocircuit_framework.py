@@ -218,7 +218,7 @@ def params_for_lif_meanfield_tools(net_dict):
                    'unit': 'ms'},
         'd_i_sd': {'val': d_i_sd,
                    'unit': 'ms'},
-        'delay_dist': 'gaussian', # not exact, but better than none
+        'delay_dist': 'gaussian',  # not exact, but better than none
         # use L23E -> L23E
         'w': {'val': net_dict['full_weight_matrix_mean'][0][0].tolist(),
               'unit': 'pA'},
@@ -378,13 +378,13 @@ def run_jobs(parameterview, jobscripts, run_type='run_locally',
         List of keys of parameter spaces to run jobs of. Providing an
         empty list means that all keys are evaluated (default=[])
     """
-    submitted_jobs = []
+    handled_paramsets = []
     for paramspace_key in parameterview.keys():
         if paramspace_keys != [] and paramspace_key not in paramspace_keys:
             pass
         else:
             for data_path, ps_id in parameterview[paramspace_key]:
-                if ps_id in submitted_jobs:
+                if ps_id in handled_paramsets:
                     pass
                 else:
                     jobs = [
@@ -419,7 +419,7 @@ def run_jobs(parameterview, jobscripts, run_type='run_locally',
                                 output = subprocess.getoutput(submit)
                                 print(output)
                                 jobid = output.split(' ')[-1]
-                    submitted_jobs.append(ps_id)
+                    handled_paramsets.append(ps_id)
     return
 
 
