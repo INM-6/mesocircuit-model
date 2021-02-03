@@ -78,7 +78,9 @@ net_dict = {
     # relative standard deviation of the weight
     'weight_rel_std': 0.1,
     # relative inhibitory weight
-    'g': -4,
+    'g': -4.,
+    # relative weight E->I
+    'rel_weight_exc_to_inh': 1.,
 
     # delay type, options are:
     # 'normal': normally distributed delays as in the original microcircuit
