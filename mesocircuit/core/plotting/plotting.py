@@ -5,9 +5,12 @@ The Plotting Class defines plotting functions.
 Functions starting with 'plot_' plot to a gridspec cell and are used in figures.py.
 """
 
+import matplotlib.patheffects as PathEffects
+from matplotlib.patches import Rectangle
 from ..helpers import base_class
 from matplotlib.colors import SymLogNorm
 from matplotlib.ticker import MultipleLocator, MaxNLocator
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import os
@@ -663,6 +666,201 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax.set_ylabel(ylabel)
         return
 
+    def plot_parameters_matrix(
+            self, ax, data, title='',
+            show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.5,
+            cmap='inferno', set_bad=[]):
+        """
+        TODO
+
+        Parameters
+        ----------
+        show_num
+            options are 'all', 'unique', False
+        """
+        tgt = np.shape(data)[0]  # numbers of rows
+        src = np.shape(data)[1]  # number of columns
+        block_data = np.zeros((tgt + 1, src + 1))
+
+        # go through data:
+        # 1. upper left    2. upper right
+        # 3. lower left    4. lower right
+
+        # extract data
+        e_to_e = data[::2, ::2]
+        i_to_e = data[::2, 1::2]
+        e_to_i = data[1::2, ::2]
+        i_to_i = data[1::2, 1::2]
+
+        tgt_e = np.shape(e_to_e)[0]
+        src_e = np.shape(e_to_e)[1]
+        tgt_i = np.shape(i_to_i)[0]
+        src_i = np.shape(i_to_i)[1]
+
+        # upper left
+        block_data[:tgt_e, :src_e] = e_to_e
+        # upper right
+        block_data[:tgt_e, src_e + 1:] = i_to_e
+        # lower left
+        block_data[tgt_e + 1:, :src_e] = e_to_i
+        # lower right
+        block_data[tgt_e + 1:, src_e + 1:] = i_to_i
+
+        # set bad: separator and additional values
+        block_data[tgt_e, :] = np.nan
+        block_data[:, src_e] = np.nan
+        for bad_val in set_bad:
+            block_data[np.where(block_data == bad_val)] = np.nan
+
+        # image
+        block_data = np.ma.masked_invalid(block_data)
+        cm = matplotlib.cm.get_cmap(cmap)
+        cm.set_bad('white')
+
+        im = ax.imshow(block_data, cmap=cm)
+
+        # annotate with numbers
+        if show_num:
+            self.__plot_parameters_show_numbers(
+                ax, block_data, show_num, num_format, num_fontsize_scale)
+
+        # annotate with panel titles
+        for (loc, txt) in zip(
+            [[(src_e - 1.) / 2., -1.], [src_e + 1 + (src_i - 1.) / 2., -1.],
+             [(src_e - 1.) / 2., tgt_e], [src_e + 1 + (src_i - 1.) / 2., tgt_e]],
+            [r'E$\rightarrow$E', r'I$\rightarrow$E',
+             r'E$\rightarrow$I', r'I$\rightarrow$I']):
+            ax.text(loc[0], loc[1] + 0.1, txt,
+                    ha='center', va='center')
+
+        # replace frame
+        [ax.spines[l].set_linewidth(0.) for l in [
+            'top', 'bottom', 'left', 'right']]
+        for (xy, width, height) in zip(
+            [(-0.5, -0.5), (-0.5 + src_e + 1, -0.5),
+             (-0.5, -0.5 + tgt_e + 1), (-0.5 + src_e + 1, -0.5 + tgt_e + 1)],
+            [src_e, src_i, src_e, src_i],
+                [tgt_e, tgt_e, tgt_i, tgt_i]):
+            rec = Rectangle(xy=xy, width=width, height=height,
+                            facecolor='none', edgecolor='k',
+                            linewidth=matplotlib.rcParams['lines.linewidth'],
+                            zorder=10)
+            ax.add_patch(rec)
+
+        # ticks and labels
+        src_labels = np.zeros(src, dtype=object)
+        src_labels[:src_e] = self.plot_dict['pop_labels'][:src:2]
+        src_labels[src_e:] = self.plot_dict['pop_labels'][1:src:2]
+        src_ticks = list(np.arange(src + 1))
+        src_ticks.pop(src_e)
+        ax.set_xticks(src_ticks)
+        plt.xticks(rotation=90)
+        ax.set_xticklabels(src_labels)
+        ax.set_xlabel('sources')
+
+        tgt_labels = np.zeros(tgt, dtype=object)
+        tgt_labels[:tgt_e] = self.plot_dict['pop_labels'][:tgt:2]
+        tgt_labels[tgt_e:] = self.plot_dict['pop_labels'][1:tgt:2]
+        tgt_ticks = list(np.arange(tgt + 1))
+        tgt_ticks.pop(tgt_e)
+        ax.set_yticks(tgt_ticks)
+        ax.set_yticklabels(tgt_labels)
+        ax.set_ylabel('targets')
+
+        self.colorbar(ax, im, title)
+        return
+
+    def plot_parameters_vector(
+            self, ax, data, title='',
+            show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.5,
+            cmap='inferno', set_bad=[]):
+        """
+        TODO
+        Parameters
+        ----------
+        show_num
+            options are 'all', 'unique', False
+        """
+        num = len(data)
+        num_e = int(np.ceil(num / 2))
+        num_i = num - num_e
+        col_data = np.zeros(num + 1)
+
+        # extract data
+        col_data[:num_e] = data[::2]
+        col_data[num_e + 1:] = data[1::2]
+
+        # set bad: separator and additional values
+        col_data[num_e] = np.nan
+
+        for bad_val in set_bad:
+            col_data[np.where(col_data == bad_val)] = np.nan
+
+        # image
+        col_data = col_data.reshape(-1, 1)  # column
+        col_data = np.ma.masked_invalid(col_data)
+        cm = matplotlib.cm.get_cmap(cmap)
+        cm.set_bad('white')
+
+        im = ax.imshow(col_data, cmap=cm)
+
+        # annotate with numbers
+        if show_num:
+            self.__plot_parameters_show_numbers(
+                ax, col_data, show_num, num_format, num_fontsize_scale)
+
+        # replace frame
+        [ax.spines[l].set_linewidth(0.) for l in [
+            'top', 'bottom', 'left', 'right']]
+        for (xy, width, height) in zip(
+            [(-0.5, -0.5), (-0.5, 0.5 + num_e)],
+            [1, 1],
+                [num_e, num_i]):
+            rec = Rectangle(xy=xy, width=width, height=height,
+                            facecolor='none', edgecolor='k',
+                            linewidth=matplotlib.rcParams['lines.linewidth'],
+                            zorder=10)
+            ax.add_patch(rec)
+
+        # ticks and labels
+        labels = np.zeros(num, dtype=object)
+        labels[:num_e] = self.plot_dict['pop_labels'][:num:2]
+        labels[num_e:] = self.plot_dict['pop_labels'][1:num:2]
+        ticks = list(np.arange(num + 1))
+        ticks.pop(num_e)
+        ax.set_yticks(ticks)
+        ax.set_yticklabels(labels)
+        ax.set_xticks([])
+
+        self.colorbar(ax, im, title, size='50%')
+        return
+
+    def __plot_parameters_show_numbers(
+            self, ax, data, show_num, num_format, num_fontsize_scale):
+        """
+        """
+        if show_num == 'unique':
+            values, flat_indices = np.unique(data, return_index=True)
+            indices = np.unravel_index(flat_indices, np.shape(data))
+        elif show_num == 'all':
+            values = data.flatten()
+            indices = np.indices(np.shape(data)).reshape(2, -1)
+
+        for i, val in enumerate(values):
+            if val != np.nan:
+                txt = ax.text(
+                    indices[1][i],
+                    indices[0][i],
+                    num_format.format(val),
+                    ha='center',
+                    va='center',
+                    color='white',
+                    fontsize=matplotlib.rcParams['font.size'] *
+                    num_fontsize_scale)
+                txt.set_path_effects(
+                    [PathEffects.withStroke(linewidth=0.5, foreground='k')])
+        return
+
     def plotfunc_distributions(self, ax, X, i, bins, data, MaxNLocatorNBins):
         """
         TODO
@@ -785,6 +983,25 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
         ax.set_yscale('log')
         ax.xaxis.set_major_locator(MaxNLocator(nbins=3))
+        return
+
+    def colorbar(
+            self,
+            ax,
+            im,
+            label,
+            axis='right',
+            size='5%',
+            pad=0.05,
+            nbins=5):
+        """
+        TODO
+        """
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes(axis, size=size, pad=pad)
+        cb = plt.colorbar(im, cax=cax, label=label)
+        cb.locator = MaxNLocator(nbins=nbins)
+        cb.update_ticks()  # necessary for location
         return
 
     def add_label(self, ax, label, offset=[0, 0],
