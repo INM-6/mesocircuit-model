@@ -46,6 +46,9 @@ for datatype in np.append(ana_dict['datatypes_preprocess'],
 # Time measurements are printed.
 
 functions = [
+    [figures.parameters,
+     [pl]],
+
     [figures.raster,
      [pl, d['all_sptrains'], d['all_pos_sorting_arrays']]],
 
