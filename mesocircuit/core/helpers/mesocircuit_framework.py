@@ -195,7 +195,9 @@ def params_for_lif_meanfield_tools(net_dict):
         d_i_sd = float(np.mean(net_dict['delay_lin_eff_std'][:, 1::2]))
 
     dic = {
-        'label': 'microcircuit',  # for correct parameter derivations
+        # for correct parameter derivations, includes doubled weight L4E->L23E,
+        # but rel_weight_exc_to_inh is not covered
+        'label': 'microcircuit',
         'populations': net_dict['populations'][:-1].tolist(),  # no thalamus
         'N': net_dict['full_num_neurons'][:-1].tolist(),
         'C': {'val': net_dict['neuron_params']['C_m'],
@@ -271,8 +273,9 @@ def write_jobscript(jsname, paramset):
         run_cmd = 'srun --mpi=pmi2 '
 
     # define executable
-    executable = [run_cmd + 'python3 -u ' + os.path.join(os.getcwd(), py) + ' ' +
-                  paramset['sim_dict']['path_parameters'] for py in run_py]
+    executable = [
+        run_cmd + 'python3 -u ' + os.path.join(os.getcwd(), py) + ' ' +
+        paramset['sim_dict']['path_parameters'] for py in run_py]
     sep = '\n\n' + 'wait' + '\n\n'
     executable = sep.join(executable)
 
