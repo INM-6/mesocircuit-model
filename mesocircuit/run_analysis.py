@@ -13,14 +13,11 @@ import core.analysis.spike_analysis as spike_analysis
 import core.helpers.parallelism_time as pt
 
 ##########################################################################
-# Load simulation, network, stimulation and analysis parameters from files
-# located in the folder provided as command line argument.
-
-path_parameters = sys.argv[1]
+# Load simulation, network, stimulation and analysis parameters.
 
 dics = []
 for dic in ['sim_dict', 'net_dict', 'ana_dict']:
-    with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
+    with open(os.path.join('parameters', f'{dic}.pkl'), 'rb') as f:
         dics.append(pickle.load(f))
 sim_dict, net_dict, ana_dict = dics
 

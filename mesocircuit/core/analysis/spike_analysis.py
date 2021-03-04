@@ -143,8 +143,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # raw node ids: tuples of first and last id of each population;
         # only rank 0 reads from file and broadcasts the data
         if RANK == 0:
-            fn = os.path.join(self.sim_dict['path_raw_data'],
-                              self.sim_dict['fname_nodeids'])
+            fn = os.path.join('raw_data', self.sim_dict['fname_nodeids'])
             nodeids_raw = np.loadtxt(fn, dtype=int)
         else:
             nodeids_raw = None
@@ -178,8 +177,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             datatype = 'spike_recorder': number of spikes per population.
             datatype = 'positions': number of neurons per population
         """
-        fname = os.path.join(self.sim_dict['path_raw_data'],
-                             '{}.h5'.format(datatype))
+        fname = os.path.join('raw_data', f'{datatype}.h5')
         with h5py.File(fname, 'r') as f:
             raw_data = f[X][()]
         sortby = self.ana_dict['write_ascii'][datatype]['sortby']
@@ -193,9 +191,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             comb_data[name] = raw_data[name]
 
         # write processed file (ASCII format)
-        fn = os.path.join(
-            self.sim_dict['path_processed_data'],
-            datatype + '_' + X + '.dat')
+        fn = os.path.join('processed_data', f'{datatype}_{X}.dat')
         np.savetxt(fn, comb_data, delimiter='\t',
                    header='\t '.join(dtype['names']),
                    fmt=self.ana_dict['write_ascii'][datatype]['fmt'])
@@ -242,8 +238,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         if i == 0:
             print('  Merging raw files:', datatype)
 
-        with tarfile.open(self.sim_dict['path_raw_data'] + '.tar', 'r'
-                          ) as f:
+        with tarfile.open('raw_data.tar', 'r') as f:
 
             # gather names of single files in tar archive
             # combine files from pre-simulation and actual simulation
@@ -283,9 +278,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             num_rows = np.shape(comb_data)[0]
 
             # write processed file
-            fn = os.path.join(
-                self.sim_dict['path_processed_data'],
-                datatype + '_' + X + '.dat')
+            fn = os.path.join('processed_data', f'{datatype}_{X}.dat')
             np.savetxt(fn, comb_data, delimiter='\t',
                        header='\t '.join(read_dtype['names']),
                        fmt=self.ana_dict['write_ascii'][datatype]['fmt'])
@@ -335,8 +328,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # load plain spike data and positions
         data_load = []
         for datatype in self.ana_dict['read_nest_ascii_dtypes'].keys():
-            fn = os.path.join(self.sim_dict['path_processed_data'],
-                              datatype + '_' + X + '.dat')
+            fn = os.path.join('processed_data', f'{datatype}_{X}.dat')
             # ignore all warnings of np.loadtxt(), target in particular
             # 'Empty input file'
             with warnings.catch_warnings():
@@ -648,9 +640,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         for datatype in self.ana_dict['datatypes_preprocess']:
             datatype_X = datatype + '_' + X
             key = datatype + '_X'
-            fn = os.path.join(
-                self.sim_dict['path_processed_data'],
-                datatype_X + '.h5')
+            fn = os.path.join('processed_data', f'{datatype_X}.h5')
             data = h5py.File(fn, 'r')
             # load .h5 files with sparse data to csr format
             if isinstance(
@@ -717,9 +707,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 elif datatype == 'CCfuncs_thalamic_pulses':
                     if self.net_dict['thalamic_input'] == 'pulses' and X != 'TC':
                         # load data from TC
-                        fn_TC = os.path.join(
-                            self.sim_dict['path_processed_data'],
-                            'sptrains_bintime_binspace_TC.h5')
+                        fn_TC = os.path.join('processed_data',
+                                             'sptrains_bintime_binspace_TC.h5')
                         data_TC = h5py.File(fn_TC, 'r')
                         data_TC = self.load_h5_to_sparse_X('TC', data_TC)
                         sptrains_bintime_binspace_TC = \
@@ -1010,7 +999,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                        'lags_ms': lags}
         return cc_func_dic
 
-
     def __merge_h5_files_populations_datatype(self, i, datatype):
         """
         Inner function to be used as argument of pt.parallelize_by_array()
@@ -1028,13 +1016,11 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         """
         print('  Merging .h5 files: ' + datatype)
 
-        fn = os.path.join(self.sim_dict['path_processed_data'],
-                          'all_' + datatype + '.h5')
+        fn = os.path.join('processed_data', f'all_{datatype}.h5')
 
         f = h5py.File(fn, 'w')
         for X in self.X:
-            fn_X = os.path.join(self.sim_dict['path_processed_data'],
-                                datatype + '_' + X + '.h5')
+            fn_X = os.path.join('processed_data', f'{datatype}_{X}.h5')
             f_X = h5py.File(fn_X, 'r')
             f.copy(f_X[X], X)
             f_X.close()

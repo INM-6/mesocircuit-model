@@ -15,20 +15,19 @@ import core.simulation.network as network
 import core.helpers.parallelism_time as pt
 
 ##########################################################################
-# Load simulation, network and stimulation parameters from files located in the
-# folder provided as command line argument.
-
-path_parameters = sys.argv[1]
+# Get the number of threads per MPI process from the command line.
+# Load simulation and network parameters.
+local_num_threads = sys.argv[-1]
 
 dics = []
 for dic in ['sim_dict', 'net_dict']:
-    with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
+    with open(os.path.join('parameters', f'{dic}.pkl'), 'rb') as f:
         dics.append(pickle.load(f))
 sim_dict, net_dict = dics
 
 ###############################################################################
-# Initialize the network with simulation, network and stimulation parameters,
-# then create and connect all nodes, and finally simulate.
+# Initialize the network with parameters, create and connect all nodes, and
+# finally simulate.
 # The times for a presimulation and the main simulation are taken
 # independently. A presimulation is useful because the spike activity typically
 # exhibits a startup transient. In benchmark simulations, this transient should
@@ -37,7 +36,7 @@ sim_dict, net_dict = dics
 # transient has passed.
 # Time measurements are printed.
 
-net = network.Network(sim_dict, net_dict)
+net = network.Network(sim_dict, net_dict, local_num_threads)
 
 functions = [
     net.create,

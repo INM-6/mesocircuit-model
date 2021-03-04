@@ -10,15 +10,6 @@ import numpy as np
 cm2inch = 1. / 2.54
 
 plot_dict = {
-    # machine to run the analysis on. Options are 'local' and 'jureca'.
-    'computer': 'jureca',
-    # number of compute nodes (ignored if computer is 'local')
-    'num_nodes': 1,
-    # number of MPI processes per compute node
-    # TODO adjust when analysis is differently parallelized
-    'num_mpi_per_node': 9,
-    # wall clock time (ignored if computer is 'local')
-    'wallclock_time': '00:15:00',
 
     # rcParams to overwrite the default ones
     'rcParams': {
@@ -60,14 +51,14 @@ plot_dict = {
                             '#DDAA77',   # L5I
                             '#771155',   # L6E pompadour
                             '#CC99BB',   # L6I
-                            '#696969']), # TC  dimgrey
+                            '#696969']),  # TC  dimgrey
     # neuron type colors
     'type_colors': np.array(['#595289',   # E, blue pastel
                              '#AF143C',   # I, red pastel
-                             '#696969']), # other, dimgrey
+                             '#696969']),  # other, dimgrey
 
 
-    ## parameters for plot_raster()
+    # parameters for plot_raster()
     # time interval for short raster plots (in ms)
     'raster_time_interval': np.array([500., 1500.]),
     # sample step of raster plot (1 means all neurons are shown).
@@ -75,7 +66,7 @@ plot_dict = {
     # computed
     'raster_sample_step': 'auto',
 
-    ## parameters for plot_statistics_overview()
+    # parameters for plot_statistics_overview()
     # number of bins for distributions
     'distr_num_bins': 30,
     # maximum bin for rate distributions (in Hz), first is at 0
@@ -88,7 +79,7 @@ plot_dict = {
     # maximum frequency to show for PSDs (in Hz)
     'psd_max_freq': 1000,
 
-    ## parameters for plot_spatial_snapshots()
+    # parameters for plot_spatial_snapshots()
     # maximum rate on color bar (in spikes/s)
     'snapshots_max_rate': 1000.0
 

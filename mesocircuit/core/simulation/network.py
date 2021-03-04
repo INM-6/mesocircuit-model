@@ -11,6 +11,7 @@ import numpy as np
 from pathlib import Path
 import tarfile
 import h5py
+import subprocess
 import nest
 from mpi4py import MPI
 from ..helpers.mpiops import GathervRecordArray
@@ -33,7 +34,7 @@ class Network:
          network models (derived from: ``base_network_params.py``).
     """
 
-    def __init__(self, sim_dict, net_dict):
+    def __init__(self, sim_dict, net_dict, local_num_threads):
         self.sim_dict = sim_dict
         self.net_dict = net_dict
 
@@ -44,7 +45,7 @@ class Network:
         self.__check_parameters()
 
         # initialize the NEST kernel
-        self.__setup_nest()
+        self.__setup_nest(local_num_threads)
         return
 
     def create(self):
@@ -155,7 +156,7 @@ class Network:
         mode: String
             tarfile.open file mode. Default: 'w'
         '''
-        output_path = self.sim_dict["path_raw_data"]
+        output_path = 'raw_data'
 
         if nest.Rank() == 0:
             # create tarfile
@@ -181,7 +182,7 @@ class Network:
 
     def __write_spikes(self, fname='spike_recorder.h5'):
         """
-        Write recorded spikes from memory to HDF5 file
+        Writes recorded spikes from memory to HDF5 file.
 
         Parameters
         ----------
@@ -189,7 +190,7 @@ class Network:
             Output file name. Path to raw data folder will be prepended
 
         """
-        fn = os.path.join(self.sim_dict['path_raw_data'], fname)
+        fn = os.path.join('raw_data', fname)
         if nest.Rank() == 0:
             f = h5py.File(fn, 'w')
         for i, (label, sr) in enumerate(zip(self.net_dict['populations'],
@@ -211,10 +212,10 @@ class Network:
             f.close()
 
     def __wipe(self):
-        """ Wipe raw output directory from any existing files"""
+        """ Wipes raw output directory from any existing files"""
         if nest.Rank() == 0:
-            if os.path.isdir(self.sim_dict['path_raw_data']):
-                for p in Path(self.sim_dict['path_raw_data']).glob('*'):
+            if os.path.isdir('raw_data'):
+                for p in Path('raw_data').glob('*'):
                     while p.is_file():
                         try:
                             p.unlink()
@@ -244,21 +245,36 @@ class Network:
             print(message)
         return
 
-    def __setup_nest(self):
+    def __setup_nest(self, local_num_threads):
         """ Initializes the NEST kernel.
 
         Reset the NEST kernel and pass parameters to it.
         The number of seeds for random number generation are computed based on
         the total number of virtual processes
         (number of MPI processes x number of threads per MPI process).
+
+        Parameters
+        ----------
+        local_num_threads
+            Number of threads per MPI process. If 'auto', an adequate number is
+            inferred.
         """
         nest.ResetKernel()
 
-        # set seeds for random number generation
+        # automatically set thread number such that the the total number of
+        # virtual processes does not exceed the number of available logical
+        # cores
+        if local_num_threads == 'auto':
+            nproc = int(subprocess.check_output(['nproc']))
+            local_threads = int(nproc / nest.GetKernelStatus('num_processes'))
+        else:
+            local_threads = int(local_num_threads)
+
         nest.SetKernelStatus(
-            {'local_num_threads': self.sim_dict['local_num_threads']})
+            {'local_num_threads': local_threads})
         N_vp = nest.GetKernelStatus('total_num_virtual_procs')
 
+        # set seeds for random number generation
         master_seed = self.sim_dict['master_seed']
         grng_seed = master_seed + N_vp
         rng_seeds = (master_seed + N_vp + 1 + np.arange(N_vp)).tolist()
@@ -279,7 +295,7 @@ class Network:
             'rng_seeds': rng_seeds,
             'overwrite_files': self.sim_dict['overwrite_files'],
             'print_time': self.sim_dict['print_time'],
-            'data_path': self.sim_dict['path_raw_data'],
+            'data_path': 'raw_data',
             # set presimulation-prefix already here to avoid empty files without
             # prefix
             'data_prefix': 'presim_'}
@@ -348,15 +364,14 @@ class Network:
 
         # write node ids to file
         if nest.Rank() == 0:
-            fn = os.path.join(self.sim_dict['path_raw_data'],
-                              self.sim_dict['fname_nodeids'])
+            fn = os.path.join('raw_data', self.sim_dict['fname_nodeids'])
             with open(fn, 'w+') as f:
                 for pop in self.pops:
                     f.write('{} {}\n'.format(pop[0].global_id,
                                              pop[-1].global_id))
 
         # Gather and write all positions to HDF5 file
-        fn = os.path.join(self.sim_dict['path_raw_data'], 'positions.h5')
+        fn = os.path.join('raw_data', 'positions.h5')
         if nest.Rank() == 0:
             f = h5py.File(fn, 'w')
         for i, (label, pop) in enumerate(zip(self.net_dict['populations'],

@@ -16,14 +16,11 @@ import core.plotting.figures as figures
 import core.helpers.parallelism_time as pt
 
 ##########################################################################
-# Load simulation, network, stimulation, analysis and plotting parameters from
-# files located in the folder provided as command line argument.
-
-path_parameters = sys.argv[1]
+# Load simulation, network, stimulation, analysis and plotting parameters.
 
 dics = []
 for dic in ['sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
-    with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
+    with open(os.path.join('parameters', f'{dic}.pkl'), 'rb') as f:
         dics.append(pickle.load(f))
 sim_dict, net_dict, ana_dict, plot_dict = dics
 
@@ -37,7 +34,7 @@ d = {}
 for datatype in np.append(ana_dict['datatypes_preprocess'],
                           ana_dict['datatypes_statistics']):
     all_datatype = 'all_' + datatype
-    fn = os.path.join(sim_dict['path_processed_data'], all_datatype + '.h5')
+    fn = os.path.join('processed_data', all_datatype + '.h5')
     data = h5py.File(fn, 'r')
     d.update({all_datatype: data})
 
@@ -69,5 +66,3 @@ functions = [
 ]
 
 pt.run_serial_functions_in_parallel(functions, os.path.basename(__file__))
-
-# TODO close files
