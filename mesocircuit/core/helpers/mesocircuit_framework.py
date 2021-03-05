@@ -299,13 +299,12 @@ def write_jobscripts(sys_dict, path):
                 # assume SLURM, append resource definitions
                 jobscript += (
                     "#SBATCH --job-name=meso\n"
-                    "#SBATCH --account=$BUDGET_ACCOUNTS\n"
                     f"#SBATCH --partition={dic['partition']}\n"
                     f"#SBATCH --output={stdout}\n"
                     f"#SBATCH --error={stdout}\n"
                     f"#SBATCH --nodes={dic['num_nodes']}\n"
                     f"#SBATCH --ntasks-per-node={dic['num_mpi_per_node']}\n"
-                    f"#SBATCH --cpus_per_task={dic['local_num_threads']}\n"
+                    f"#SBATCH --cpus-per-task={dic['local_num_threads']}\n"
                     f"#SBATCH --time={dic['wall_clock_time']}\n"
                     "export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n\n")
                 run_cmd = 'srun --mpi=pmi2'
@@ -444,16 +443,15 @@ def run_single_jobs(paramspace_key, ps_id,
 
     if machine == 'hpc':
         print('Submitting ' + info)
-        submit = f'sbatch {jobs[0]}'
+        submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{machine}_{jobs[0]}.sh'
         output = subprocess.getoutput(submit)
         print(output)
         jobid = output.split(' ')[-1]
         # submit potential following jobs with dependency
         if len(jobs) > 1:
-            for i, js in enumerate(jobs[1:]):
-                print('Submitting ' +
-                      jobscripts[i + 1] + job_spec)
-                submit = 'sbatch --dependency=afterok:' + jobid + ' ' + js
+            for i, job in enumerate(jobs[1:]):
+                submit = (f'sbatch --account $BUDGET_ACCOUNTS ' +
+                          f'--dependency=afterok:{jobid} jobscripts/{machine}_{job}.sh')
                 output = subprocess.getoutput(submit)
                 print(output)
                 jobid = output.split(' ')[-1]
