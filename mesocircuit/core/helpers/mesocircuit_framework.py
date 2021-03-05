@@ -408,18 +408,15 @@ def run_jobs(
         # parameter sets identified by ps_id
         for full_data_path in full_data_paths:
             ps_id = os.path.basename(full_data_path)
-            # jobscripts
-            for job in jobs:
-                run_single_job(ps_key, ps_id, job, machine,
-                               data_dir)
+            run_single_jobs(ps_key, ps_id, jobs, machine, data_dir)
     return
 
 
-def run_single_job(paramspace_key, ps_id,
-                   job='network', machine='hpc',
-                   data_dir=auto_data_directory()):
+def run_single_jobs(paramspace_key, ps_id,
+                    jobs=['network', 'analysis_and_plotting'], machine='hpc',
+                    data_dir=auto_data_directory()):
     """
-    Runs a single job.
+    Runs jobs of a single parameterset.
 
     Parameters
     ----------
@@ -427,6 +424,9 @@ def run_single_job(paramspace_key, ps_id,
         A key identifying a parameter space.
     ps_id
         A parameter space id.
+    jobs
+        List of one or multiple of 'network, 'analysis, 'plotting', and
+        'anlysis_and_plotting'.
     job
         'network', 'analysis', 'plotting', or 'analysis_and_plotting'.
     machine
@@ -438,7 +438,8 @@ def run_single_job(paramspace_key, ps_id,
     full_data_path = os.path.join(data_dir, paramspace_key, ps_id)
     os.chdir(full_data_path)
 
-    info = (f'{job} for {paramspace_key} - {ps_id}.' + '\n'
+    jobinfo = ' and '.join(jobs) if len(jobs) > 1 else jobs[0]
+    info = (f'{jobinfo} for {paramspace_key} - {ps_id}.' + '\n'
             f'    Data path: {full_data_path}')
 
     if machine == 'hpc':
@@ -459,7 +460,8 @@ def run_single_job(paramspace_key, ps_id,
 
     elif machine == 'local':
         print('Running ' + info)
-        os.system(f'sh jobscripts/{machine}_{job}.sh')
+        for job in jobs:
+            os.system(f'sh jobscripts/{machine}_{job}.sh')
     return
 
 
