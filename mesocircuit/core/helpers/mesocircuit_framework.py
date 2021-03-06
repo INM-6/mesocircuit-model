@@ -314,11 +314,13 @@ def write_jobscripts(sys_dict, path):
 
             # append executable(s),
             # number of local threads needed for network simulation,
-            # tee output to file for local execution
+            # tee output to file for local execution (append for multiple jobs)
             t = dic['local_num_threads'] if name == 'network' else ''
-            o = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
+            o_0 = f'2>&1 | tee {stdout}' if machine == 'local' else ''
+            o_1 = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
             executables = [
-                f'{run_cmd} python3 -u code/{py} {t} {o}' for py in scripts]
+                f'{run_cmd} python3 -u code/{py} {t} {o_0 if i == 0 else o_1}'
+                for i, py in enumerate(scripts)]
             sep = '\n\n' + 'wait' + '\n\n'
             jobscript += sep.join(executables)
 
@@ -450,8 +452,9 @@ def run_single_jobs(paramspace_key, ps_id,
         # submit potential following jobs with dependency
         if len(jobs) > 1:
             for i, job in enumerate(jobs[1:]):
-                submit = (f'sbatch --account $BUDGET_ACCOUNTS ' +
-                          f'--dependency=afterok:{jobid} jobscripts/{machine}_{job}.sh')
+                submit = (
+                    f'sbatch --account $BUDGET_ACCOUNTS ' +
+                    f'--dependency=afterok:{jobid} jobscripts/{machine}_{job}.sh')
                 output = subprocess.getoutput(submit)
                 print(output)
                 jobid = output.split(' ')[-1]
