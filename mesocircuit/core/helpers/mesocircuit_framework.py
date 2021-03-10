@@ -51,7 +51,7 @@ def evaluate_parameterspaces(
     Parameters
     ----------
     custom_ps_dicts
-        Dictonary defining custom parameter spaces to be evaluated.
+        Dictionary defining custom parameter spaces to be evaluated.
         If no dictionary is given, i.e., custom_ps_dicts='', parameters are
         evaluated according to the base parameters (default='').
     paramspace_keys
@@ -63,6 +63,10 @@ def evaluate_parameterspaces(
     data_dir
         Absolute path to write data to.
 
+    Returns
+    -------
+    parameterview
+        Dictionary of evaluated parameter spaces as overview.
     """
 
     ps_dicts = {}
@@ -72,14 +76,22 @@ def evaluate_parameterspaces(
     if with_base_params:
         ps_dicts.update({'base': {}})
 
+    print(f'Data directory: {data_dir}')
+
     # parameterspaces built with the parameters module and indexed by
     # paramspace_key
     parameterspaces = {}
+    # overview of parameterspaces and corresponding ps_ids
+    parameterview = {}
 
     for paramspace_key in sorted(ps_dicts):
         if (len(paramspace_keys) == 0 or  # all keys
             paramspace_key in paramspace_keys or  # selected key(s)
                 paramspace_key == 'base'):  # base parameters if with_base_params
+            parameterview[paramspace_key] = {}
+            parameterview[paramspace_key]['custom_params'] = {}
+            parameterview[paramspace_key]['custom_params']['ranges'] = {}
+            parameterview[paramspace_key]['custom_params']['values'] = {}
 
             parameterspaces[paramspace_key] = ps.ParameterSpace({})
             # start with default parameters and update
@@ -92,32 +104,81 @@ def evaluate_parameterspaces(
                     parameterspaces[paramspace_key][dic].update(
                         ps_dicts[paramspace_key][dic])
 
+                    # ranges and values from parameter space that overwrite the
+                    # base parameters
+                    for param, val in ps_dicts[paramspace_key][dic].items():
+                        if isinstance(val, ps.ParameterRange):
+                            if dic not in parameterview[paramspace_key][
+                                    'custom_params']['ranges'].keys():
+                                parameterview[paramspace_key][
+                                    'custom_params']['ranges'][dic] = {}
+                            parameterview[paramspace_key][
+                                'custom_params']['ranges'][dic][param] = list(val)
+                        else:
+                            if dic not in parameterview[paramspace_key][
+                                    'custom_params']['values'].keys():
+                                parameterview[paramspace_key][
+                                    'custom_params']['values'][dic] = {}
+                            parameterview[paramspace_key][
+                                'custom_params']['values'][dic][param] = val
+
             # only sim_dict and net_dict enable parameter spaces and are used to
             # compute a unique id
             dicts_unique = ['sim_dict', 'net_dict']
             sub_paramspace = ps.ParameterSpace(
                 {k: parameterspaces[paramspace_key][k] for k in dicts_unique})
 
+            parameterview[paramspace_key]['paramsets'] = {}
             for sub_paramset in sub_paramspace.iter_inner():
                 ps_id = get_unique_id(sub_paramset)
-                print('Evaluating parameters for ' + str(paramspace_key) +
-                      ' - ' + str(ps_id) + '.')
+                print(f'Evaluating parameters for {paramspace_key} - {ps_id}.')
 
                 # readd ana_dict and plot_dict to get full paramset
-                # (deep copy of sub_paramset is needed, otherwise changes to
-                # paramset['sim_dict']['data_path'] survive iterations)
+                # (deep copy of sub_paramset is needed)
                 paramset = {
                     **copy.deepcopy(sub_paramset),
                     'sys_dict': parameterspaces[paramspace_key]['sys_dict'],
                     'ana_dict': parameterspaces[paramspace_key]['ana_dict'],
                     'plot_dict': parameterspaces[paramspace_key]['plot_dict']}
 
-                # full path to data directory
-                full_data_path = os.path.join(data_dir, paramspace_key, ps_id)
-                print(f'    Data path: {full_data_path}')
+                # add parameterset values of ranges to parameterview
+                parameterview[paramspace_key]['paramsets'][ps_id] = {}
+                for dic in \
+                        parameterview[paramspace_key]['custom_params']['ranges']:
+                    parameterview[paramspace_key][
+                        'paramsets'][ps_id][dic] = {}
+                    for param, val in \
+                        parameterview[paramspace_key][
+                            'custom_params']['ranges'][dic].items():
+                        parameterview[paramspace_key][
+                            'paramsets'][ps_id][dic][param] = \
+                            paramset[dic][param]
 
-                evaluate_parameterset(ps_id, paramset, full_data_path)
-    return
+                # evaluate the parameter set
+                evaluate_parameterset(
+                    ps_id, paramset,
+                    os.path.join(data_dir, paramspace_key, ps_id))
+
+            # setup for parameterspace analysis
+            for dname in ['parameters', 'plots']:
+                path = os.path.join(
+                    data_dir, paramspace_key, 'parameter_space', dname)
+                if not os.path.isdir(path):
+                    os.makedirs(path)
+
+            # write parameterview to file
+            dir = os.path.join(data_dir, paramspace_key,
+                               'parameter_space', 'parameters')
+            # pickle for machine readability
+            with open(os.path.join(dir, 'psview_dict.pkl'), 'wb') as f:
+                pickle.dump(parameterview, f)
+            # text for human readability
+            with open(os.path.join(dir, 'psview_dict.txt'), 'w') as f:
+                json_dump = json.dumps(
+                    parameterview, cls=NumpyEncoder, indent=2, sort_keys=True)
+                f.write(json_dump)
+
+    return parameterview
 
 
 def evaluate_parameterset(ps_id, paramset, full_data_path):
@@ -149,19 +210,19 @@ def evaluate_parameterset(ps_id, paramset, full_data_path):
 
     # write final parameters to file
     for dic in ['sys_dict', 'sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
-        filename = os.path.join(full_data_path, 'parameters', dic)
+        fname = os.path.join(full_data_path, 'parameters', dic)
         # pickle for machine readability
-        with open(filename + '.pkl', 'wb') as f:
+        with open(fname + '.pkl', 'wb') as f:
             pickle.dump(paramset[dic], f)
         # text for human readability
-        with open(filename + '.txt', 'w') as f:
+        with open(fname + '.txt', 'w') as f:
             json_dump = json.dumps(
                 paramset[dic], cls=NumpyEncoder, indent=2, sort_keys=True)
             f.write(json_dump)
     # parameters for LIF Meanfield Tools
     lmt_dic = params_for_lif_meanfield_tools(paramset['net_dict'])
-    filename = os.path.join(full_data_path, 'parameters', 'lmt_dict')
-    with open(filename + '.yaml', 'w') as f:
+    fname = os.path.join(full_data_path, 'parameters', 'lmt_dict')
+    with open(fname + '.yaml', 'w') as f:
         yaml.dump(lmt_dic, f, default_flow_style=False)
     shutil.copyfile(os.path.join('core/parameterization',
                                  'lmt_analysis_params.yaml'),
@@ -179,7 +240,7 @@ def evaluate_parameterset(ps_id, paramset, full_data_path):
         'run_plotting.py',
         'core/simulation/network.py',
         'core/analysis/spike_analysis.py',
-        'core/stats.py',  # TODO move stats into analysis
+        'core/analysis/statistics.py',
         'core/plotting/plotting.py',
         'core/plotting/figures.py',
         'core/helpers/base_class.py',
@@ -276,7 +337,7 @@ def write_jobscripts(sys_dict, path):
         Path to folder of ps_id.
     """
 
-    for machine, dic in sys_dict['machines'].items():
+    for machine, dic in sys_dict.items():
         machine_path = os.path.join(path, machine)
         for name, scripts in [['network', ['run_network.py']],
                               ['analysis', ['run_analysis.py']],
@@ -286,7 +347,7 @@ def write_jobscripts(sys_dict, path):
 
             # key of sys_dict defining resources
             res = name if name == 'network' else 'analysis_and_plotting'
-            dic = sys_dict['machines'][machine][res]
+            dic = sys_dict[machine][res]
 
             # file for output and errors
             stdout = os.path.join('stdout', name + '.txt')
@@ -374,48 +435,71 @@ def sort_deep_dict(d):
     return x
 
 
-def run_jobs(
-        paramspace_keys=[], with_base_params=False,
-        jobs=['network', 'analysis_and_plotting'],
-        machine='hpc',
-        data_dir=auto_data_directory()):
+def run_parametersets(
+        func,
+        parameterview=None,
+        paramspace_keys=None,
+        with_base_params=False,
+        ps_ids=[],
+        data_dir=auto_data_directory(),
+        **kwargs):
     """
-    Initiatiates job execution for all given parameter spaces.
+    Runs the given function for parameter sets specified.
+    Provide either a parameterview or a list of paramspace_keys.
 
     Parameters
     ----------
+    func
+        Function to be executed for parameter sets.
+    parameterview
+        Dictionary of evaluated parameter spaces.
     paramspace_keys
-        List of keys of parameter spaces defined in custom_ps_dicts.
-        Providing an empty list means that all keys are evaluated (default=[]).
+        List of keys of parameter spaces evaluated with
+        evaluate_parameterspaces() into data_dir.
     with_base_params
+        If paramspace_keys are given:
         Whether to include a parameter space with only base parameters
         (default=False).
-    jobs
-        List of one or multiple of 'network, 'analysis, 'plotting', and
-        'anlysis_and_plotting'.
-    machine
-        'local' or 'hpc'.
+    ps_ids
+        List of parameterset identifiers (hashes) as computed in
+        evaluate_parameterspaces().
+        Providing an empty list means that jobs of all ps_ids existing in
+        data_dir of the given paramspace_keys are executed (default=[]).
     data_dir
         Absolute path to write data to.
     """
+    if np.all(parameterview, paramspace_keys) or \
+            np.all(parameterview, paramspace_keys) == False:
+        raise Exception('Specify either parameterview or paramspace_keys')
 
-    ps_keys = paramspace_keys
-    if with_base_params:
-        ps_keys.append('base')
+    print(f'Data directory: {data_dir}')
 
-    # parameters spaces identified by key
-    for ps_key in ps_keys:
-        full_data_paths = glob.glob(os.path.join(data_dir, ps_key, '*'))
-        # parameter sets identified by ps_id
-        for full_data_path in full_data_paths:
-            ps_id = os.path.basename(full_data_path)
-            run_single_jobs(ps_key, ps_id, jobs, machine, data_dir)
+    if parameterview:
+        for ps_key in parameterview.keys():
+            for ps_id in parameterview[ps_key]['paramsets'].keys():
+                if ps_id in ps_ids or ps_ids == []:
+                    func(ps_key, ps_id, data_dir, **kwargs)
+
+    elif paramspace_keys:
+        ps_keys = paramspace_keys
+        if with_base_params:
+            ps_keys.append('base')
+
+        for ps_key in ps_keys:
+            full_data_paths = glob.glob(os.path.join(data_dir, ps_key, '*'))
+            # parameter sets identified by ps_id
+            for full_data_path in full_data_paths:
+                ps_id = os.path.basename(full_data_path)
+                # pass if not a real ps_id (hash)
+                if ps_id == 'parameter_space':
+                    pass
+                if ps_id in ps_ids or ps_ids == []:
+                    func(ps_key, ps_id, data_dir, **kwargs)
     return
 
 
-def run_single_jobs(paramspace_key, ps_id,
-                    jobs=['network', 'analysis_and_plotting'], machine='hpc',
-                    data_dir=auto_data_directory()):
+def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
+                    jobs=['network', 'analysis_and_plotting'], machine='hpc'):
     """
     Runs jobs of a single parameterset.
 
@@ -425,6 +509,8 @@ def run_single_jobs(paramspace_key, ps_id,
         A key identifying a parameter space.
     ps_id
         A parameter space id.
+    data_diri
+        Absolute path to write data to.
     jobs
         List of one or multiple of 'network, 'analysis, 'plotting', and
         'anlysis_and_plotting'.
@@ -432,16 +518,13 @@ def run_single_jobs(paramspace_key, ps_id,
         'network', 'analysis', 'plotting', or 'analysis_and_plotting'.
     machine
         'local' or 'hpc'.
-    data_dir
-        Absolute path to write data to.
     """
     # change to directory with copied files
     full_data_path = os.path.join(data_dir, paramspace_key, ps_id)
     os.chdir(full_data_path)
 
     jobinfo = ' and '.join(jobs) if len(jobs) > 1 else jobs[0]
-    info = (f'{jobinfo} for {paramspace_key} - {ps_id}.' + '\n'
-            f'    Data path: {full_data_path}')
+    info = f'{jobinfo} for {paramspace_key} - {ps_id}.'
 
     if machine == 'hpc':
         print('Submitting ' + info)
@@ -463,6 +546,83 @@ def run_single_jobs(paramspace_key, ps_id,
         print('Running ' + info)
         for job in jobs:
             os.system(f'sh jobscripts/{machine}_{job}.sh')
+    return
+
+
+def run_single_lmt(paramspace_key, ps_id, data_dir=auto_data_directory()):
+    """
+    Computes some theoretical quantities with LIF Meanfield Tools for a single
+    parameter set.
+
+    TODO move to a more appropriate place
+
+    Parameters
+    ----------
+    paramspace_key
+        A key identifying a parameter space.
+    ps_id
+        A parameter space id.
+    data_diri
+        Absolute path to write data to.
+    """
+    from ..plotting import figures, plotting
+    import lif_meanfield_tools as lmt
+    ureg = lmt.ureg
+
+    print(f'Computing theory for {paramspace_key} - {ps_id}.')
+
+    os.chdir(os.path.join(data_dir, paramspace_key, ps_id))
+
+    # lmt network object
+    nw = lmt.Network(
+        network_params=os.path.join(
+            'parameters', 'lmt_dict.yaml'), analysis_params=os.path.join(
+            'parameters', 'lmt_ana_dict.yaml'))
+
+    # working point
+    wp = nw.working_point()
+
+    # power spectrum
+    power = nw.power_spectra()
+    freqs = nw.analysis_params['omegas'] / (2. * np.pi)
+
+    # sensitivity measure
+    pop_idx, freq_idx = np.unravel_index(np.argmax(power),
+                                         np.shape(power))
+    frequency = freqs[freq_idx]
+
+    sm = nw.sensitivity_measure(freq=frequency)
+    eigs = nw.eigenvalue_spectra('MH')
+    eigc = eigs[pop_idx][np.argmin(abs(eigs[pop_idx] - 1))]
+
+    Z = nw.sensitivity_measure(frequency)
+    k = np.asarray([1, 0]) - np.asarray([eigc.real, eigc.imag])
+    k /= np.sqrt(np.dot(k, k))
+    k_per = np.asarray([-k[1], k[0]])
+    k_per /= np.sqrt(np.dot(k_per, k_per))
+    Z_amp = Z.real * k[0] + Z.imag * k[1]
+    Z_freq = Z.real * k_per[0] + Z.imag * k_per[1]
+
+    # corresponding plotting class
+    dics = []
+    for dic in ['sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
+        with open(f'parameters/{dic}.pkl', 'rb') as f:
+            dics.append(pickle.load(f))
+    sim_dict, net_dict, ana_dict, plot_dict = dics
+
+    pl = plotting.Plotting(
+        sim_dict, net_dict, ana_dict, plot_dict)
+
+    # overview figure
+    figures.theory_overview(
+        plot=pl,
+        working_point=wp,
+        frequencies=freqs,
+        power=power,
+        sensitvity_amplitude=Z_amp,
+        sensitivity_frequency=Z_freq,
+        sensitivity_popidx_freq=[pop_idx, frequency])
+
     return
 
 

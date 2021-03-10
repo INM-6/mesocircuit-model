@@ -9,18 +9,19 @@ key = 'local_mesocircuit'
 #key = 'local_macaqueV1'
 #key = 'local_mesomacaqueV1'
 
-mesoframe.evaluate_parameterspaces(
+parameterview = mesoframe.evaluate_parameterspaces(
     custom_ps_dicts=custom_ps_dicts,
     paramspace_keys=[key])
 
 # theory is not fully integrated because of dependence on lif_meanfield_tools
 if True:
-    import run_theory
-    run_theory.run_lmt(
-        paramspace_keys=[key])
+    mesoframe.run_parametersets(
+        func=mesoframe.run_single_lmt,
+        parameterview=parameterview)
 
-mesoframe.run_jobs(
-    paramspace_keys=[key],
+mesoframe.run_parametersets(
+    func=mesoframe.run_single_jobs,
+    parameterview=parameterview,
     jobs=[
         'network',
         'analysis_and_plotting',
