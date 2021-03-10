@@ -63,6 +63,9 @@ ps_dicts = {
     },
 
     'local_mesomacaqueV1': {
+        'sim_dict': {
+            **local_sim_dict,
+        },
         'net_dict': {
             **net_dict_mesomacaqueV1,
             'N_scaling': 0.008,
@@ -71,9 +74,14 @@ ps_dicts = {
     },
 
     'local_mesocircuit': {
+        'sim_dict': {
+            **local_sim_dict,
+        },
         'net_dict': {
             'N_scaling': 0.008,
             'K_scaling': 0.1,
+            #'g': ps.ParameterRange([-4.]),
+            #'bg_rate': ps.ParameterRange([8., 10.]),
         },
     },
 }
