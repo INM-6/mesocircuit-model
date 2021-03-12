@@ -468,8 +468,10 @@ def run_parametersets(
     data_dir
         Absolute path to write data to.
     """
-    if np.all(parameterview, paramspace_keys) or \
-            np.all(parameterview, paramspace_keys) == False:
+    # note that this comparison is not exhaustive
+    boolean = ((parameterview == None and paramspace_keys == None) or \
+               (parameterview != None and paramspace_keys != None))
+    if boolean:
         raise Exception('Specify either parameterview or paramspace_keys')
 
     print(f'Data directory: {data_dir}')
