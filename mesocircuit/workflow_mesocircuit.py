@@ -14,7 +14,7 @@ parameterview = mesoframe.evaluate_parameterspaces(
     paramspace_keys=[key])
 
 # theory is not fully integrated because of dependence on lif_meanfield_tools
-if True:
+if 0:
     mesoframe.run_parametersets(
         func=mesoframe.run_single_lmt,
         parameterview=parameterview)

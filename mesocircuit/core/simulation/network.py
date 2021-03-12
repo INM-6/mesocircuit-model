@@ -284,21 +284,31 @@ class Network:
             print('  Total number of virtual processes: {}'.format(N_vp))
             print('  Global random number generator seed: {}'.format(grng_seed))
             print(
-                '  Seeds for random number generators of virtual processes: ' +
+                '  Seeds for random number generators of virtual processes (old): ' +
                 '{}'.format(rng_seeds))
 
         # pass parameters to NEST kernel
+
+        # TODO adjust code on random number generator seeds if PR #1549 is merged
+        if 'grng_seed' in nest.GetKernelStatus(): # in NEST 2
+            rng_seed = 'grng_seed'
+        else:
+            rng_seed = 'rng_seed'
+
         self.sim_resolution = self.sim_dict['sim_resolution']
         kernel_dict = {
             'resolution': self.sim_resolution,
-            'grng_seed': grng_seed,
-            'rng_seeds': rng_seeds,
+            rng_seed: grng_seed,
             'overwrite_files': self.sim_dict['overwrite_files'],
             'print_time': self.sim_dict['print_time'],
             'data_path': 'raw_data',
             # set presimulation-prefix already here to avoid empty files without
             # prefix
             'data_prefix': 'presim_'}
+
+        if rng_seed == 'grng_seed': # in NEST 2
+            kernel_dict.update({'rng_seeds': rng_seeds})
+
         nest.SetKernelStatus(kernel_dict)
         return
 
