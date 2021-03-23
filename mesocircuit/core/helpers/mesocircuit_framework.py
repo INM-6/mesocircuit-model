@@ -240,7 +240,7 @@ def evaluate_parameterset(ps_id, paramset, full_data_path):
         'run_plotting.py',
         'core/simulation/network.py',
         'core/analysis/spike_analysis.py',
-        'core/analysis/statistics.py',
+        'core/analysis/stats.py',
         'core/plotting/plotting.py',
         'core/plotting/figures.py',
         'core/helpers/base_class.py',

@@ -8,7 +8,7 @@ compute statistics.
 
 from ..helpers import base_class
 from ..helpers import parallelism_time as pt
-import statistics
+from . import stats
 import fnmatch
 import re
 import tarfile
@@ -979,10 +979,10 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
             for j in range(len(idx_k)):
                 # correlated entries
-                x0 = statistics.ztransform(data0_prune)
+                x0 = stats.ztransform(data0_prune)
                 x0 /= x0.size
 
-                x1 = statistics.ztransform(data1_prune[j, :])
+                x1 = stats.ztransform(data1_prune[j, :])
 
                 cc[j, ] = np.correlate(x0, x1, 'same')[lag_inds][::-1]
 
