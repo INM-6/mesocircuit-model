@@ -178,6 +178,57 @@ def evaluate_parameterspaces(
                     parameterview, cls=NumpyEncoder, indent=2, sort_keys=True)
                 f.write(json_dump)
 
+
+            # sorted list of ranges
+            psview_ranges = \
+                parameterview[paramspace_key]['custom_params']['ranges']
+            ranges = [] 
+            for dic in sorted(psview_ranges.keys()):
+                for r in sorted(psview_ranges[dic].keys()):
+                    ranges.append([dic, r, psview_ranges[dic][r]])
+            dim = len(ranges) # dimension of parameter space
+            if dim not in [1, 2]:
+                raise Exception (
+                    f'Parameterspace {paramspace_key} has dimension {dim}' +
+                    'Hashes are not printed.')
+                return
+
+            # set up a hash map
+            shape = [len(r[2]) for r in ranges]
+            hashmap = np.zeros(shape, dtype=object)
+            psets = parameterview[paramspace_key]['paramsets']
+            for p,h in enumerate(psets.keys()):
+                d0_dict, d0_param, d0_range = ranges[0]
+                for i,val0 in enumerate(d0_range):
+                    if psets[h][d0_dict][d0_param] == val0:
+                        if dim == 1:
+                            hashmap[i] = h
+                        else:
+                            d1_dict, d1_param, d1_range = ranges[1]
+                            for j,val1 in enumerate(d1_range):
+                                if psets[h][d1_dict][d1_param] == val1:
+                                    if dim == 2:
+                                        hashmap[i][j] = h
+                                    else:
+                                        d2_dict, d2_param, d2_range = ranges[2]
+
+            # write ranges and hashmap to file
+            ranges_hashmap = {'ranges': ranges, 'hashmap': hashmap}
+            dir = os.path.join(data_dir, paramspace_key,
+                               'parameter_space', 'parameters')
+            # pickle for machine readability
+            with open(os.path.join(dir, 'ranges_hashmap.pkl'), 'wb') as f:
+                pickle.dump(ranges_hashmap, f)
+            # text for human readability
+            with open(os.path.join(dir, 'ranges_hashmap.txt'), 'w') as f:
+                for i,r in enumerate(ranges):
+                    lst = '[' + ', '.join([str(x) for x in r[2]]) + ']'
+                    line = f'dim{i}: {r[0]}[{r[1]}]: {lst}\n'
+                    f.write(line)
+                f.write('\n\n')
+                for line in np.matrix(hashmap):
+                    np.savetxt(f, line, fmt='%s')
+
     return parameterview
 
 
@@ -564,7 +615,7 @@ def run_single_lmt(paramspace_key, ps_id, data_dir=auto_data_directory()):
         A key identifying a parameter space.
     ps_id
         A parameter space id.
-    data_diri
+    data_dir
         Absolute path to write data to.
     """
     from ..plotting import figures, plotting
@@ -642,3 +693,5 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
 
         return json.JSONEncoder.default(self, obj)
+
+
