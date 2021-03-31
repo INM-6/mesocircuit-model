@@ -353,24 +353,34 @@ def parameterspace_overviews(paramspace_key, data_dir):
     import subprocess
     import pickle
 
-    # ranges and hash map
+    # height and width space in inch
+    hspace=0.7 # provide space for title
+    wspace=0.5
+ 
+    # load parameter space view, ranges and hash map
+    with open(os.path.join(data_dir, paramspace_key, 'parameter_space',
+                           'parameters', 'psview_dict.pkl'), 'rb') as f:
+        psview = pickle.load(f)
     with open(os.path.join(data_dir, paramspace_key, 'parameter_space',
                            'parameters', 'ranges_hashmap.pkl'), 'rb') as f:
         hashmap_ranges = pickle.load(f)
     ranges = hashmap_ranges['ranges']
     hashmap = hashmap_ranges['hashmap']
+
+    # infer 2D indices for figure
     shape = np.shape(hashmap)
     rows = shape[0]
     if len(shape) == 1:
         cols = 1
-        indices = np.arange(len(hashmap))
+        indices = np.zeros((rows, cols), dtype=object)
+        indices[:, 0] = np.arange(len(hashmap))
     elif len(shape) == 2:
         cols = shape[1]
         indices = np.zeros(shape, dtype=object)
         for r in np.arange(rows):
             for c in np.arange(cols):
                 indices[r,c] = (r,c)
-        indices = indices.flatten()
+    indices = indices.flatten()
 
     # existing single figures (exclude parameter_space folder)
     sfigs = glob.glob(os.path.join(data_dir, paramspace_key,
@@ -379,12 +389,22 @@ def parameterspace_overviews(paramspace_key, data_dir):
 
     for sf in sfigs:
         name, extension = sf.split('.')
-        # TODO take first existing
-        ext_file_name = os.path.join(data_dir, paramspace_key,
-                                     hashmap[indices[0]], 'plots', sf)
-        print(name, extension)
+        iterate_sf = True
+        for ind in indices:
+            try:
+                sfig_name = os.path.join(data_dir, paramspace_key,
+                                         hashmap[ind], 'plots', sf)
+                break
+            except:
+                print(f'Single figures {sf} do not exist in parameter space.')
+                iterate_sf = False
+        # stop processing of non-existing single figure
+        if iterate_sf == False:
+            break
+
+        # figure size
         if extension == 'pdf':
-            pdfinfo = subprocess.check_output(['pdfinfo', ext_file_name]).decode('utf-8')
+            pdfinfo = subprocess.check_output(['pdfinfo', sfig_name]).decode('utf-8')
             for line in pdfinfo.split('\n'):
                 if 'Page size' in line:
                     ps = line
@@ -392,17 +412,15 @@ def parameterspace_overviews(paramspace_key, data_dir):
             sfig_size_pts = [float(s) for s in ps]
             sfig_size = [pts / 72 for pts in sfig_size_pts] # to inch
         else:
-            raise Exception
-        
-        fig_size = [sfig_size[0] * cols, sfig_size[1] * rows]
+            raise Exception (
+                f'Size of {extension} figures cannot be inferred.')
 
-        fig = plt.figure(figsize=fig_size)
+        fig_size = (sfig_size[0] * cols + wspace * (cols - 1),
+                    sfig_size[1] * rows + hspace * rows)
 
+        # write tex script
         fname = os.path.join(data_dir, paramspace_key, 'parameter_space',
                              'plots', sf.split('.')[0])
-        master_file_name = fname + '_master.pdf'
-        fig.savefig(master_file_name)
-
         file = open('%s.tex' % fname , 'w')
         file.write(r"\documentclass{article}")
         file.write("\n")
@@ -411,8 +429,6 @@ def parameterspace_overviews(paramspace_key, data_dir):
         file.write(r"\geometry{paperwidth=%.3fin, paperheight=%.3fin, top=0pt, bottom=0pt, right=0pt, left=0pt}" % (fig_size[0],fig_size[1]))
         file.write("\n")
         file.write(r"\usepackage{tikz}")
-        file.write("\n")
-        file.write(r"\usepackage{graphicx}")
         file.write("\n")
         file.write(r"\pagestyle{empty}")
         file.write("\n")
@@ -424,32 +440,52 @@ def parameterspace_overviews(paramspace_key, data_dir):
         file.write("\n")
         file.write(r"  \begin{tikzpicture}")
         file.write("\n")
-        file.write(r"    \node[inner sep=-1pt] (matplotlib_figure) at (0,0)")
-        file.write("\n")
-        file.write(r"    {\includegraphics{%s}};" % (master_file_name))
-        file.write("\n")
 
+        def strfmt(raw):
+            """ Converts to string and replaces underscore. """
+            if isinstance(raw, float):
+                fmt = f'{raw:.3f}'
+            if isinstance(raw, int):
+                fmt = str(raw)
+            elif isinstance(raw, str):
+                fmt = '\_'.join(raw.split('_'))
+            return fmt
+
+        # iterate over parametersets and insert single figures
         for ind in indices:
-            if len(shape) == 1:
-                xshift = -0.5*fig_size[0] + sfig_size[0] * (0.5 + ind)
-                yshift = 0
-            elif len(shape) == 2:
-                xshift = -0.5*fig_size[0] + sfig_size[0] * (0.5 + ind[1])
-                yshift = 0.5*fig_size[1] - sfig_size[1] * (0.5 + ind[0])
+            # label
+            h = hashmap[ind]
+            label = '[align=left]' + h
+            for i,r in enumerate(ranges):
+                label += r"\\ "
+                val = psview[paramspace_key]['paramsets'][h][r[0]][r[1]]
+                label += f'{strfmt(r[0])}[{strfmt(r[1])}] = {strfmt(val)}'
 
-            pos_ext_figure =  (xshift, yshift)
-            print(sfig_size, fig_size)
-            print(ind, pos_ext_figure)
+            # position
+            pos = (-0.5*fig_size[0] + sfig_size[0] * (0.5 + ind[1]) + wspace * ind[1],
+                   0.5*fig_size[1] - sfig_size[1] * (0.5 + ind[0]) - hspace * (ind[0] + 1))
 
+            file.write(r"    \node[label={%s},inner sep=-1pt,rectangle] at (%.4fin,%.4fin)" % (label, pos[0],pos[1]))
 
-            ext_file_name = os.path.join(data_dir, paramspace_key,
+            # single figure file name
+            sfig_name = os.path.join(data_dir, paramspace_key,
                                          hashmap[ind], 'plots', sf)
+            file.write("\n")
+            file.write(r"    {\includegraphics{%s}};" % (sfig_name))
+            file.write("\n")
 
-            file.write(r"    \node[inner sep=-1pt,rectangle] (inkscape_sketch) at (%.4fin,%.4fin)" % (pos_ext_figure[0],pos_ext_figure[1]))
+        # draw grid
+        for x in np.arange(cols - 1):
+            xval = -0.5 * (fig_size[0]+wspace) + (sfig_size[0]+ wspace) * (x+1)
+            file.write(r"    \draw ({%.4fin},{%.4fin}) --({%.4fin},{%.4fin});" % (
+                xval, -0.5 * fig_size[1], xval, 0.5 * fig_size[1]))
             file.write("\n")
-            file.write(r"    {\includegraphics{%s}};" % (ext_file_name))
+        for y in np.arange(rows - 1):
+            yval = 0.5 * fig_size[1] - (hspace + sfig_size[1]) * (y + 1)
+            file.write(r"    \draw ({%.4fin},{%.4fin}) --({%.4fin},{%.4fin});" % (
+                -0.5 * fig_size[0], yval, 0.5 * fig_size[0], yval))
             file.write("\n")
-  
+
         file.write(r"  \end{tikzpicture}")
         file.write("\n")
         file.write(r"}")
@@ -464,6 +500,9 @@ def parameterspace_overviews(paramspace_key, data_dir):
             os.path.join(data_dir, paramspace_key, 'parameter_space','plots'),
             fname))
 
-        #raise Exception
-
+        # remove unnecessary files
+        for ext in ['aux', 'log', 'tex']:
+            os.system('rm ' + 
+                os.path.join(data_dir, paramspace_key, 'parameter_space','plots',
+                f'{fname}.{ext}'))
     return
