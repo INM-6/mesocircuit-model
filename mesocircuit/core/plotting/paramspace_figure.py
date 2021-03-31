@@ -7,6 +7,7 @@ import glob
 import matplotlib
 matplotlib.use('Agg')
 
+
 def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
     """
     TODO use auto data dir when mesocircuit_framework is revised
@@ -37,7 +38,7 @@ def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
         if isinstance(raw, int):
             fmt = str(raw)
         elif isinstance(raw, str):
-            fmt = '\_'.join(raw.split('_'))
+            fmt = r'\_'.join(raw.split('_'))
         return fmt
 
     # load parameter space view, ranges and hash map
@@ -57,7 +58,7 @@ def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
     indices = np.zeros(shape, dtype=object)
     for r in np.arange(rows):
         for c in np.arange(cols):
-            indices[r,c] = (r,c)
+            indices[r, c] = (r, c)
     indices = indices.flatten()
     print(indices)
 
@@ -77,24 +78,25 @@ def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
                 sfig_name = os.path.join(data_dir, paramspace_key,
                                          hashmap[ind], 'plots', sf)
                 break
-            except:
+            except BaseException:
                 print(f'Single figures {sf} do not exist in parameter space.')
                 iterate_sf = False
         # stop processing of non-existing single figure
-        if iterate_sf == False:
+        if not iterate_sf:
             break
 
         # figure size
         if extension == 'pdf':
-            pdfinfo = subprocess.check_output(['pdfinfo', sfig_name]).decode('utf-8')
+            pdfinfo = subprocess.check_output(
+                ['pdfinfo', sfig_name]).decode('utf-8')
             for line in pdfinfo.split('\n'):
                 if 'Page size' in line:
                     ps = line
             ps = ps.split(':')[1].split('pts')[0].split('x')
             sfig_size_pts = [float(s) for s in ps]
-            sfig_size = [pts / 72 for pts in sfig_size_pts] # to inch
+            sfig_size = [pts / 72 for pts in sfig_size_pts]  # to inch
         else:
-            raise Exception (
+            raise Exception(
                 f'Size of {extension} figures cannot be inferred.')
 
         fig_size = (sfig_size[0] * cols + wspace * (cols - 1),
@@ -103,12 +105,14 @@ def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
         # write tex script
         fname = os.path.join(data_dir, paramspace_key, 'parameter_space',
                              'plots', sf.split('.')[0])
-        file = open('%s.tex' % fname , 'w')
+        file = open('%s.tex' % fname, 'w')
         file.write(r"\documentclass{article}")
         file.write("\n")
         file.write(r"\usepackage{geometry}")
         file.write("\n")
-        file.write(r"\geometry{paperwidth=%.3fin, paperheight=%.3fin, top=0pt, bottom=0pt, right=0pt, left=0pt}" % (fig_size[0],fig_size[1]))
+        file.write(
+            r"\geometry{paperwidth=%.3fin, paperheight=%.3fin, top=0pt, bottom=0pt, right=0pt, left=0pt}" %
+            (fig_size[0], fig_size[1]))
         file.write("\n")
         file.write(r"\usepackage{tikz}")
         file.write("\n")
@@ -128,34 +132,39 @@ def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
             # label
             h = hashmap[ind]
             label = '[align=left]' + h
-            for i,r in enumerate(ranges):
+            for i, r in enumerate(ranges):
                 label += r"\\ "
                 val = psview[paramspace_key]['paramsets'][h][r[0]][r[1]]
                 label += f'{__strfmt(r[0])}[{__strfmt(r[1])}] = {__strfmt(val)}'
 
             # position
-            pos = (-0.5*fig_size[0] + sfig_size[0] * (0.5 + ind[1]) + wspace * ind[1],
-                   0.5*fig_size[1] - sfig_size[1] * (0.5 + ind[0]) - hspace * (ind[0] + 1))
+            pos = (-0.5 * fig_size[0] + sfig_size[0] * (0.5 + ind[1]) + wspace * ind[1],
+                   0.5 * fig_size[1] - sfig_size[1] * (0.5 + ind[0]) - hspace * (ind[0] + 1))
 
-            file.write(r"    \node[label={%s},inner sep=-1pt,rectangle] at (%.4fin,%.4fin)" % (label, pos[0],pos[1]))
+            file.write(
+                r"    \node[label={%s},inner sep=-1pt,rectangle] at (%.4fin,%.4fin)" %
+                (label, pos[0], pos[1]))
 
             # single figure file name
             sfig_name = os.path.join(data_dir, paramspace_key,
-                                         hashmap[ind], 'plots', sf)
+                                     hashmap[ind], 'plots', sf)
             file.write("\n")
             file.write(r"    {\includegraphics{%s}};" % (sfig_name))
             file.write("\n")
 
         # draw grid
         for x in np.arange(cols - 1):
-            xval = -0.5 * (fig_size[0]+wspace) + (sfig_size[0]+ wspace) * (x+1)
-            file.write(r"    \draw ({%.4fin},{%.4fin}) --({%.4fin},{%.4fin});" % (
-                xval, -0.5 * fig_size[1], xval, 0.5 * fig_size[1]))
+            xval = -0.5 * (fig_size[0] + wspace) + \
+                (sfig_size[0] + wspace) * (x + 1)
+            file.write(
+                r"    \draw ({%.4fin},{%.4fin}) --({%.4fin},{%.4fin});" %
+                (xval, -0.5 * fig_size[1], xval, 0.5 * fig_size[1]))
             file.write("\n")
         for y in np.arange(rows - 1):
             yval = 0.5 * fig_size[1] - (hspace + sfig_size[1]) * (y + 1)
-            file.write(r"    \draw ({%.4fin},{%.4fin}) --({%.4fin},{%.4fin});" % (
-                -0.5 * fig_size[0], yval, 0.5 * fig_size[0], yval))
+            file.write(
+                r"    \draw ({%.4fin},{%.4fin}) --({%.4fin},{%.4fin});" %
+                (-0.5 * fig_size[0], yval, 0.5 * fig_size[0], yval))
             file.write("\n")
 
         file.write(r"  \end{tikzpicture}")
@@ -169,12 +178,12 @@ def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
 
         # execute tex script
         os.system('pdflatex -output-directory=%s %s.tex' % (
-            os.path.join(data_dir, paramspace_key, 'parameter_space','plots'),
+            os.path.join(data_dir, paramspace_key, 'parameter_space', 'plots'),
             fname))
 
         # remove unnecessary files
         for ext in ['aux', 'log', 'tex']:
-            os.system('rm ' + 
-                os.path.join(data_dir, paramspace_key, 'parameter_space','plots',
-                f'{fname}.{ext}'))
+            os.system('rm ' +
+                      os.path.join(data_dir, paramspace_key, 'parameter_space',
+                                   'plots', f'{fname}.{ext}'))
     return

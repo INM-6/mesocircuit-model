@@ -43,7 +43,7 @@ def auto_data_directory():
 
 
 def extend_existing_parameterspaces(
-    custom_key, custom_params, base_key, base_ps_dicts):
+        custom_key, custom_params, base_key, base_ps_dicts):
     """
     Adds a new parameter space to existing dictionary.
 
@@ -205,15 +205,14 @@ def evaluate_parameterspaces(
                     parameterview, cls=NumpyEncoder, indent=2, sort_keys=True)
                 f.write(json_dump)
 
-
             # sorted list of ranges (if any exist)
             psview_ranges = \
                 parameterview[paramspace_key]['custom_params']['ranges']
-            ranges = [] 
+            ranges = []
             for dic in sorted(psview_ranges.keys()):
                 for r in sorted(psview_ranges[dic].keys()):
                     ranges.append([dic, r, psview_ranges[dic][r]])
-            dim = len(ranges) # dimension of parameter space
+            dim = len(ranges)  # dimension of parameter space
             if dim not in [1, 2]:
                 print(
                     f'Parameterspace {paramspace_key} has dimension {dim}. ' +
@@ -223,15 +222,15 @@ def evaluate_parameterspaces(
                 shape = [len(r[2]) for r in ranges]
                 hashmap = np.zeros(shape, dtype=object)
                 psets = parameterview[paramspace_key]['paramsets']
-                for p,h in enumerate(psets.keys()):
+                for p, h in enumerate(psets.keys()):
                     d0_dict, d0_param, d0_range = ranges[0]
-                    for i,val0 in enumerate(d0_range):
+                    for i, val0 in enumerate(d0_range):
                         if psets[h][d0_dict][d0_param] == val0:
                             if dim == 1:
                                 hashmap[i] = h
                             else:
                                 d1_dict, d1_param, d1_range = ranges[1]
-                                for j,val1 in enumerate(d1_range):
+                                for j, val1 in enumerate(d1_range):
                                     if psets[h][d1_dict][d1_param] == val1:
                                         if dim == 2:
                                             hashmap[i][j] = h
@@ -243,13 +242,13 @@ def evaluate_parameterspaces(
                 # write ranges and hashmap to file
                 ranges_hashmap = {'ranges': ranges, 'hashmap': hashmap}
                 dir = os.path.join(data_dir, paramspace_key,
-                                'parameter_space', 'parameters')
+                                   'parameter_space', 'parameters')
                 # pickle for machine readability
                 with open(os.path.join(dir, 'ranges_hashmap.pkl'), 'wb') as f:
                     pickle.dump(ranges_hashmap, f)
                 # text for human readability
                 with open(os.path.join(dir, 'ranges_hashmap.txt'), 'w') as f:
-                    for i,r in enumerate(ranges):
+                    for i, r in enumerate(ranges):
                         lst = '[' + ', '.join([str(x) for x in r[2]]) + ']'
                         line = f'dim{i}: {r[0]}[{r[1]}]: {lst}\n'
                         f.write(line)
@@ -548,8 +547,8 @@ def run_parametersets(
         Absolute path to write data to.
     """
     # note that this comparison is not exhaustive
-    boolean = ((parameterview == None and paramspace_keys == None) or \
-               (parameterview != None and paramspace_keys != None))
+    boolean = ((parameterview is None and paramspace_keys is None) or
+               (parameterview is not None and paramspace_keys is not None))
     if boolean:
         raise Exception('Specify either parameterview or paramspace_keys')
 
@@ -628,7 +627,7 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
         print('Running ' + info)
         for job in jobs:
             os.system(f'sh jobscripts/{machine}_{job}.sh')
-    
+
     os.chdir(cwd)
     return
 
@@ -724,5 +723,3 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
 
         return json.JSONEncoder.default(self, obj)
-
-

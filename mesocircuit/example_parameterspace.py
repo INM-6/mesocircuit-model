@@ -17,7 +17,7 @@ custom_ps_dicts = mesoframe.extend_existing_parameterspaces(
             'bg_rate': ps.ParameterRange([8., 8.5, 9.])
         }},
     base_key='local_mesocircuit',
-    base_ps_dicts = ps_dicts)
+    base_ps_dicts=ps_dicts)
 print(f'Custom parameters of {key}:\n', custom_ps_dicts[key])
 
 if 1:
@@ -35,8 +35,7 @@ if 1:
         ],
         machine='local')
 
-if 1: # should be executed locally as it depends on latex
-   psfig.parameterspace_overviews(
-       paramspace_key=key,
-       data_dir=mesoframe.auto_data_directory())
-
+if 1:  # should be executed locally as it depends on latex
+    psfig.parameterspace_overviews(
+        paramspace_key=key,
+        data_dir=mesoframe.auto_data_directory())
