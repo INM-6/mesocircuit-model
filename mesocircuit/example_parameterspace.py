@@ -35,7 +35,7 @@ if 1:
         ],
         machine='local')
 
-if 0: # should be executed locally as it depends on latex
+if 1: # should be executed locally as it depends on latex
    psfig.parameterspace_overviews(
        paramspace_key=key,
        data_dir=mesoframe.auto_data_directory())

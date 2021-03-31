@@ -218,45 +218,44 @@ def evaluate_parameterspaces(
                 print(
                     f'Parameterspace {paramspace_key} has dimension {dim}. ' +
                     'Hashes are not printed.')
-                return
+            else:
+                # set up a hash map
+                shape = [len(r[2]) for r in ranges]
+                hashmap = np.zeros(shape, dtype=object)
+                psets = parameterview[paramspace_key]['paramsets']
+                for p,h in enumerate(psets.keys()):
+                    d0_dict, d0_param, d0_range = ranges[0]
+                    for i,val0 in enumerate(d0_range):
+                        if psets[h][d0_dict][d0_param] == val0:
+                            if dim == 1:
+                                hashmap[i] = h
+                            else:
+                                d1_dict, d1_param, d1_range = ranges[1]
+                                for j,val1 in enumerate(d1_range):
+                                    if psets[h][d1_dict][d1_param] == val1:
+                                        if dim == 2:
+                                            hashmap[i][j] = h
+                                        else:
+                                            d2_dict, d2_param, d2_range = ranges[2]
+                if dim == 1:
+                    hashmap = hashmap.reshape(-1, 1)
 
-            # set up a hash map
-            shape = [len(r[2]) for r in ranges]
-            hashmap = np.zeros(shape, dtype=object)
-            psets = parameterview[paramspace_key]['paramsets']
-            for p,h in enumerate(psets.keys()):
-                d0_dict, d0_param, d0_range = ranges[0]
-                for i,val0 in enumerate(d0_range):
-                    if psets[h][d0_dict][d0_param] == val0:
-                        if dim == 1:
-                            hashmap[i] = h
-                        else:
-                            d1_dict, d1_param, d1_range = ranges[1]
-                            for j,val1 in enumerate(d1_range):
-                                if psets[h][d1_dict][d1_param] == val1:
-                                    if dim == 2:
-                                        hashmap[i][j] = h
-                                    else:
-                                        d2_dict, d2_param, d2_range = ranges[2]
-            if dim == 1:
-                hashmap = hashmap.reshape(-1, 1)
-
-            # write ranges and hashmap to file
-            ranges_hashmap = {'ranges': ranges, 'hashmap': hashmap}
-            dir = os.path.join(data_dir, paramspace_key,
-                               'parameter_space', 'parameters')
-            # pickle for machine readability
-            with open(os.path.join(dir, 'ranges_hashmap.pkl'), 'wb') as f:
-                pickle.dump(ranges_hashmap, f)
-            # text for human readability
-            with open(os.path.join(dir, 'ranges_hashmap.txt'), 'w') as f:
-                for i,r in enumerate(ranges):
-                    lst = '[' + ', '.join([str(x) for x in r[2]]) + ']'
-                    line = f'dim{i}: {r[0]}[{r[1]}]: {lst}\n'
-                    f.write(line)
-                f.write('\n\n')
-                for line in np.matrix(hashmap):
-                    np.savetxt(f, line, fmt='%s')
+                # write ranges and hashmap to file
+                ranges_hashmap = {'ranges': ranges, 'hashmap': hashmap}
+                dir = os.path.join(data_dir, paramspace_key,
+                                'parameter_space', 'parameters')
+                # pickle for machine readability
+                with open(os.path.join(dir, 'ranges_hashmap.pkl'), 'wb') as f:
+                    pickle.dump(ranges_hashmap, f)
+                # text for human readability
+                with open(os.path.join(dir, 'ranges_hashmap.txt'), 'w') as f:
+                    for i,r in enumerate(ranges):
+                        lst = '[' + ', '.join([str(x) for x in r[2]]) + ']'
+                        line = f'dim{i}: {r[0]}[{r[1]}]: {lst}\n'
+                        f.write(line)
+                    f.write('\n\n')
+                    for line in np.matrix(hashmap):
+                        np.savetxt(f, line, fmt='%s')
 
     return parameterview
 
