@@ -1,7 +1,3 @@
-import os
-import numpy as np
-import parameters as ps
-
 local_sim_dict = {
     'print_time': True}
 
@@ -28,6 +24,8 @@ net_dict_mesomacaqueV1 = {
 
 # main dictionary as used by evaluate_parameterspaces() in helpers.py
 ps_dicts = {
+    'base': {},
+
     'microcircuit': {
         'net_dict': {
             **net_dict_microcircuit,
@@ -80,8 +78,6 @@ ps_dicts = {
         'net_dict': {
             'N_scaling': 0.008,
             'K_scaling': 0.1,
-            #'g': ps.ParameterRange([-4.]),
-            #'bg_rate': ps.ParameterRange([8., 10.]),
         },
     },
 }
