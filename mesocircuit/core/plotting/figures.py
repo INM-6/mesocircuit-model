@@ -7,6 +7,8 @@ Definition of figures plotted with Plotting class in plotting.py.
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import glob
 import h5py
 import matplotlib
 matplotlib.use('Agg')
@@ -339,4 +341,129 @@ def theory_overview(
         plot.add_label(axes[i], label)
 
     plot.savefig('theory_overview')
+    return
+
+
+def parameterspace_overviews(paramspace_key, data_dir):
+    print('Plotting overviews for parameter space.')
+    """
+    TODO use auto data dir
+    """
+    
+    import subprocess
+    import pickle
+
+    # ranges and hash map
+    with open(os.path.join(data_dir, paramspace_key, 'parameter_space',
+                           'parameters', 'ranges_hashmap.pkl'), 'rb') as f:
+        hashmap_ranges = pickle.load(f)
+    ranges = hashmap_ranges['ranges']
+    hashmap = hashmap_ranges['hashmap']
+    shape = np.shape(hashmap)
+    rows = shape[0]
+    if len(shape) == 1:
+        cols = 1
+        indices = np.arange(len(hashmap))
+    elif len(shape) == 2:
+        cols = shape[1]
+        indices = np.zeros(shape, dtype=object)
+        for r in np.arange(rows):
+            for c in np.arange(cols):
+                indices[r,c] = (r,c)
+        indices = indices.flatten()
+
+    # existing single figures (exclude parameter_space folder)
+    sfigs = glob.glob(os.path.join(data_dir, paramspace_key,
+                                   '[!parameter_space]*', 'plots', '*'))
+    sfigs = np.unique([os.path.basename(p) for p in sfigs])
+
+    for sf in sfigs:
+        name, extension = sf.split('.')
+        # TODO take first existing
+        ext_file_name = os.path.join(data_dir, paramspace_key,
+                                     hashmap[indices[0]], 'plots', sf)
+        print(name, extension)
+        if extension == 'pdf':
+            pdfinfo = subprocess.check_output(['pdfinfo', ext_file_name]).decode('utf-8')
+            for line in pdfinfo.split('\n'):
+                if 'Page size' in line:
+                    ps = line
+            ps = ps.split(':')[1].split('pts')[0].split('x')
+            sfig_size_pts = [float(s) for s in ps]
+            sfig_size = [pts / 72 for pts in sfig_size_pts] # to inch
+        else:
+            raise Exception
+        
+        fig_size = [sfig_size[0] * cols, sfig_size[1] * rows]
+
+        fig = plt.figure(figsize=fig_size)
+
+        fname = os.path.join(data_dir, paramspace_key, 'parameter_space',
+                             'plots', sf.split('.')[0])
+        master_file_name = fname + '_master.pdf'
+        fig.savefig(master_file_name)
+
+        file = open('%s.tex' % fname , 'w')
+        file.write(r"\documentclass{article}")
+        file.write("\n")
+        file.write(r"\usepackage{geometry}")
+        file.write("\n")
+        file.write(r"\geometry{paperwidth=%.3fin, paperheight=%.3fin, top=0pt, bottom=0pt, right=0pt, left=0pt}" % (fig_size[0],fig_size[1]))
+        file.write("\n")
+        file.write(r"\usepackage{tikz}")
+        file.write("\n")
+        file.write(r"\usepackage{graphicx}")
+        file.write("\n")
+        file.write(r"\pagestyle{empty}")
+        file.write("\n")
+        file.write(r"\begin{document}")
+        file.write("\n")
+        file.write(r"\noindent")
+        file.write("\n")
+        file.write(r"\resizebox{\paperwidth}{!}{")
+        file.write("\n")
+        file.write(r"  \begin{tikzpicture}")
+        file.write("\n")
+        file.write(r"    \node[inner sep=-1pt] (matplotlib_figure) at (0,0)")
+        file.write("\n")
+        file.write(r"    {\includegraphics{%s}};" % (master_file_name))
+        file.write("\n")
+
+        for ind in indices:
+            if len(shape) == 1:
+                xshift = -0.5*fig_size[0] + sfig_size[0] * (0.5 + ind)
+                yshift = 0
+            elif len(shape) == 2:
+                xshift = -0.5*fig_size[0] + sfig_size[0] * (0.5 + ind[1])
+                yshift = 0.5*fig_size[1] - sfig_size[1] * (0.5 + ind[0])
+
+            pos_ext_figure =  (xshift, yshift)
+            print(sfig_size, fig_size)
+            print(ind, pos_ext_figure)
+
+
+            ext_file_name = os.path.join(data_dir, paramspace_key,
+                                         hashmap[ind], 'plots', sf)
+
+            file.write(r"    \node[inner sep=-1pt,rectangle] (inkscape_sketch) at (%.4fin,%.4fin)" % (pos_ext_figure[0],pos_ext_figure[1]))
+            file.write("\n")
+            file.write(r"    {\includegraphics{%s}};" % (ext_file_name))
+            file.write("\n")
+  
+        file.write(r"  \end{tikzpicture}")
+        file.write("\n")
+        file.write(r"}")
+        file.write("\n")
+        file.write(r"\end{document}")
+        file.write("\n")
+
+        file.close()
+
+        # execute tex script
+        os.system('pdflatex -output-directory=%s %s.tex' % (
+            os.path.join(data_dir, paramspace_key, 'parameter_space','plots'),
+            fname))
+
+        #raise Exception
+
     return
