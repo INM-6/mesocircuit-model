@@ -42,6 +42,34 @@ def auto_data_directory():
     return data_dir
 
 
+def extend_existing_parameterspaces(
+    custom_key, custom_params, base_key, base_ps_dicts):
+    """
+    Adds a new parameter space to existing dictionary.
+
+    Parameters
+    ----------
+    custom_key
+        New parameter space key.
+    custom_params
+        New parameters (may include ranges).
+    base_key
+        New dictionary with custom_key will be based on this dictionary.
+    base_ps_dicts
+        Base parameter space dictionaries containing a parameter space (or set)
+        corresponding to base_key.
+    """
+    custom_ps_dicts = dict(base_ps_dicts)
+    custom_ps_dicts[custom_key] = dict(custom_ps_dicts[base_key])
+    for dic in custom_params.keys():
+        if dic in custom_ps_dicts[custom_key].keys():
+            custom_ps_dicts[custom_key][dic].update(custom_params[dic])
+        else:
+            custom_ps_dicts[custom_key][dic] = custom_params[dic]
+
+    return custom_ps_dicts
+
+
 def evaluate_parameterspaces(
         custom_ps_dicts='', paramspace_keys=[], with_base_params=False,
         data_dir=auto_data_directory()):
@@ -68,7 +96,6 @@ def evaluate_parameterspaces(
     parameterview
         Dictionary of evaluated parameter spaces as overview.
     """
-
     ps_dicts = {}
 
     if custom_ps_dicts != '':
@@ -87,7 +114,7 @@ def evaluate_parameterspaces(
     for paramspace_key in sorted(ps_dicts):
         if (len(paramspace_keys) == 0 or  # all keys
             paramspace_key in paramspace_keys or  # selected key(s)
-                paramspace_key == 'base'):  # base parameters if with_base_params
+                (with_base_params and paramspace_key == 'base')):
             parameterview[paramspace_key] = {}
             parameterview[paramspace_key]['custom_params'] = {}
             parameterview[paramspace_key]['custom_params']['ranges'] = {}
@@ -179,7 +206,7 @@ def evaluate_parameterspaces(
                 f.write(json_dump)
 
 
-            # sorted list of ranges
+            # sorted list of ranges (if any exist)
             psview_ranges = \
                 parameterview[paramspace_key]['custom_params']['ranges']
             ranges = [] 
@@ -188,8 +215,8 @@ def evaluate_parameterspaces(
                     ranges.append([dic, r, psview_ranges[dic][r]])
             dim = len(ranges) # dimension of parameter space
             if dim not in [1, 2]:
-                raise Exception (
-                    f'Parameterspace {paramspace_key} has dimension {dim}' +
+                print(
+                    f'Parameterspace {paramspace_key} has dimension {dim}. ' +
                     'Hashes are not printed.')
                 return
 
@@ -211,6 +238,8 @@ def evaluate_parameterspaces(
                                         hashmap[i][j] = h
                                     else:
                                         d2_dict, d2_param, d2_range = ranges[2]
+            if dim == 1:
+                hashmap = hashmap.reshape(-1, 1)
 
             # write ranges and hashmap to file
             ranges_hashmap = {'ranges': ranges, 'hashmap': hashmap}
@@ -574,6 +603,7 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
     """
     # change to directory with copied files
     full_data_path = os.path.join(data_dir, paramspace_key, ps_id)
+    cwd = os.getcwd()
     os.chdir(full_data_path)
 
     jobinfo = ' and '.join(jobs) if len(jobs) > 1 else jobs[0]
@@ -599,6 +629,8 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
         print('Running ' + info)
         for job in jobs:
             os.system(f'sh jobscripts/{machine}_{job}.sh')
+    
+    os.chdir(cwd)
     return
 
 
