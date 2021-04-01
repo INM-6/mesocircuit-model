@@ -7,6 +7,8 @@ Definition of figures plotted with Plotting class in plotting.py.
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import glob
 import h5py
 import matplotlib
 matplotlib.use('Agg')

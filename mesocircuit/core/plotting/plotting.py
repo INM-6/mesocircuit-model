@@ -1050,7 +1050,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
             pdftops).
         """
 
-        path_fn = os.path.join(self.sim_dict['path_plots'], filename)
+        path_fn = os.path.join('plots', filename)
 
         if self.plot_dict['extension'] == '.eps' and eps_conv:
 
