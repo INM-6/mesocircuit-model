@@ -60,7 +60,6 @@ def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
         for c in np.arange(cols):
             indices[r, c] = (r, c)
     indices = indices.flatten()
-    print(indices)
 
     # existing single figures (exclude parameter_space folder)
     sfigs = glob.glob(os.path.join(data_dir, paramspace_key,
@@ -72,18 +71,13 @@ def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
     for sf in sfigs:
         print(f'  Plotting {sf} for parameter space.')
         name, extension = sf.split('.')
-        iterate_sf = True
+
+        # find first existing figure
         for ind in indices:
-            try:
-                sfig_name = os.path.join(data_dir, paramspace_key,
-                                         hashmap[ind], 'plots', sf)
+            sfig_name = os.path.join(data_dir, paramspace_key,
+                                     hashmap[ind], 'plots', sf)
+            if os.path.isfile(sfig_name):
                 break
-            except BaseException:
-                print(f'Single figures {sf} do not exist in parameter space.')
-                iterate_sf = False
-        # stop processing of non-existing single figure
-        if not iterate_sf:
-            break
 
         # figure size
         if extension == 'pdf':
@@ -144,12 +138,17 @@ def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
             file.write(
                 r"    \node[label={%s},inner sep=-1pt,rectangle] at (%.4fin,%.4fin)" %
                 (label, pos[0], pos[1]))
+            file.write("\n")
 
             # single figure file name
             sfig_name = os.path.join(data_dir, paramspace_key,
                                      hashmap[ind], 'plots', sf)
-            file.write("\n")
-            file.write(r"    {\includegraphics{%s}};" % (sfig_name))
+            if os.path.isfile(sfig_name):
+                file.write(r"    {\includegraphics{%s}};" % (sfig_name))
+            else:
+                print(f'Figure {sf} of {h} does not exist.')
+
+                file.write(r"    {};")
             file.write("\n")
 
         # draw grid
