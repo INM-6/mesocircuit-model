@@ -128,11 +128,14 @@ def evaluate_parameterspaces(
                 parameterspaces[paramspace_key][dic] = dict(
                     vdic)  # copy is needed
                 if dic in ps_dicts[paramspace_key]:
-                    parameterspaces[paramspace_key][dic].update(
+                    parameterspaces[paramspace_key][dic] = __merge_dictionaries(
+                        parameterspaces[paramspace_key][dic],
                         ps_dicts[paramspace_key][dic])
 
                     # ranges and values from parameter space that overwrite the
                     # base parameters
+                    # TODO: this is not implemented for deeper dictionaries, yet
+                    # (could be handled as __merge_dictionaries())
                     for param, val in ps_dicts[paramspace_key][dic].items():
                         if isinstance(val, ps.ParameterRange):
                             if dic not in parameterview[paramspace_key][
@@ -708,6 +711,30 @@ def run_single_lmt(paramspace_key, ps_id, data_dir=auto_data_directory()):
 
     return
 
+
+def __merge_dictionaries(main_dict, new_dict):
+    """
+    Merges new dictionary recursively into main dictionary.
+
+    Parameters
+    ----------
+    main_dict
+        Main dictionary.
+    new_dict
+        New dictionary with entries to overwrite main_dict.
+
+    Returns
+    -------
+    main_dict
+        Updated dictionary.
+    """
+    for key, val in new_dict.items():
+        if isinstance(val, dict):
+            node = main_dict.setdefault(key, {})
+            __merge_dictionaries(node, val)
+        else:
+            main_dict[key] = val
+    return main_dict
 
 class NumpyEncoder(json.JSONEncoder):
     """
