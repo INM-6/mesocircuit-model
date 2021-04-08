@@ -326,7 +326,8 @@ def evaluate_parameterset(ps_id, paramset, full_data_path):
         'core/plotting/figures.py',
         'core/helpers/base_class.py',
         'core/helpers/mpiops.py',
-        'core/helpers/parallelism_time.py'
+        'core/helpers/parallelism_time.py',
+        'core/helpers/io.py'
     ]:
         shutil.copyfile(f, os.path.join(full_data_path, 'code', f))
 
@@ -424,7 +425,7 @@ def write_jobscripts(sys_dict, path):
                               ['plotting', ['run_plotting.py']],
                               ['analysis_and_plotting', ['run_analysis.py',
                                                          'run_plotting.py']],
-                              ['lfp'], ['run_lfp_simulation.py'],
+                              # ['lfp'], ['run_lfp_simulation.py'],
                               ]:
 
             # key of sys_dict defining resources

@@ -9,7 +9,7 @@ compute statistics.
 from ..helpers import base_class
 from ..helpers import parallelism_time as pt
 from ..helpers.io import load_h5_to_sparse_X
-from .. import stats
+from . import stats
 import fnmatch
 import re
 import tarfile
