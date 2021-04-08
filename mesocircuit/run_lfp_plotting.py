@@ -35,8 +35,7 @@ sim_dict, net_dict, ana_dict = dics
 ##########################################################################
 # LFP output directory
 ##########################################################################
-path_lfp_data = os.path.join(sim_dict['data_path'], 'lfp',
-                             os.path.split(path_parameters)[-1])
+path_lfp_data = os.path.join(os.path.split(path_parameters)[0], 'lfp')
 
 ##########################################################################
 # get ParameterSet object instance with all required parameters for LFPs
