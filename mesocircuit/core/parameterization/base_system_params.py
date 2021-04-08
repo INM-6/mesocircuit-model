@@ -5,8 +5,7 @@ A dictionary with parameters defining machine configurations.
 
 """
 
-import multiprocessing as mp
-
+import sys
 
 # parameters have to be specified for each machine type individually
 sys_dict = {
@@ -49,7 +48,8 @@ sys_dict = {
             'local_num_threads': 'auto'},
         'analysis_and_plotting': {
             # '$(nproc)' gives the number of available logical cores
-            'num_mpi': mp.cpu_count() // 2  # disable multithreading
+            'num_mpi': ('$(sysctl -n hw.physicalcpu)'
+                        if sys.platform == 'darwin' else '$(nproc)')
         }
     }
 }
