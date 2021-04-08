@@ -129,13 +129,14 @@ def network_lfp_activity_animation(PS, net_dict, networkSim, T=(
     # srate = f['srate'][()]
 
     # draw image plot on axes
-    im = ax.pcolormesh(np.r_[0:4001:400] -
-                       2000, np.r_[0:4001:400] -
-                       2000, data[:, :, 0], vmin=-
-                       data.std() *
-                       4, vmax=data.std() *
-                       4, zorder=-
-                       1, cmap='RdBu')
+    im = ax.pcolormesh(np.r_[0:4001:400] - 2000,
+                       np.r_[0:4001:400] - 2000,
+                       data[:, :, 0],
+                       vmin=-data.std() * 4,
+                       vmax=data.std() * 4,
+                       zorder=-1,
+                       cmap='RdBu',
+                       shading='auto')
 
     cbar = plt.colorbar(im, cax=cbax, orientation='horizontal')
     cbar.set_label('LFP (mV)', labelpad=0)
@@ -1205,7 +1206,8 @@ def plot_coherence_vs_distance_vs_frequency(
         means,
         vmin=0,
         vmax=0.5,
-        cmap='viridis')
+        cmap='viridis',
+        shading='auto')
 
     ax.set_ylabel('f (Hz)', labelpad=0)
     ax.set_xlabel(r'$r$ (mm)', labelpad=0)
