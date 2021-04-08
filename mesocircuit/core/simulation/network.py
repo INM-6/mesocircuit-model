@@ -11,10 +11,10 @@ import numpy as np
 from pathlib import Path
 import tarfile
 import h5py
-import subprocess
 import nest
 from mpi4py import MPI
 from ..helpers.mpiops import GathervRecordArray
+import multiprocessing as mp
 
 
 class Network:
@@ -265,7 +265,7 @@ class Network:
         # virtual processes does not exceed the number of available logical
         # cores
         if local_num_threads == 'auto':
-            nproc = int(subprocess.check_output(['nproc']))
+            nproc = mp.cpu_count() // 2  # disable multithreading
             local_threads = int(nproc / nest.GetKernelStatus('num_processes'))
         else:
             local_threads = int(local_num_threads)

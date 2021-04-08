@@ -5,7 +5,8 @@ A dictionary with parameters defining machine configurations.
 
 """
 
-import os
+import multiprocessing as mp
+
 
 # parameters have to be specified for each machine type individually
 sys_dict = {
@@ -30,7 +31,9 @@ sys_dict = {
             'num_nodes': 1,
             'num_mpi_per_node': 12,
             'local_num_threads': 1,
-            'wall_clock_time': '00:30:00'}},
+            'wall_clock_time': '00:30:00'
+        }
+    },
     # laptop
     'local': {
         # per default, use as many threads as available (logical cores) for
@@ -46,4 +49,7 @@ sys_dict = {
             'local_num_threads': 'auto'},
         'analysis_and_plotting': {
             # '$(nproc)' gives the number of available logical cores
-            'num_mpi': '$(nproc)'}}}
+            'num_mpi': mp.cpu_count() // 2  # disable multithreading
+        }
+    }
+}
