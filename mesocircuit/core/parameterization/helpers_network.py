@@ -43,7 +43,7 @@ def derive_dependent_parameters(base_net_dict):
         beta = get_exc_inh_matrix(
             net_dict['beta_exc_inh'][0],
             net_dict['beta_exc_inh'][1],
-            net_dict['num_pops'])[:, :-1] # thalamic value separate
+            net_dict['num_pops'])[:, :-1]  # thalamic value separate
     else:
         beta = net_dict['beta_unscaled'] * net_dict['beta_scaling']
     net_dict['beta'] = np.zeros(pop_shape)
@@ -84,6 +84,9 @@ def derive_dependent_parameters(base_net_dict):
         net_dict['PSP_exc_mean'] * net_dict['g'],
         net_dict['num_pops'])
     PSP_matrix_mean[0, 2] = 2. * net_dict['PSP_exc_mean']
+
+    # apply relative weight E to I
+    PSP_matrix_mean[1::2, 0::2] *= net_dict['rel_weight_exc_to_inh']
 
     # conversion from PSPs to PSCs
     PSC_over_PSP = postsynaptic_potential_to_current(

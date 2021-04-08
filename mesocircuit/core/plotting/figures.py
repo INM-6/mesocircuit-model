@@ -7,9 +7,123 @@ Definition of figures plotted with Plotting class in plotting.py.
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import glob
 import h5py
 import matplotlib
 matplotlib.use('Agg')
+
+
+def parameters(plot):
+    """
+    Creates a figure with important parameter matrices and vectors.
+    """
+    orig_fontsize = plt.rcParams['font.size']
+    plt.rcParams.update({'font.size': orig_fontsize * 0.5})
+
+    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 9))
+    gs = gridspec.GridSpec(4, 3)
+    gs.update(left=0.06, right=0.92, bottom=0.05, top=0.95,
+              wspace=0.6, hspace=0.5)
+
+    axes = []
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_matrix(
+        axes[-1],
+        data=plot.net_dict['full_num_synapses'],
+        title='number of synapses',
+        show_num=False,
+        set_bad=[0])
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_matrix(
+        axes[-1],
+        data=plot.net_dict['full_indegrees'],
+        title='in-degree',
+        show_num='all',
+        set_bad=[0])
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_matrix(
+        axes[-1],
+        data=plot.net_dict['beta'],
+        title='beta (mm)',
+        num_format='{:.3f}')
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_matrix(
+        axes[-1],
+        data=plot.net_dict['K_area_scaling'],
+        title='in-degree scaling',
+        num_format='{:.3f}')
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_matrix(
+        axes[-1],
+        data=plot.net_dict['delay_offset_matrix'],
+        title='delay offset (ms)',
+        num_format='{:.2f}')
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_matrix(
+        axes[-1],
+        data=plot.net_dict['prop_speed_matrix'],
+        title='propagation speed (mm/ms)',
+        num_format='{:.2f}')
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_matrix(
+        axes[-1],
+        data=plot.net_dict['delay_lin_eff_mean'],
+        title='delay lin eff mean (ms)',
+        num_format='{:.2f}')
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_matrix(
+        axes[-1],
+        data=plot.net_dict['delay_lin_eff_std'],
+        title='delay lin eff std (ms)',
+        num_format='{:.2f}')
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_matrix(
+        axes[-1],
+        data=plot.net_dict['full_weight_matrix_mean'],
+        title='mean weight (pA)',
+        num_format='{:.0f}')
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_matrix(
+        axes[-1],
+        data=plot.net_dict['p0_raw'],
+        title='not full p0_raw',
+        show_num='all', num_format='{:.2f}',
+        set_bad=[0])
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_vector(
+        axes[-1],
+        data=plot.net_dict['full_num_neurons'],
+        title='number of neurons',
+        show_num=False)
+
+    axes.append(plt.subplot(gs[len(axes)]))
+    plot.plot_parameters_vector(
+        axes[-1],
+        data=plot.net_dict['full_ext_indegrees'],
+        title='external in-degree',
+        show_num='all')
+
+    labels = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N']
+    for i, ax in enumerate(axes):
+        plot.add_label(ax, labels[i])
+
+    plot.savefig('parameters')
+
+    plt.rcParams.update({'font.size': orig_fontsize})
+    return
 
 
 def raster(plot, all_sptrains, all_pos_sorting_arrays):
@@ -206,4 +320,25 @@ def instantaneous_firing_rates(plot, all_sptrains_bintime):
         time_interval=plot.plot_dict['raster_time_interval'])
 
     plot.savefig('instantaneous_rates')
+    return
+
+
+def theory_overview(
+        plot, working_point, frequencies, power,
+        sensitvity_amplitude, sensitivity_frequency, sensitivity_popidx_freq):
+    """
+    """
+    print('Plotting theory overview.')
+
+    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 4))
+    gs = gridspec.GridSpec(1, 1)
+    gs.update(left=0.1, right=0.98, bottom=0.15, top=0.93)
+    axes = plot.plot_theory_overview(
+        gs[0], working_point, frequencies, power,
+        sensitvity_amplitude, sensitivity_frequency, sensitivity_popidx_freq)
+    labels = ['A', 'B', 'C', 'D', 'E']
+    for i, label in enumerate(labels):
+        plot.add_label(axes[i], label)
+
+    plot.savefig('theory_overview')
     return

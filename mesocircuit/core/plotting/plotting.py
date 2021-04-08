@@ -5,9 +5,12 @@ The Plotting Class defines plotting functions.
 Functions starting with 'plot_' plot to a gridspec cell and are used in figures.py.
 """
 
+import matplotlib.patheffects as PathEffects
+from matplotlib.patches import Rectangle
 from ..helpers import base_class
 from matplotlib.colors import SymLogNorm
 from matplotlib.ticker import MultipleLocator, MaxNLocator
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import os
@@ -235,11 +238,74 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                          MaxNLocatorNBins=2)
 
         # column 4: PSDs
-        print('  Plotting PSDs.')
+        print('  Plotting PSDs')
         axes[6] = self.plot_layer_panels(gs_cols[0, 10:],
                                          xlabel='f (Hz)', ylabel='PSD (s$^{-2}$/Hz)',
                                          plotfunc=self.plotfunc_PSDs,
                                          data=all_PSDs)
+        return axes
+
+    def plot_theory_overview(self, gs, working_point, frequencies, power,
+                             sensitvity_amplitude, sensitivity_frequency,
+                             sensitivity_popidx_freq):
+        """
+        """
+        axes = [0] * 5
+        gs_cols = gridspec.GridSpecFromSubplotSpec(1, 12, subplot_spec=gs,
+                                                   wspace=0.5)
+
+        # column 0: barcharts
+        gs_c0 = gridspec.GridSpecFromSubplotSpec(
+            3, 1, subplot_spec=gs_cols[0, :2], hspace=0.5)
+
+        # top: FRs
+        print('  Plotting barcharts: rates')
+        axes[0] = self.plot_barcharts(gs_c0[0, 0],
+                                      working_point['firing_rates'].magnitude,
+                                      xlabel='', ylabel='FR (spikes/s)',
+                                      xticklabels=False)
+
+        # middle: mean input
+        print('  Plotting barcharts: mean input')
+        axes[1] = self.plot_barcharts(gs_c0[1, 0],
+                                      working_point['mean_input'].magnitude,
+                                      xlabel='', ylabel=r'$\mu$ (mV)',
+                                      xticklabels=False)
+
+        # bottom: standard deviation of input
+        print('  Plotting boxcharts: standard deviation of inupt')
+        axes[2] = self.plot_barcharts(gs_c0[2, 0],
+                                      working_point['std_input'].magnitude,
+                                      xlabel='', ylabel=r'$\sigma$ (mV)')
+
+       # column 1: PSDs
+        print('  Plotting power')
+        axes[3] = self.plot_layer_panels(gs_cols[0, 4:6],
+                                         xlabel=r'$f$ (Hz)', ylabel='power',
+                                         plotfunc=self.plotfunc_theory_power_spectra,
+                                         data=[frequencies, power])
+
+        gs_c2 = gridspec.GridSpecFromSubplotSpec(
+            2, 1, subplot_spec=gs_cols[7:], hspace=0.3)
+
+        # column 2: sensitivity measure
+        print('  Plotting sensitivity measure')
+        freq = '({} Hz)'.format(sensitivity_popidx_freq[1].astype(int))
+        axes[4] = plt.subplot(gs_c2[0])
+        self.plot_matrix(ax=axes[4],
+                         data=sensitvity_amplitude,
+                         title=r'$\,Z^\mathrm{amp}$ ' + freq,
+                         xlabel='', ylabel='targets',
+                         xticklabels=[],
+                         yticklabels=self.plot_dict['pop_labels'][:-1])
+
+        self.plot_matrix(ax=plt.subplot(gs_c2[1]),
+                         data=sensitivity_frequency,
+                         title=r'$\,Z^\mathrm{freq}$ ' + freq,
+                         xlabel='sources', ylabel='targets',
+                         xticklabels=self.plot_dict['pop_labels'][:-1],
+                         yticklabels=self.plot_dict['pop_labels'][:-1],
+                         xticklabelrotation=True)
         return axes
 
     def plot_spatial_snapshots(self,
@@ -470,6 +536,33 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax.yaxis.set_major_locator(MaxNLocator(3))
         return ax
 
+    def plot_barcharts(self, gs, data, xlabel='', ylabel='',
+                       xticklabels=True):
+        """
+        TODO
+        """
+        ax = plt.subplot(gs)
+        for loc in ['top', 'right']:
+            ax.spines[loc].set_color('none')
+
+        if len(data) != len(self.Y):
+            raise Exception
+        xs = np.arange(len(data))
+        ax.bar(x=xs,
+               height=data,
+               color=self.plot_dict['pop_colors'][:-1])
+
+        ax.set_xticks(xs)
+        ax.set_xticklabels(self.plot_dict['pop_labels'][:-1])
+        plt.xticks(rotation=90)
+        if not xticklabels:
+            ax.set_xticklabels([])
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+
+        ax.yaxis.set_major_locator(MaxNLocator(3))
+        return ax
+
     def plot_layer_panels(self, gs, plotfunc, xlabel='', ylabel='', **kwargs):
         """
         Generic function to plot four vertically arranged panels, one for each
@@ -554,6 +647,219 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 ax.set_ylabel(ylabel)
                 ax_label = ax
         return ax_label
+
+    def plot_matrix(self, ax, data, title='', xlabel='', ylabel='',
+                    xticklabels=[], yticklabels=[], xticklabelrotation=False,
+                    cmap='coolwarm', vmin=-1, vmax=1):
+        """
+        """
+        ax.imshow(data, cmap=cmap, vmin=vmin, vmax=vmax)
+
+        ax.set_title(title)
+        ax.set_xticks((np.arange(len(data))))
+        ax.set_yticks((np.arange(len(data[0]))))
+        ax.set_xticklabels(xticklabels)
+        ax.set_yticklabels(yticklabels)
+        if xticklabelrotation:
+            plt.xticks(rotation=90)
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        return
+
+    def plot_parameters_matrix(
+            self, ax, data, title='',
+            show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.5,
+            cmap='inferno', set_bad=[]):
+        """
+        TODO
+
+        Parameters
+        ----------
+        show_num
+            options are 'all', 'unique', False
+        """
+        tgt = np.shape(data)[0]  # numbers of rows
+        src = np.shape(data)[1]  # number of columns
+        block_data = np.zeros((tgt + 1, src + 1))
+
+        # go through data:
+        # 1. upper left    2. upper right
+        # 3. lower left    4. lower right
+
+        # extract data
+        e_to_e = data[::2, ::2]
+        i_to_e = data[::2, 1::2]
+        e_to_i = data[1::2, ::2]
+        i_to_i = data[1::2, 1::2]
+
+        tgt_e = np.shape(e_to_e)[0]
+        src_e = np.shape(e_to_e)[1]
+        tgt_i = np.shape(i_to_i)[0]
+        src_i = np.shape(i_to_i)[1]
+
+        # upper left
+        block_data[:tgt_e, :src_e] = e_to_e
+        # upper right
+        block_data[:tgt_e, src_e + 1:] = i_to_e
+        # lower left
+        block_data[tgt_e + 1:, :src_e] = e_to_i
+        # lower right
+        block_data[tgt_e + 1:, src_e + 1:] = i_to_i
+
+        # set bad: separator and additional values
+        block_data[tgt_e, :] = np.nan
+        block_data[:, src_e] = np.nan
+        for bad_val in set_bad:
+            block_data[np.where(block_data == bad_val)] = np.nan
+
+        # image
+        block_data = np.ma.masked_invalid(block_data)
+        cm = matplotlib.cm.get_cmap(cmap)
+        cm.set_bad('white')
+
+        im = ax.imshow(block_data, cmap=cm)
+
+        # annotate with numbers
+        if show_num:
+            self.__plot_parameters_show_numbers(
+                ax, block_data, show_num, num_format, num_fontsize_scale)
+
+        # annotate with panel titles
+        for (loc, txt) in zip(
+            [[(src_e - 1.) / 2., -1.], [src_e + 1 + (src_i - 1.) / 2., -1.],
+             [(src_e - 1.) / 2., tgt_e], [src_e + 1 + (src_i - 1.) / 2., tgt_e]],
+            [r'E$\rightarrow$E', r'I$\rightarrow$E',
+             r'E$\rightarrow$I', r'I$\rightarrow$I']):
+            ax.text(loc[0], loc[1] + 0.1, txt,
+                    ha='center', va='center')
+
+        # replace frame
+        [ax.spines[l].set_linewidth(0.) for l in [
+            'top', 'bottom', 'left', 'right']]
+        for (xy, width, height) in zip(
+            [(-0.5, -0.5), (-0.5 + src_e + 1, -0.5),
+             (-0.5, -0.5 + tgt_e + 1), (-0.5 + src_e + 1, -0.5 + tgt_e + 1)],
+            [src_e, src_i, src_e, src_i],
+                [tgt_e, tgt_e, tgt_i, tgt_i]):
+            rec = Rectangle(xy=xy, width=width, height=height,
+                            facecolor='none', edgecolor='k',
+                            linewidth=matplotlib.rcParams['lines.linewidth'],
+                            zorder=10)
+            ax.add_patch(rec)
+
+        # ticks and labels
+        src_labels = np.zeros(src, dtype=object)
+        src_labels[:src_e] = self.plot_dict['pop_labels'][:src:2]
+        src_labels[src_e:] = self.plot_dict['pop_labels'][1:src:2]
+        src_ticks = list(np.arange(src + 1))
+        src_ticks.pop(src_e)
+        ax.set_xticks(src_ticks)
+        plt.xticks(rotation=90)
+        ax.set_xticklabels(src_labels)
+        ax.set_xlabel('sources')
+
+        tgt_labels = np.zeros(tgt, dtype=object)
+        tgt_labels[:tgt_e] = self.plot_dict['pop_labels'][:tgt:2]
+        tgt_labels[tgt_e:] = self.plot_dict['pop_labels'][1:tgt:2]
+        tgt_ticks = list(np.arange(tgt + 1))
+        tgt_ticks.pop(tgt_e)
+        ax.set_yticks(tgt_ticks)
+        ax.set_yticklabels(tgt_labels)
+        ax.set_ylabel('targets')
+
+        self.colorbar(ax, im, title)
+        return
+
+    def plot_parameters_vector(
+            self, ax, data, title='',
+            show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.5,
+            cmap='inferno', set_bad=[]):
+        """
+        TODO
+        Parameters
+        ----------
+        show_num
+            options are 'all', 'unique', False
+        """
+        num = len(data)
+        num_e = int(np.ceil(num / 2))
+        num_i = num - num_e
+        col_data = np.zeros(num + 1)
+
+        # extract data
+        col_data[:num_e] = data[::2]
+        col_data[num_e + 1:] = data[1::2]
+
+        # set bad: separator and additional values
+        col_data[num_e] = np.nan
+
+        for bad_val in set_bad:
+            col_data[np.where(col_data == bad_val)] = np.nan
+
+        # image
+        col_data = col_data.reshape(-1, 1)  # column
+        col_data = np.ma.masked_invalid(col_data)
+        cm = matplotlib.cm.get_cmap(cmap)
+        cm.set_bad('white')
+
+        im = ax.imshow(col_data, cmap=cm)
+
+        # annotate with numbers
+        if show_num:
+            self.__plot_parameters_show_numbers(
+                ax, col_data, show_num, num_format, num_fontsize_scale)
+
+        # replace frame
+        [ax.spines[l].set_linewidth(0.) for l in [
+            'top', 'bottom', 'left', 'right']]
+        for (xy, width, height) in zip(
+            [(-0.5, -0.5), (-0.5, 0.5 + num_e)],
+            [1, 1],
+                [num_e, num_i]):
+            rec = Rectangle(xy=xy, width=width, height=height,
+                            facecolor='none', edgecolor='k',
+                            linewidth=matplotlib.rcParams['lines.linewidth'],
+                            zorder=10)
+            ax.add_patch(rec)
+
+        # ticks and labels
+        labels = np.zeros(num, dtype=object)
+        labels[:num_e] = self.plot_dict['pop_labels'][:num:2]
+        labels[num_e:] = self.plot_dict['pop_labels'][1:num:2]
+        ticks = list(np.arange(num + 1))
+        ticks.pop(num_e)
+        ax.set_yticks(ticks)
+        ax.set_yticklabels(labels)
+        ax.set_xticks([])
+
+        self.colorbar(ax, im, title, size='50%')
+        return
+
+    def __plot_parameters_show_numbers(
+            self, ax, data, show_num, num_format, num_fontsize_scale):
+        """
+        """
+        if show_num == 'unique':
+            values, flat_indices = np.unique(data, return_index=True)
+            indices = np.unravel_index(flat_indices, np.shape(data))
+        elif show_num == 'all':
+            values = data.flatten()
+            indices = np.indices(np.shape(data)).reshape(2, -1)
+
+        for i, val in enumerate(values):
+            if val != np.nan:
+                txt = ax.text(
+                    indices[1][i],
+                    indices[0][i],
+                    num_format.format(val),
+                    ha='center',
+                    va='center',
+                    color='white',
+                    fontsize=matplotlib.rcParams['font.size'] *
+                    num_fontsize_scale)
+                txt.set_path_effects(
+                    [PathEffects.withStroke(linewidth=0.5, foreground='k')])
+        return
 
     def plotfunc_distributions(self, ax, X, i, bins, data, MaxNLocatorNBins):
         """
@@ -664,6 +970,40 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax.set_ylim(bottom=0)
         return
 
+    def plotfunc_theory_power_spectra(self, ax, X, i, data):
+        """
+        TODO
+        """
+        frequencies = data[0].magnitude
+        power = data[1][i].magnitude
+
+        ax.plot(frequencies, power,
+                linewidth=matplotlib.rcParams['lines.linewidth'],
+                color=self.plot_dict['pop_colors'][i])
+
+        ax.set_yscale('log')
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=3))
+        return
+
+    def colorbar(
+            self,
+            ax,
+            im,
+            label,
+            axis='right',
+            size='5%',
+            pad=0.05,
+            nbins=5):
+        """
+        TODO
+        """
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes(axis, size=size, pad=pad)
+        cb = plt.colorbar(im, cax=cax, label=label)
+        cb.locator = MaxNLocator(nbins=nbins)
+        cb.update_ticks()  # necessary for location
+        return
+
     def add_label(self, ax, label, offset=[0, 0],
                   weight='bold', fontsize_scale=1.2):
         """
@@ -710,7 +1050,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
             pdftops).
         """
 
-        path_fn = os.path.join(self.sim_dict['path_plots'], filename)
+        path_fn = os.path.join('plots', filename)
 
         if self.plot_dict['extension'] == '.eps' and eps_conv:
 
