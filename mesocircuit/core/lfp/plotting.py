@@ -26,7 +26,7 @@ import h5py
 import numpy as np
 # import sys
 from ..parameterization.base_plotting_params import plot_dict
-from .. import stats
+from ..analysis import stats
 import LFPy
 import matplotlib
 from meso_analysis import helperfun
