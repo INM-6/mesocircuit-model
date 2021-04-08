@@ -8,7 +8,7 @@ local_sim_dict = {
     'computer': 'local',
     'print_time': False,
     'num_mpi_per_node': 2,
-    'local_num_threads': 4}
+    'local_num_threads': 1}
 
 local_ana_dict = {
     'computer': 'local',
@@ -90,8 +90,8 @@ ps_dicts = {
         **local_sim_ana_plot_dicts,
         'net_dict': {
             **net_dict_mesomacaqueV1,
-            'N_scaling': 0.008,
-            'K_scaling': 0.1,
+            'N_scaling': 1.,  # 0.008,
+            'K_scaling': 1.,  # 0.1,
             },
         },
 
@@ -104,8 +104,16 @@ ps_dicts = {
     'local_mesocircuit': {
         **local_sim_ana_plot_dicts,
         'net_dict': {
-            'N_scaling': 0.0625, #0.008,
-            'K_scaling': 1., #0.1,
+            'N_scaling': 1., # 0.0625, # 0.008,
+            'K_scaling': 1., # 0.1,
+            },
+        },
+
+    'mesocircuit': {
+        **local_sim_ana_plot_dicts,
+        'net_dict': {
+            'N_scaling': 1.,                                                                                                                                          
+            'K_scaling': 1.,  
             },
         },
     }

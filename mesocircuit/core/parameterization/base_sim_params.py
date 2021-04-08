@@ -11,11 +11,11 @@ sim_dict = {
     # machine to run the simulation on. Options are 'jureca' and 'local'.
     'computer': 'jureca',
     # number of compute nodes (ignored if computer is 'local')
-    'num_nodes': 24,
+    'num_nodes': 4,
     # number of MPI processes per compute node
-    'num_mpi_per_node': 1,
+    'num_mpi_per_node': 64,
     # number of threads per MPI process
-    'local_num_threads': 24,
+    'local_num_threads': 4,
     # wall clock time (ignored if computer is 'local')
     'wallclock_time': '00:15:00',
 

@@ -298,7 +298,7 @@ def write_jobscript(jsname, paramset):
                               jsname.split('.')[0] + '.txt')
 
         sbatch = (
-            '#SBATCH --account=jinb33\n' +
+            '#SBATCH --account={}\n'.format(os.environ['PROJECT'].strip('/p/project/')) +
             '#SBATCH --nodes={}\n'.format(dic['num_nodes']) +
             '#SBATCH --ntasks-per-node={}\n'.format(dic['num_mpi_per_node']) +
             '#SBATCH --cpus-per-task={}\n'.format(threads) +
