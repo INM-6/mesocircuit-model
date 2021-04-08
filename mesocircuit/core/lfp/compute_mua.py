@@ -33,7 +33,8 @@ def write_mua_file(sim_dict, net_dict, ana_dict,
             'y-position_mm': networkSim.positions[X][:, 1]
         }
 
-        with h5py.File(os.path.join(sim_dict['path_processed_data'],
+        with h5py.File(os.path.join(os.path.split(path_lfp_data)[0],
+                                    'processed_data',
                                     'all_sptrains_bintime.h5'), 'r') as f:
             sptrains_bintime = load_h5_to_sparse_X(X, f)
         tmp = sana._time_and_space_binned_sptrains_X(
