@@ -214,7 +214,8 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         network_params=dict(
             simtime=sim_dict['t_presim'] + sim_dict['t_sim'],
             dt=sim_dict['sim_resolution'],
-            spike_output_path=sim_dict['path_processed_data'],
+            spike_output_path=os.path.join(os.path.split(path_lfp_data)[0],
+                                           'processed_data'),
             label=sim_dict['rec_dev'][0],
             ext='dat',
             GIDs=dict(zip(net_dict['populations'],

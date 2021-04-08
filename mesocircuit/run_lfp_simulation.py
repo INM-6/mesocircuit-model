@@ -95,16 +95,17 @@ neuron.load_mechanisms(nmodl_dir)
 path_parameters = sys.argv[1]
 
 dics = []
-for dic in ['sim_dict', 'net_dict']:
+for dic in ['sim_dict', 'net_dict', 'sys_dict']:
     with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
         dics.append(pickle.load(f))
-sim_dict, net_dict = dics
+sim_dict, net_dict, sys_dict = dics
 
 ##########################################################################
 # set up the file destination
 ##########################################################################
-path_lfp_data = os.path.join(sim_dict['data_path'], 'lfp',
-                             os.path.split(path_parameters)[-1])
+path_lfp_data = os.path.join(os.path.split(path_parameters)[0], 'lfp',
+                             # os.path.split(path_parameters)[-1]
+                             )
 if RANK == 0:
     if not os.path.isdir(os.path.split(path_lfp_data)[0]):
         os.mkdir(os.path.split(path_lfp_data)[0])
