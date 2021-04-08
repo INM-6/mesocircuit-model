@@ -444,7 +444,7 @@ def write_jobscripts(sys_dict, path):
                 jobscript += (
                     "#SBATCH --job-name=meso\n"
                     f"#SBATCH --partition={dic['partition']}\n"
-                    # why not '#SBATCH --account={}\n'.format(os.environ['PROJECT'].strip('/p/project/'))
+                    # why not '#SBATCH --account={}\n'.format(os.environ['PROJECT'].strip('/p/project/'))?
                     f"#SBATCH --output={stdout}\n"
                     f"#SBATCH --error={stdout}\n"
                     f"#SBATCH --nodes={dic['num_nodes']}\n"
@@ -455,7 +455,16 @@ def write_jobscripts(sys_dict, path):
                 run_cmd = 'srun --mpi=pmi2'
 
             elif machine == 'local':
-                run_cmd = f"mpirun -n {dic['num_mpi']}"
+                # check which executables are available
+                for mpiexec in ['srun', 'mpiexec', 'mpirun']:
+                    out = subprocess.run(['which', mpiexec])
+                    if out.returncode == 0:
+                        if mpiexec in ['mpiexec', 'mpirun']:
+                            run_cmd = '{} -n {}'.format(run_cmd,
+                                                        dic['num_mpi'])
+                        else:
+                            run_cmd = mpiexec
+                        break
 
             # append executable(s),
             # number of local threads needed for network simulation,
