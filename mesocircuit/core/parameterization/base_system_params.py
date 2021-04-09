@@ -49,7 +49,7 @@ sys_dict = {
             'wall_clock_time': '00:30:00'
         },
         'lfp_plotting': {
-            'particion': partition,
+            'partition': partition,
             'num_nodes': 1,
             'num_mpi_per_node': 1,
             'local_num_threads': 1,  # not used
