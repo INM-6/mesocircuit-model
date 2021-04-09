@@ -228,9 +228,8 @@ if PROPERRUN:
                            mapping_Yy=PS.mapping_Yy,
                            savelist=PS.savelist,
                            probes=probes,
-                           cells_subfolder=os.path.split(PS.cells_path)[-1],
-                           populations_subfolder=os.path.split(
-                               PS.populations_path)[-1],
+                           cells_subfolder=PS.cells_path,
+                           populations_subfolder=PS.populations_path,
                            figures_subfolder=PS.figures_subfolder,
                            )
 
