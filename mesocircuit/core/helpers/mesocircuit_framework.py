@@ -315,28 +315,19 @@ def evaluate_parameterset(ps_id, paramset, full_data_path):
         dir_path = os.path.join(full_data_path, 'code', 'core', d)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
-    for f in [
-        'run_network.py',
-        'run_analysis.py',
-        'run_plotting.py',
-        'run_lfp_simulation.py',
-        'run_lfp_plotting.py',
-        # 'core/simulation/network.py',
-        # 'core/analysis/spike_analysis.py',
-        # 'core/analysis/stats.py',
-        # 'core/plotting/plotting.py',
-        # 'core/plotting/figures.py',
-        # 'core/helpers/base_class.py',
-        # 'core/helpers/mpiops.py',
-        # 'core/helpers/parallelism_time.py',
-        # 'core/helpers/io.py'
-    ]:
+
+    filelist = ['run_network.py',
+                'run_analysis.py',
+                'run_plotting.py',
+                'run_lfp_simulation.py',
+                'run_lfp_plotting.py']
+
+    for f in filelist:
         shutil.copyfile(f, os.path.join(full_data_path, 'code', f))
 
     # copy 'core' module
     shutil.copytree('core', os.path.join(full_data_path, 'code', 'core'),
                     dirs_exist_ok=True)
-
 
     # write jobscripts
     write_jobscripts(paramset['sys_dict'], full_data_path)
