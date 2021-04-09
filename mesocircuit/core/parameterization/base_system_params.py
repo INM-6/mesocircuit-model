@@ -45,12 +45,14 @@ sys_dict = {
             'partition': partition,
             'num_nodes': 4,
             'num_mpi_per_node': 128,
+            'local_num_threads': 1,  # not used
             'wall_clock_time': '00:30:00'
         },
         'lfp_plotting': {
             'particion': partition,
             'num_nodes': 1,
             'num_mpi_per_node': 1,
+            'local_num_threads': 1,  # not used
             'wall_clock_time': '00:15:00'
         }
     },

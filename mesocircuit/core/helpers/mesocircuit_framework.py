@@ -486,7 +486,11 @@ def write_jobscripts(sys_dict, path):
             if name == 'lfp_plotting':
                 # should be run serially!
                 executables = [
-                    f'python3 -u code/{py} {t} {o_0 if i == 0 else o_1}'
+                    f'python3 -u code/{py} {o_0 if i == 0 else o_1}'
+                    for i, py in enumerate(scripts)]
+            elif name == 'lfp_simulation':
+                executables = [
+                    f'{run_cmd} python3 -u code/{py} {o_0 if i == 0 else o_1}'
                     for i, py in enumerate(scripts)]
             else:
                 executables = [
