@@ -38,7 +38,7 @@ import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
-import sys
+# import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from time import time
@@ -77,7 +77,8 @@ PROPERRUN = True
 
 # check if mod file for synapse model specified in expsyni.mod is loaded.
 # if not, compile and load it.
-nmodl_dir = os.path.join('core', 'lfp')
+# nmodl_dir = os.path.join('code', 'core', 'lfp')
+nmodl_dir = os.path.join('code', 'core', 'lfp')
 try:
     assert neuron.load_mechanisms(nmodl_dir)
 except AssertionError:
@@ -92,7 +93,8 @@ neuron.load_mechanisms(nmodl_dir)
 ##########################################################################
 # Network parameters
 ##########################################################################
-path_parameters = sys.argv[1]
+# path_parameters = sys.argv[1]
+path_parameters = 'parameters'
 
 dics = []
 for dic in ['sim_dict', 'net_dict', 'sys_dict']:
@@ -103,12 +105,11 @@ sim_dict, net_dict, sys_dict = dics
 ##########################################################################
 # set up the file destination
 ##########################################################################
-path_lfp_data = os.path.join(os.path.split(path_parameters)[0], 'lfp',
-                             # os.path.split(path_parameters)[-1]
-                             )
+# path_lfp_data = os.path.join(os.path.split(path_parameters)[0], 'lfp')
+path_lfp_data = 'lfp'
 if RANK == 0:
-    if not os.path.isdir(os.path.split(path_lfp_data)[0]):
-        os.mkdir(os.path.split(path_lfp_data)[0])
+    # if not os.path.isdir(os.path.split(path_lfp_data)[0]):
+    #     os.mkdir(os.path.split(path_lfp_data)[0])
     if not os.path.isdir(path_lfp_data):
         os.mkdir(path_lfp_data)
 

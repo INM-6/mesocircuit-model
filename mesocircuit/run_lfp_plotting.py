@@ -6,7 +6,7 @@ import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
-import sys
+# import sys
 import pickle
 import matplotlib
 import matplotlib.pyplot as plt
@@ -24,7 +24,8 @@ matplotlib.rcParams.update(plot_dict['rcParams'])
 ##########################################################################
 # Network parameters
 ##########################################################################
-path_parameters = sys.argv[1]
+# path_parameters = sys.argv[1]
+path_parameters = 'parameters'
 
 dics = []
 for dic in ['sim_dict', 'net_dict', 'ana_dict']:
@@ -35,7 +36,8 @@ sim_dict, net_dict, ana_dict = dics
 ##########################################################################
 # LFP output directory
 ##########################################################################
-path_lfp_data = os.path.join(os.path.split(path_parameters)[0], 'lfp')
+# path_lfp_data = os.path.join(os.path.split(path_parameters)[0], 'lfp')
+path_lfp_data = 'lfp'
 
 ##########################################################################
 # get ParameterSet object instance with all required parameters for LFPs

@@ -319,17 +319,24 @@ def evaluate_parameterset(ps_id, paramset, full_data_path):
         'run_network.py',
         'run_analysis.py',
         'run_plotting.py',
-        'core/simulation/network.py',
-        'core/analysis/spike_analysis.py',
-        'core/analysis/stats.py',
-        'core/plotting/plotting.py',
-        'core/plotting/figures.py',
-        'core/helpers/base_class.py',
-        'core/helpers/mpiops.py',
-        'core/helpers/parallelism_time.py',
-        'core/helpers/io.py'
+        'run_lfp_simulation.py',
+        'run_lfp_plotting.py',
+        # 'core/simulation/network.py',
+        # 'core/analysis/spike_analysis.py',
+        # 'core/analysis/stats.py',
+        # 'core/plotting/plotting.py',
+        # 'core/plotting/figures.py',
+        # 'core/helpers/base_class.py',
+        # 'core/helpers/mpiops.py',
+        # 'core/helpers/parallelism_time.py',
+        # 'core/helpers/io.py'
     ]:
         shutil.copyfile(f, os.path.join(full_data_path, 'code', f))
+
+    # copy 'core' module
+    shutil.copytree('core', os.path.join(full_data_path, 'code', 'core'),
+                    dirs_exist_ok=True)
+
 
     # write jobscripts
     write_jobscripts(paramset['sys_dict'], full_data_path)
@@ -425,7 +432,8 @@ def write_jobscripts(sys_dict, path):
                               ['plotting', ['run_plotting.py']],
                               ['analysis_and_plotting', ['run_analysis.py',
                                                          'run_plotting.py']],
-                              # ['lfp'], ['run_lfp_simulation.py'],
+                              ['lfp_simulation', ['run_lfp_simulation.py']],
+                              ['lfp_plotting', ['run_lfp_plotting.py']]
                               ]:
 
             # key of sys_dict defining resources
@@ -444,7 +452,6 @@ def write_jobscripts(sys_dict, path):
                 jobscript += (
                     "#SBATCH --job-name=meso\n"
                     f"#SBATCH --partition={dic['partition']}\n"
-                    # why not '#SBATCH --account={}\n'.format(os.environ['PROJECT'].strip('/p/project/'))?
                     f"#SBATCH --output={stdout}\n"
                     f"#SBATCH --error={stdout}\n"
                     f"#SBATCH --nodes={dic['num_nodes']}\n"
@@ -460,11 +467,13 @@ def write_jobscripts(sys_dict, path):
                     out = subprocess.run(['which', mpiexec])
                     if out.returncode == 0:
                         if mpiexec in ['mpiexec', 'mpirun']:
-                            run_cmd = '{} -n {}'.format(run_cmd,
-                                                        dic['num_mpi'])
+                            run_cmd = f'{mpiexec} -n {dic["num_mpi"]}'
                         else:
-                            run_cmd = mpiexec
+                            run_cmd = f'{mpiexec} --mpi=pmi2'
                         break
+
+            else:
+                raise NotImplementedError(f'machine {machine} not recognized')
 
             # append executable(s),
             # number of local threads needed for network simulation,
