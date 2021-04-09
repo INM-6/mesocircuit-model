@@ -18,6 +18,6 @@ if 1:
             'lfp_simulation',
             'lfp_plotting',
         ],
-        machine='local',
-        # machine='hpc'
+        #machine='local',
+        machine='hpc'
         )
