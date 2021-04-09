@@ -460,7 +460,8 @@ def write_jobscripts(sys_dict, path):
                     f"#SBATCH --ntasks-per-node={dic['num_mpi_per_node']}\n"
                     f"#SBATCH --cpus-per-task={dic['local_num_threads']}\n"
                     f"#SBATCH --time={dic['wall_clock_time']}\n"
-                    "export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n\n")
+                    "export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n"
+                    "unset DISPLAY\n")
                 run_cmd = 'srun --mpi=pmi2'
 
             elif machine == 'local':
