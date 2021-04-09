@@ -437,7 +437,9 @@ def write_jobscripts(sys_dict, path):
                               ]:
 
             # key of sys_dict defining resources
-            res = name if name == 'network' else 'analysis_and_plotting'
+            res = (name
+                   if name in ['network', 'lfp_simulation', 'lfp_plotting']
+                   else 'analysis_and_plotting')
             dic = sys_dict[machine][res]
 
             # file for output and errors

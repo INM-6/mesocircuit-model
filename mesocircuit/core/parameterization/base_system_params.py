@@ -12,7 +12,7 @@ import os
 if 'HOSTNAME' in os.environ:
     partition = ('dc-cpu'
                  if os.environ['HOSTNAME'].rfind('jureca') > 0
-                 else 'batch*')
+                 else 'batch')
 else:
     partition = None
 
