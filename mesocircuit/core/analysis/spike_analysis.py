@@ -8,6 +8,7 @@ compute statistics.
 
 from ..helpers import base_class
 from ..helpers import parallelism_time as pt
+from ..helpers.io import load_h5_to_sparse_X
 from . import stats
 import fnmatch
 import re
@@ -20,8 +21,6 @@ import h5py
 import numpy as np
 import scipy.sparse as sp
 import scipy.spatial as spatial
-import matplotlib
-matplotlib.use('Agg')
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
@@ -127,6 +126,27 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         pt.parallelize_by_array(self.ana_dict['datatypes_statistics'],
                                 self.__merge_h5_files_populations_datatype)
         return
+
+    def compute_psd(self, x, Fs, detrend='mean', overlap=3/4):
+        """
+        Compute power sprectrum `Pxx` of signal `x` using
+        matplotlib.mlab.psd function
+
+        Parameters
+        ----------
+        x: ndarray
+            1-D array or sequence
+        Fs: float
+            sampling frequency
+        detrend: {'none', 'mean', 'linear'} or callable, default 'mean'
+            detrend data before fft-ing.
+        overlap: float
+            fraction of NFFT points of overlap between segments
+        """
+        NFFT = self.ana_dict['psd_NFFT']
+        noverlap = int(overlap * NFFT)
+        return plt.mlab.psd(x, NFFT=NFFT, Fs=Fs,
+                            detrend=detrend, noverlap=noverlap)
 
     def __load_raw_nodeids(self):
         """
@@ -367,7 +387,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
             # time-binned and space-binned spike trains
             elif datatype == 'sptrains_bintime_binspace':
-                datasets[datatype] = self.__time_and_space_binned_sptrains_X(
+                datasets[datatype] = self._time_and_space_binned_sptrains_X(
                     X, datasets['positions'], datasets['sptrains_bintime'],
                     dtype=np.uint16)
 
@@ -460,7 +480,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 shape=shape, dtype=dtype)
         return sptrains_bintime
 
-    def __time_and_space_binned_sptrains_X(
+    def _time_and_space_binned_sptrains_X(
             self, X, positions, sptrains_bintime, dtype):
         """
         Computes space-binned spike trains from time-binned spike trains.
@@ -646,7 +666,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             if isinstance(
                     data[X],
                     h5py._hl.group.Group) and 'data_row_col' in data[X]:
-                data = self.load_h5_to_sparse_X(X, data)
+                data = load_h5_to_sparse_X(X, data)
             else:
                 data = data[X]
 
@@ -710,7 +730,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                         fn_TC = os.path.join('processed_data',
                                              'sptrains_bintime_binspace_TC.h5')
                         data_TC = h5py.File(fn_TC, 'r')
-                        data_TC = self.load_h5_to_sparse_X('TC', data_TC)
+                        data_TC = load_h5_to_sparse_X('TC', data_TC)
                         sptrains_bintime_binspace_TC = \
                             data_TC[:, self.min_time_index_rs:]
                         dataset = self.__compute_cc_funcs_thalamic_pulses(
@@ -874,15 +894,12 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         """
         # sampling frequency
         Fs = 1000. / binsize_time
-        # number of points of overlap between segments
-        noverlap = int(self.ana_dict['psd_NFFT'] * 3 / 4)
 
-        # detrend data
+        # compute rate
         x = np.array(sptrains_X.sum(axis=0), dtype=float).flatten()
-        x -= x.mean()
 
-        Pxx, freq = plt.psd(x, NFFT=self.ana_dict['psd_NFFT'],
-                            Fs=Fs, noverlap=noverlap)
+        Pxx, freq = self.compute_psd(x, Fs)
+
         # frequencies (in 1/s), PSDs (in s^{-2} / Hz)
         psds = {'frequencies_s-1': freq,
                 'psds_s^-2_Hz-1': Pxx}

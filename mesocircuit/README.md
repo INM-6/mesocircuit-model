@@ -1,6 +1,14 @@
 Mesocircuit
 ===========
 
+Installing
+----------
+
+The LFP predictions requires a module which should be installed as
+
+    $ python setup.py develop --user
+
+
 Docker
 ------
 

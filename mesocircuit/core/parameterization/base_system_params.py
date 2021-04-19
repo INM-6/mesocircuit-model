@@ -6,6 +6,15 @@ A dictionary with parameters defining machine configurations.
 """
 
 import sys
+import os
+
+
+if 'HOSTNAME' in os.environ:
+    partition = ('dc-cpu'
+                 if os.environ['HOSTNAME'].rfind('jureca') > 0
+                 else 'batch')
+else:
+    partition = None
 
 # parameters have to be specified for each machine type individually
 sys_dict = {
@@ -14,7 +23,7 @@ sys_dict = {
         # network simulation
         'network': {
             # partition, on JURECA DC the default is 'dc-cpu'
-            'partition': 'dc-cpu',
+            'partition': partition,
             # number of compute nodes
             'num_nodes': 4,
             # number of MPI processes per node
@@ -26,11 +35,25 @@ sys_dict = {
         # analysis, plotting and analysis_and_plotting all use the same
         # configuration
         'analysis_and_plotting': {
-            'partition': 'dc-cpu',
+            'partition': partition,
             'num_nodes': 1,
             'num_mpi_per_node': 12,
             'local_num_threads': 1,
             'wall_clock_time': '00:30:00'
+        },
+        'lfp_simulation': {
+            'partition': partition,
+            'num_nodes': 4,
+            'num_mpi_per_node': 128,
+            'local_num_threads': 1,  # not used
+            'wall_clock_time': '00:30:00'
+        },
+        'lfp_plotting': {
+            'partition': partition,
+            'num_nodes': 1,
+            'num_mpi_per_node': 1,
+            'local_num_threads': 1,  # not used
+            'wall_clock_time': '00:15:00'
         }
     },
     # laptop
@@ -49,7 +72,14 @@ sys_dict = {
         'analysis_and_plotting': {
             # '$(nproc)' gives the number of available logical cores
             'num_mpi': ('$(sysctl -n hw.physicalcpu)'
-                        if sys.platform == 'darwin' else '$(nproc)')
+                        if sys.platform == 'darwin' else '$(nproc)'),
+                        },
+        'lfp_simulation': {
+            'num_mpi': ('$(sysctl -n hw.physicalcpu)'
+                        if sys.platform == 'darwin' else '$(nproc)'),
+        },
+        'lfp_plotting': {
+            'num_mpi': 1
         }
-    }
-}
+        }
+        }

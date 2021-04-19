@@ -17,9 +17,9 @@ import os
 import warnings
 import h5py
 import numpy as np
-import scipy.sparse as sp
 from mpi4py import MPI
 import matplotlib
+from ..helpers.io import load_h5_to_sparse_X
 matplotlib.use('Agg')
 
 # initialize MPI
@@ -118,7 +118,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         yticks = []
         ax = plt.subplot(gs)
         for i, X in enumerate(populations):
-            data = self.load_h5_to_sparse_X(X, all_sptrains)
+            data = load_h5_to_sparse_X(X, all_sptrains)
 
             # slice according to time interval
             time_indices = np.arange(
@@ -340,7 +340,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         val_sep = -1
 
         for X in populations:
-            data = self.load_h5_to_sparse_X(X, all_inst_rates_bintime_binspace)
+            data = load_h5_to_sparse_X(X, all_inst_rates_bintime_binspace)
             data = data[:, start_frame:end_frame + 1:step].toarray()
             data = data.reshape((numbins, -1, data.shape[-1]))
 
@@ -948,7 +948,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         """
         TODO
         """
-        data = self.load_h5_to_sparse_X(X, sptrains)
+        data = load_h5_to_sparse_X(X, sptrains)
 
         # slice according to time interval
         time_indices = np.arange(

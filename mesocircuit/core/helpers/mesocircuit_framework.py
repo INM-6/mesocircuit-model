@@ -315,20 +315,19 @@ def evaluate_parameterset(ps_id, paramset, full_data_path):
         dir_path = os.path.join(full_data_path, 'code', 'core', d)
         if not os.path.isdir(dir_path):
             os.makedirs(dir_path)
-    for f in [
-        'run_network.py',
-        'run_analysis.py',
-        'run_plotting.py',
-        'core/simulation/network.py',
-        'core/analysis/spike_analysis.py',
-        'core/analysis/stats.py',
-        'core/plotting/plotting.py',
-        'core/plotting/figures.py',
-        'core/helpers/base_class.py',
-        'core/helpers/mpiops.py',
-        'core/helpers/parallelism_time.py'
-    ]:
+
+    filelist = ['run_network.py',
+                'run_analysis.py',
+                'run_plotting.py',
+                'run_lfp_simulation.py',
+                'run_lfp_plotting.py']
+
+    for f in filelist:
         shutil.copyfile(f, os.path.join(full_data_path, 'code', f))
+
+    # copy 'core' module
+    shutil.copytree('core', os.path.join(full_data_path, 'code', 'core'),
+                    dirs_exist_ok=True)
 
     # write jobscripts
     write_jobscripts(paramset['sys_dict'], full_data_path)
@@ -419,15 +418,19 @@ def write_jobscripts(sys_dict, path):
     """
 
     for machine, dic in sys_dict.items():
-        machine_path = os.path.join(path, machine)
         for name, scripts in [['network', ['run_network.py']],
                               ['analysis', ['run_analysis.py']],
                               ['plotting', ['run_plotting.py']],
                               ['analysis_and_plotting', ['run_analysis.py',
-                                                         'run_plotting.py']]]:
+                                                         'run_plotting.py']],
+                              ['lfp_simulation', ['run_lfp_simulation.py']],
+                              ['lfp_plotting', ['run_lfp_plotting.py']]
+                              ]:
 
             # key of sys_dict defining resources
-            res = name if name == 'network' else 'analysis_and_plotting'
+            res = (name
+                   if name in ['network', 'lfp_simulation', 'lfp_plotting']
+                   else 'analysis_and_plotting')
             dic = sys_dict[machine][res]
 
             # file for output and errors
@@ -448,11 +451,23 @@ def write_jobscripts(sys_dict, path):
                     f"#SBATCH --ntasks-per-node={dic['num_mpi_per_node']}\n"
                     f"#SBATCH --cpus-per-task={dic['local_num_threads']}\n"
                     f"#SBATCH --time={dic['wall_clock_time']}\n"
-                    "export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n\n")
+                    "export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n"
+                    "unset DISPLAY\n")
                 run_cmd = 'srun --mpi=pmi2'
 
             elif machine == 'local':
-                run_cmd = f"mpirun -n {dic['num_mpi']}"
+                # check which executables are available
+                for mpiexec in ['srun', 'mpiexec', 'mpirun']:
+                    out = subprocess.run(['which', mpiexec])
+                    if out.returncode == 0:
+                        if mpiexec in ['mpiexec', 'mpirun']:
+                            run_cmd = f'{mpiexec} -n {dic["num_mpi"]}'
+                        else:
+                            run_cmd = f'{mpiexec} --mpi=pmi2'
+                        break
+
+            else:
+                raise NotImplementedError(f'machine {machine} not recognized')
 
             # append executable(s),
             # number of local threads needed for network simulation,
@@ -460,9 +475,19 @@ def write_jobscripts(sys_dict, path):
             t = dic['local_num_threads'] if name == 'network' else ''
             o_0 = f'2>&1 | tee {stdout}' if machine == 'local' else ''
             o_1 = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
-            executables = [
-                f'{run_cmd} python3 -u code/{py} {t} {o_0 if i == 0 else o_1}'
-                for i, py in enumerate(scripts)]
+            if name == 'lfp_plotting':
+                # should be run serially!
+                executables = [
+                    f'python3 -u code/{py} {o_0 if i == 0 else o_1}'
+                    for i, py in enumerate(scripts)]
+            elif name == 'lfp_simulation':
+                executables = [
+                    f'{run_cmd} python3 -u code/{py} {o_0 if i == 0 else o_1}'
+                    for i, py in enumerate(scripts)]
+            else:
+                executables = [
+                    f'{run_cmd} python3 -u code/{py} {t} {o_0 if i == 0 else o_1}'
+                    for i, py in enumerate(scripts)]
             sep = '\n\n' + 'wait' + '\n\n'
             jobscript += sep.join(executables)
 

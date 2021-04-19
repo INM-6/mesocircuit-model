@@ -14,7 +14,7 @@ plot_dict = {
     # rcParams to overwrite the default ones
     'rcParams': {
         # dpi for typical journal printing
-        'figure.dpi': 300,
+        'figure.dpi': 150,
         # line width
         'lines.linewidth': 1.,
         # labels close to ticklabels
@@ -22,6 +22,12 @@ plot_dict = {
         # handling of .svg fonts:
         # 'path' (embed characters as paths) or 'none'
         'svg.fonttype': 'none',
+        # font sizes
+        'font.size': 7,
+        # margin around lines
+        'axes.xmargin': 0.0,
+        'axes.ymargin': 0.0,
+
     },
 
     # plot format (use '.eps' for final figures)
@@ -77,7 +83,7 @@ plot_dict = {
     'distr_max_cc': 0.08,
 
     # maximum frequency to show for PSDs (in Hz)
-    'psd_max_freq': 1000,
+    'psd_max_freq': 750,
 
     # parameters for plot_spatial_snapshots()
     # maximum rate on color bar (in spikes/s)
