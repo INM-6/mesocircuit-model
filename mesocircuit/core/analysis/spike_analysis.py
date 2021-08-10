@@ -509,9 +509,9 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         """
         # match position indices with spatial indices
         pos_x = np.digitize(positions['x-position_mm'],
-                            self.space_bins[1:], right=True)
+                            self.space_bins[1:], right=False)
         pos_y = np.digitize(positions['y-position_mm'],
-                            self.space_bins[1:], right=True)
+                            self.space_bins[1:], right=False)
 
         # 2D sparse array with spatial bins flattened to 1D
         map_y, map_x = np.mgrid[0:self.space_bins.size - 1,
@@ -526,8 +526,13 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         row = np.zeros(sptrains_coo.nnz)
         j = 0
         for i, n in enumerate(nspikes):
-            [ind] = np.where((map_x == pos_x[i]) & (map_y == pos_y[i]))[0]
-            row[j:j + n] = ind
+            try:
+                [ind] = np.where((map_x == pos_x[i]) & (map_y == pos_y[i]))[0]
+                row[j:j + n] = ind
+            except ValueError:
+                # TODO: ignore spike events from units outside spatial grid
+                mssg = 'neurons must be on spatial analysis grid'
+                raise NotImplementedError(mssg)
             j += n
 
         sptrains_coo = sp.coo_matrix(
