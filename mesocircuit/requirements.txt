@@ -8,7 +8,7 @@ h5py
 mpi4py
 MEAutility
 neuron>=7.7.2
--e git+https://github.com/LFPy/LFPykit@master#egg=lfpykit
--e git+https://github.com/LFPy/LFPy@master#egg=LFPy
--e git+https://github.com/INM-6/hybridLFPy@master#egg=hybridLFPy
--e git+https://github.com/NeuralEnsemble/parameters@master#egg=parameters
+git+https://github.com/LFPy/LFPykit@master#egg=lfpykit
+git+https://github.com/LFPy/LFPy@master#egg=LFPy
+git+https://github.com/INM-6/hybridLFPy@master#egg=hybridLFPy
+git+https://github.com/NeuralEnsemble/parameters@master#egg=parameters
