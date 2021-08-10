@@ -36,9 +36,9 @@ jobs:
             exit 1
         fi
         python -m pip install --upgrade pip
-        pip install flake8 pytest wheel
+        pip install flake8 pytest wheel numpy
         if [ -f mesocircuit/requirements.txt ]; then pip install -r mesocircuit/requirements.txt; fi
-        pip install -e mesocircuit/. 
+        pip install -e mesocircuit/.
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
