@@ -26,10 +26,19 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
       run: |
+        if [ "$RUNNER_OS" == "macOS" ]; then
+            brew install openmpi
+        elif [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get update
+            sudo apt install build-essential libopenmpi-dev openmpi-bin
+        else
+            echo "$RUNNER_OS not supported"
+            exit 1
+        fi
         python -m pip install --upgrade pip
         pip install flake8 pytest wheel
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        # pip install .  # uncomment this line as soon as a setuptools file is in place.
+        if [ -f mesocircuit/requirements.txt ]; then pip install -r mesocircuit/requirements.txt; fi
+        pip install -e mesocircuit/. 
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -38,4 +47,5 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        py.test -v mesocircuit
+        cd mesocircuit
+        py.test -v .
