@@ -3,12 +3,12 @@ numpy>=1.15.2
 scipy
 matplotlib
 Cython
+PrettyTable
 h5py
 mpi4py
 MEAutility
-git+https://github.com/LFPy/LFPykit@master#egg=lfpykit
 neuron>=7.7.2
-git+https://github.com/LFPy/LFPy.git@master#egg=LFPy
-git+https://github.com/INM-6/hybridLFPy.git@master#egg=hybridLFPy
-git+https://github.com/NeuralEnsemble/parameters@master#egg=parameters
-PrettyTable
+-e git+https://github.com/LFPy/LFPykit@master#egg=lfpykit
+-e git+https://github.com/LFPy/LFPy@master#egg=LFPy
+-e git+https://github.com/INM-6/hybridLFPy@master#egg=hybridLFPy
+-e git+https://github.com/NeuralEnsemble/parameters@master#egg=parameters
