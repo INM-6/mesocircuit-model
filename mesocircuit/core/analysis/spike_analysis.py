@@ -478,7 +478,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             sptrains_bintime = sp.coo_matrix(
                 (data, (spikes['nodeid'], time_indices)),
                 shape=shape, dtype=dtype)
-        return sptrains_bintime
+        return sp.coo_matrix(sptrains_bintime.todense())
 
     def _time_and_space_binned_sptrains_X(
             self, X, positions, sptrains_bintime, dtype):
