@@ -508,9 +508,9 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             Spike trains as sparse matrix in Compressed Sparse Row format.
         """
         # match position indices with spatial indices
-        pos_x = np.digitize(positions['x-position_mm'],
+        pos_x = np.digitize(positions['x-position_mm'].astype(float),
                             self.space_bins[1:], right=False)
-        pos_y = np.digitize(positions['y-position_mm'],
+        pos_y = np.digitize(positions['y-position_mm'].astype(float),
                             self.space_bins[1:], right=False)
 
         # 2D sparse array with spatial bins flattened to 1D
@@ -523,30 +523,32 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         nspikes = np.asarray(sptrains_coo.sum(axis=1)).flatten().astype(int)
         data = sptrains_coo.data
         col = sptrains_coo.col
-        row = np.zeros(sptrains_coo.nnz)
+        row = np.zeros(sptrains_coo.nnz, dtype=int)
         j = 0
         for i, n in enumerate(nspikes):
-            try:
-                [ind] = np.where((map_x == pos_x[i]) & (map_y == pos_y[i]))[0]
-                row[j:j + n] = ind
-            except ValueError:
-                # TODO: ignore spike events from units outside spatial grid
-                mssg = 'neurons must be on spatial analysis grid'
-                raise NotImplementedError(mssg)
+            if n > 0:
+                try:
+                    [ind] = np.where(
+                        (map_x == pos_x[i]) & (map_y == pos_y[i]))[0]
+                    row[j:j + n] = ind
+                except ValueError:
+                    # TODO: ignore spike events from units outside spatial grid
+                    mssg = 'neurons must be on spatial analysis grid'
+                    raise NotImplementedError(mssg)
             j += n
 
-        sptrains_coo = sp.coo_matrix(
-            (data, (row, col)), shape=(map_x.size, sptrains_bintime.shape[1]))
+        sptrains_csr = sp.coo_matrix(
+            (data, (row, col)), shape=(map_x.size, sptrains_bintime.shape[1])
+            ).tocsr()
 
         try:
-            assert(sptrains_bintime.sum() == sptrains_coo.tocsr().sum())
+            assert(sptrains_bintime.sum() == sptrains_csr.sum())
         except AssertionError as ae:
             raise ae(
                 'sptrains_bintime.sum()={0} != sptrains_coo.sum()={1}'.format(
-                    sptrains_bintime.sum(), sptrains_coo.tocsr().sum()))
+                    sptrains_bintime.sum(), sptrains_csr.sum()))
 
-        sptrains_bintime_binspace = sptrains_coo.tocsr()
-        return sptrains_bintime_binspace
+        return sptrains_csr
 
     def __neuron_count_per_spatial_bin_X(self, X, positions):
         """

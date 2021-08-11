@@ -31,17 +31,16 @@ class TestSuite(unittest.TestCase):
         X = 'E'
         N_X = 1000
         spikes = np.array(list(zip(np.arange(N_X), np.arange(N_X) + 0.5)),
-                          dtype=[('nodeid', int), ('time_ms', object)])
-
-        time_bins = np.arange(1000)
+                          dtype=[('nodeid', int), ('time_ms', float)])
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
         sim_dict = {'t_presim': 0, 't_sim': 1000, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array(['E']),
+        net_dict = {'populations': np.array([X]),
                     'num_neurons': np.array([N_X]),
                     'extent': 10}
         ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
 
+        time_bins = np.arange(sim_dict['t_sim'])
 
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
@@ -52,6 +51,107 @@ class TestSuite(unittest.TestCase):
 
         self.assertTrue(np.all(sptrains_bin_time.todense() == np.eye(N_X)))
 
+    def test_SpikeAnalysis__time_binned_sptrains_X_01(self):
+        '''test SpikeAnalysis.__time_binned_sptrains_X()
+        '''
+        from core.analysis.spike_analysis import SpikeAnalysis
+
+        X = 'E'
+        N_X = 50
+        spikes = np.array(list(zip([1, 1, 2, 4], [1.5, 100.5, 200.5, 250.5])),
+                          dtype=[('nodeid', int), ('time_ms', float)])
+
+        # dummy simulation dicts allowing creating SpikeAnalysis instance
+        sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
+        net_dict = {'populations': np.array([X]),
+                    'num_neurons': np.array([N_X]),
+                    'extent': 10}
+        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
+
+        time_bins = np.arange(sim_dict['t_sim'])
+
+        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+
+        sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
+            X=X,
+            spikes=spikes,
+            time_bins=time_bins, dtype=int)
+
+        gt = np.zeros((N_X, time_bins.size))
+        gt[1, 1] = 1
+        gt[1, 100] = 1
+        gt[2, 200] = 1
+        gt[4, 250] = 1
+
+        self.assertTrue(np.all(sptrains_bin_time.todense() == gt))
+
+    def test_SpikeAnalysis__time_binned_sptrains_X_02(self):
+        '''test SpikeAnalysis.__time_binned_sptrains_X()
+        '''
+        from core.analysis.spike_analysis import SpikeAnalysis
+
+        X = 'E'
+        N_X = 50
+        spikes = np.array(list(zip([4, 2, 1, 1], [1.5, 100.5, 200.5, 250.5])),
+                          dtype=[('nodeid', int), ('time_ms', float)])
+
+        # dummy simulation dicts allowing creating SpikeAnalysis instance
+        sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
+        net_dict = {'populations': np.array([X]),
+                    'num_neurons': np.array([N_X]),
+                    'extent': 10}
+        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
+
+        time_bins = np.arange(sim_dict['t_sim'])
+
+        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+
+        sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
+            X=X,
+            spikes=spikes,
+            time_bins=time_bins, dtype=int)
+
+        gt = np.zeros((N_X, time_bins.size))
+        gt[4, 1] = 1
+        gt[2, 100] = 1
+        gt[1, 200] = 1
+        gt[1, 250] = 1
+
+        self.assertTrue(np.all(sptrains_bin_time.todense() == gt))
+
+    def test_SpikeAnalysis__time_binned_sptrains_X_03(self):
+        '''test SpikeAnalysis.__time_binned_sptrains_X()
+        '''
+        from core.analysis.spike_analysis import SpikeAnalysis
+
+        X = 'E'
+        N_X = 50
+        spikes = np.array(list(zip([1, 4, 2, 1], [100.5, 1.5, 250.5, 200.5])),
+                          dtype=[('nodeid', int), ('time_ms', float)])
+
+        # dummy simulation dicts allowing creating SpikeAnalysis instance
+        sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
+        net_dict = {'populations': np.array([X]),
+                    'num_neurons': np.array([N_X]),
+                    'extent': 10}
+        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
+
+        time_bins = np.arange(sim_dict['t_sim'])
+
+        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+
+        sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
+            X=X,
+            spikes=spikes,
+            time_bins=time_bins, dtype=int)
+
+        gt = np.zeros((N_X, time_bins.size))
+        gt[4, 1] = 1
+        gt[1, 100] = 1
+        gt[1, 200] = 1
+        gt[2, 250] = 1
+
+        self.assertTrue(np.all(sptrains_bin_time.todense() == gt))
 
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_00(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
@@ -61,15 +161,12 @@ class TestSuite(unittest.TestCase):
         X = 'E'
         N_X = 100
         spikes = np.array(list(zip(np.arange(N_X), np.arange(N_X) + 0.5)),
-                          dtype=[('nodeid', int), ('time_ms', object)])
+                          dtype=[('nodeid', int), ('time_ms', float)])
 
         # one centered unit per spatial bin
         x, y = np.meshgrid(np.arange(-5, 5) + 0.5, np.arange(-5, 5) + 0.5)
         positions = {'x-position_mm': x.ravel(),
                      'y-position_mm': y.ravel()}
-
-        # one spike per neuron per spatial bin
-        time_bins = np.arange(100)
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
         sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
@@ -78,6 +175,7 @@ class TestSuite(unittest.TestCase):
                     'extent': 10}
         ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
 
+        time_bins = np.arange(sim_dict['t_sim'])
 
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
@@ -90,7 +188,7 @@ class TestSuite(unittest.TestCase):
             X, positions, sptrains_bin_time,
             dtype=np.uint16)
 
-        gt = np.eye(N_X)
+        gt = np.eye((sana.space_bins.size - 1)**2)
 
         self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
 
@@ -103,16 +201,13 @@ class TestSuite(unittest.TestCase):
         X = 'E'
         N_X = 100
         spikes = np.array(list(zip(np.arange(N_X), np.arange(N_X) + 0.5)),
-                          dtype=[('nodeid', int), ('time_ms', object)])
+                          dtype=[('nodeid', int), ('time_ms', float)])
 
         # one unit per spatial bin located on left-hand edge
         # (we count intervals [LH, RH>)
         x, y = np.meshgrid(np.arange(-5, 5), np.arange(-5, 5))
         positions = {'x-position_mm': x.ravel(),
                      'y-position_mm': y.ravel()}
-
-        # one spike per neuron per spatial bin
-        time_bins = np.arange(100)
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
         sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
@@ -121,6 +216,7 @@ class TestSuite(unittest.TestCase):
                     'extent': 10}
         ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
 
+        time_bins = np.arange(sim_dict['t_sim'])
 
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
@@ -133,7 +229,7 @@ class TestSuite(unittest.TestCase):
             X, positions, sptrains_bin_time,
             dtype=np.uint16)
 
-        gt = np.eye(N_X)
+        gt = np.eye((sana.space_bins.size - 1)**2)
 
         self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
 
@@ -145,16 +241,13 @@ class TestSuite(unittest.TestCase):
         X = 'E'
         N_X = 100
         spikes = np.array(list(zip(np.arange(N_X), np.arange(N_X) + 0.5)),
-                          dtype=[('nodeid', int), ('time_ms', object)])
+                          dtype=[('nodeid', int), ('time_ms', float)])
 
         # one unit per spatial bin located near right-hand edge
         # (we count intervals [LH, RH>)
         x, y = np.meshgrid(np.arange(-5, 5) + 0.9999, np.arange(-5, 5) + 0.9999)
         positions = {'x-position_mm': x.ravel(),
                      'y-position_mm': y.ravel()}
-
-        # one spike per neuron per spatial bin
-        time_bins = np.arange(100)
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
         sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
@@ -163,6 +256,7 @@ class TestSuite(unittest.TestCase):
                     'extent': 10}
         ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
 
+        time_bins = np.arange(sim_dict['t_sim'])
 
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
@@ -175,7 +269,7 @@ class TestSuite(unittest.TestCase):
             X, positions, sptrains_bin_time,
             dtype=np.uint16)
 
-        gt = np.eye(N_X)
+        gt = np.eye((sana.space_bins.size - 1)**2)
 
         self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
 
@@ -187,16 +281,13 @@ class TestSuite(unittest.TestCase):
         X = 'E'
         N_X = 100
         spikes = np.array(list(zip(np.arange(N_X), np.arange(N_X) + 0.5)),
-                          dtype=[('nodeid', int), ('time_ms', object)])
+                          dtype=[('nodeid', int), ('time_ms', float)])
 
         # one unit per spatial bin located on right-hand edge
         # (we count intervals [LH, RH>)
         x, y = np.meshgrid(np.arange(-5, 5) + 1, np.arange(-5, 5) + 1)
         positions = {'x-position_mm': x.ravel(),
                      'y-position_mm': y.ravel()}
-
-        # one spike per neuron per spatial bin
-        time_bins = np.arange(100)
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
         sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
@@ -205,6 +296,7 @@ class TestSuite(unittest.TestCase):
                     'extent': 10}
         ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
 
+        time_bins = np.arange(sim_dict['t_sim'])
 
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
@@ -228,16 +320,13 @@ class TestSuite(unittest.TestCase):
         X = 'E'
         N_X = 100
         spikes = np.array(list(zip(np.arange(N_X), np.arange(N_X) + 0.5)),
-                          dtype=[('nodeid', int), ('time_ms', object)])
+                          dtype=[('nodeid', int), ('time_ms', float)])
 
         # one unit per spatial bin located on right-hand edge
         # (we count intervals [LH, RH>)
         x, y = np.meshgrid(np.arange(-5, 5) - 0.0001, np.arange(-5, 5) - 0.0001)
         positions = {'x-position_mm': x.ravel(),
                      'y-position_mm': y.ravel()}
-
-        # one spike per neuron per spatial bin
-        time_bins = np.arange(100)
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
         sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
@@ -246,6 +335,7 @@ class TestSuite(unittest.TestCase):
                     'extent': 10}
         ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
 
+        time_bins = np.arange(sim_dict['t_sim'])
 
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
@@ -260,3 +350,134 @@ class TestSuite(unittest.TestCase):
                 dtype=np.uint16)
         except NotImplementedError:
             pass
+
+    def test_SpikeAnalysis_time_and_space_binned_sptrains_X_05(self):
+        '''test SpikeAnalysis.__time_binned_sptrains_X()
+        '''
+        from core.analysis.spike_analysis import SpikeAnalysis
+
+        X = 'E'
+        N_X = 100
+        spikes = np.array(list(zip(np.hstack([np.arange(N_X)] * 3), np.arange(N_X * 3) + 0.5)),
+                          dtype=[('nodeid', int), ('time_ms', float)])
+        spikes = spikes[spikes['time_ms'].argsort()]
+
+        # one centered unit per spatial bin
+        x, y = np.meshgrid(np.arange(-5, 5) + 0.5, np.arange(-5, 5) + 0.5)
+        positions = {'x-position_mm': x.ravel(),
+                     'y-position_mm': y.ravel()}
+
+        # three spikes per neuron per spatial bin
+        time_bins = np.arange(N_X * 3)
+
+        # dummy simulation dicts allowing creating SpikeAnalysis instance
+        sim_dict = {'t_presim': 0,
+                    't_sim': time_bins.size,
+                    'sim_resolution': 0.1}
+        net_dict = {'populations': np.array(['E']),
+                    'num_neurons': np.array([N_X]),
+                    'extent': 10}
+        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
+
+        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+
+        sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
+            X=X,
+            spikes=spikes,
+            time_bins=time_bins, dtype=int)
+
+        sptrains_bin_space_time = sana._time_and_space_binned_sptrains_X(
+            X, positions, sptrains_bin_time,
+            dtype=np.uint16)
+
+        gt = np.c_[np.eye((sana.space_bins.size - 1)**2),
+                   np.eye((sana.space_bins.size - 1)**2),
+                   np.eye((sana.space_bins.size - 1)**2)]
+
+        self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
+
+    def test_SpikeAnalysis_time_and_space_binned_sptrains_X_06(self):
+        '''test SpikeAnalysis.__time_binned_sptrains_X()
+        '''
+        from core.analysis.spike_analysis import SpikeAnalysis
+
+        X = 'E'
+        N_X = 100
+        spikes = np.array(list(zip([1, 1, 2, 4], [1.5, 100.5, 200.5, 250.5])),
+                          dtype=[('nodeid', int), ('time_ms', float)])
+
+        # one centered unit per spatial bin
+        x, y = np.meshgrid(np.arange(-5, 5) + 0.5, np.arange(-5, 5) + 0.5)
+        positions = {'x-position_mm': x.ravel(),
+                     'y-position_mm': y.ravel()}
+
+        # dummy simulation dicts allowing creating SpikeAnalysis instance
+        sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
+        net_dict = {'populations': np.array(['E']),
+                    'num_neurons': np.array([N_X]),
+                    'extent': 10}
+        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
+
+        time_bins = np.arange(sim_dict['t_sim'])
+
+        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+
+        sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
+            X=X,
+            spikes=spikes,
+            time_bins=time_bins, dtype=int)
+
+        sptrains_bin_space_time = sana._time_and_space_binned_sptrains_X(
+            X, positions, sptrains_bin_time,
+            dtype=np.uint16)
+
+        gt = np.zeros(((sana.space_bins.size - 1)**2, time_bins.size))
+        gt[1, 1] = 1
+        gt[1, 100] = 1
+        gt[2, 200] = 1
+        gt[4, 250] = 1
+
+        self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
+
+    def test_SpikeAnalysis_time_and_space_binned_sptrains_X_06(self):
+        '''test SpikeAnalysis.__time_binned_sptrains_X()
+        '''
+        from core.analysis.spike_analysis import SpikeAnalysis
+
+        X = 'E'
+        N_X = 100
+        spikes = np.array(list(zip([4, 1, 2, 1], [1.5, 200.5, 250.5, 100.5])),
+                          dtype=[('nodeid', int), ('time_ms', float)])
+
+        # one centered unit per spatial bin
+        x, y = np.meshgrid(np.arange(-5, 5) + 0.5, np.arange(-5, 5) + 0.5)
+        positions = {'x-position_mm': x.ravel(),
+                     'y-position_mm': y.ravel()}
+
+        # dummy simulation dicts allowing creating SpikeAnalysis instance
+        sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
+        net_dict = {'populations': np.array(['E']),
+                    'num_neurons': np.array([N_X]),
+                    'extent': 10}
+        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
+
+        time_bins = np.arange(sim_dict['t_sim'])
+
+        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+
+        sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
+            X=X,
+            spikes=spikes,
+            time_bins=time_bins, dtype=int)
+
+        sptrains_bin_space_time = sana._time_and_space_binned_sptrains_X(
+            X, positions, sptrains_bin_time,
+            dtype=np.uint16)
+
+        gt = np.zeros(((sana.space_bins.size - 1)**2, time_bins.size))
+        gt[4, 1] = 1
+        gt[1, 200] = 1
+        gt[2, 250] = 1
+        gt[1, 100] = 1
+
+        self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
