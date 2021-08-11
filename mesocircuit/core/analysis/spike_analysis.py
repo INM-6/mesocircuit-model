@@ -445,18 +445,18 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         Parameters
         ----------
-        X
+        X: str
             Population name.
-        spikes
+        spikes: ndarray
             Array of node ids and spike times.
-        time_bins
+        time_bins: ndarray
             Time bins.
-        dtype
+        dtype: type or str
             An integer dtype that fits the data.
 
         Returns
         -------
-        sptrains
+        sptrains: scipy.sparse.coo.coo_matrix
             Spike trains as sparse matrix in COOrdinate format.
 
         """
@@ -478,7 +478,11 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             sptrains_bintime = sp.coo_matrix(
                 (data, (spikes['nodeid'], time_indices)),
                 shape=shape, dtype=dtype)
-        return sp.coo_matrix(sptrains_bintime.todense())
+
+        sptrains_bintime = sptrains_bintime.tocsr().tocoo()
+        assert np.all(np.diff(sptrains_bintime.row) >= 0), \
+            'row indices must be increasing'
+        return sptrains_bintime
 
     def _time_and_space_binned_sptrains_X(
             self, X, positions, sptrains_bintime, dtype):
@@ -493,18 +497,18 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         Parameters
         ----------
-        X
+        X: str
             Population name.
-        positions
+        positions: dict
             Positions of population X.
-        sptrains_bintime
-            Time-binned spike trains.
-        dtype
+        sptrains_bintime: scipy.sparse.coo.coo_matrix
+            Time-binned spike trains as sparse matrix in COOrdinate format
+        dtype: type
             An integer dtype that fits the data.
 
         Returns
         -------
-        sptrains_bintime_binspace
+        sptrains_bintime_binspace: scipy.sparse.csr.csr_matrix
             Spike trains as sparse matrix in Compressed Sparse Row format.
         """
         # match position indices with spatial indices
@@ -519,11 +523,15 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         map_y = map_y.ravel()
         map_x = map_x.ravel()
 
-        sptrains_coo = sptrains_bintime.tocoo().astype(dtype)
-        nspikes = np.asarray(sptrains_coo.sum(axis=1)).flatten().astype(int)
-        data = sptrains_coo.data
-        col = sptrains_coo.col
-        row = np.zeros(sptrains_coo.nnz, dtype=int)
+        assert type(sptrains_bintime) is sp.coo.coo_matrix, \
+            'sptrains_bintime must be of type scipy.sparse.coo.coo_matrix'
+        assert np.all(np.diff(sptrains_bintime.row) >= 0), \
+            'sptrains_bintime.row must be in increasing order'
+
+        nspikes = np.asarray(sptrains_bintime.sum(axis=1)).flatten().astype(int)
+        data = sptrains_bintime.data
+        col = sptrains_bintime.col
+        row = np.zeros(sptrains_bintime.nnz, dtype=int)
         j = 0
         for i, n in enumerate(nspikes):
             if n > 0:

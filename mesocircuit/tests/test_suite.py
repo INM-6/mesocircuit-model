@@ -49,7 +49,7 @@ class TestSuite(unittest.TestCase):
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
-        self.assertTrue(np.all(sptrains_bin_time.todense() == np.eye(N_X)))
+        self.assertTrue(np.all(sptrains_bin_time.toarray() == np.eye(N_X)))
 
     def test_SpikeAnalysis__time_binned_sptrains_X_01(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
@@ -83,7 +83,7 @@ class TestSuite(unittest.TestCase):
         gt[2, 200] = 1
         gt[4, 250] = 1
 
-        self.assertTrue(np.all(sptrains_bin_time.todense() == gt))
+        self.assertTrue(np.all(sptrains_bin_time.toarray() == gt))
 
     def test_SpikeAnalysis__time_binned_sptrains_X_02(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
@@ -117,7 +117,7 @@ class TestSuite(unittest.TestCase):
         gt[1, 200] = 1
         gt[1, 250] = 1
 
-        self.assertTrue(np.all(sptrains_bin_time.todense() == gt))
+        self.assertTrue(np.all(sptrains_bin_time.toarray() == gt))
 
     def test_SpikeAnalysis__time_binned_sptrains_X_03(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
@@ -151,7 +151,7 @@ class TestSuite(unittest.TestCase):
         gt[1, 200] = 1
         gt[2, 250] = 1
 
-        self.assertTrue(np.all(sptrains_bin_time.todense() == gt))
+        self.assertTrue(np.all(sptrains_bin_time.toarray() == gt))
 
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_00(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
@@ -190,7 +190,7 @@ class TestSuite(unittest.TestCase):
 
         gt = np.eye((sana.space_bins.size - 1)**2)
 
-        self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
+        self.assertTrue(np.all(sptrains_bin_space_time.toarray() == gt))
 
 
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_01(self):
@@ -231,7 +231,7 @@ class TestSuite(unittest.TestCase):
 
         gt = np.eye((sana.space_bins.size - 1)**2)
 
-        self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
+        self.assertTrue(np.all(sptrains_bin_space_time.toarray() == gt))
 
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_02(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
@@ -271,7 +271,7 @@ class TestSuite(unittest.TestCase):
 
         gt = np.eye((sana.space_bins.size - 1)**2)
 
-        self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
+        self.assertTrue(np.all(sptrains_bin_space_time.toarray() == gt))
 
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_03(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
@@ -394,7 +394,7 @@ class TestSuite(unittest.TestCase):
                    np.eye((sana.space_bins.size - 1)**2),
                    np.eye((sana.space_bins.size - 1)**2)]
 
-        self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
+        self.assertTrue(np.all(sptrains_bin_space_time.toarray() == gt))
 
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_06(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
@@ -437,7 +437,7 @@ class TestSuite(unittest.TestCase):
         gt[2, 200] = 1
         gt[4, 250] = 1
 
-        self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
+        self.assertTrue(np.all(sptrains_bin_space_time.toarray() == gt))
 
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_06(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
@@ -480,4 +480,4 @@ class TestSuite(unittest.TestCase):
         gt[2, 250] = 1
         gt[1, 100] = 1
 
-        self.assertTrue(np.all(sptrains_bin_space_time.todense() == gt))
+        self.assertTrue(np.all(sptrains_bin_space_time.toarray() == gt))
