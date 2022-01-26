@@ -14,7 +14,7 @@ plot_dict = {
     # rcParams to overwrite the default ones
     'rcParams': {
         # dpi for typical journal printing
-        'figure.dpi': 150,
+        'figure.dpi': 300,
         # line width
         'lines.linewidth': 1.,
         # labels close to ticklabels
