@@ -126,7 +126,7 @@ def parameters(plot):
     return
 
 
-def raster(plot, all_sptrains, all_pos_sorting_arrays):
+def raster(plot, all_sptrains, all_pos_sorting_arrays, length):
     """
     Creates a figure with a raster plot.
 
@@ -135,8 +135,14 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays):
     plot
     all_sptrains
     all_pos_sorting_arrays
+    length [short, long]
     """
-    print('Plotting spike raster.')
+    print(f'Plotting spike raster ({length}).')
+
+    if length == 'short':
+        raster_time_interval = plot.plot_dict['raster_time_interval_short']
+    elif length == 'long':
+        raster_time_interval = plot.plot_dict['raster_time_interval_long']
 
     if plot.net_dict['thalamic_input']:
         pops = plot.X
@@ -152,7 +158,7 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays):
         # dots if all neurons were shown
         rate_estim = 4.
         full_num_dots_estim = \
-            np.diff(plot.plot_dict['raster_time_interval']) * 1e-3 * \
+            np.diff(raster_time_interval) * 1e-3 * \
             rate_estim * \
             np.sum(num_neurons)
         raster_sample_step = 1 + int(full_num_dots_estim / target_num_dots)
@@ -168,10 +174,10 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays):
         all_sptrains,
         all_pos_sorting_arrays,
         plot.sim_dict['sim_resolution'],
-        plot.plot_dict['raster_time_interval'],
+        raster_time_interval,
         raster_sample_step)
 
-    plot.savefig('raster', eps_conv=True)
+    plot.savefig(f'raster_{length}', eps_conv=True)
     return
 
 
@@ -252,9 +258,9 @@ def spatial_snapshots(plot, all_inst_rates_bintime_binspace):
     else:
         pops = plot.Y
 
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 4.))
+    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 3.))
     gs = gridspec.GridSpec(1, 1)
-    gs.update(left=0.17, right=0.97, top=0.99, bottom=0.2)
+    gs.update(left=0.09, right=0.97, top=1.1, bottom=0.2)
     ax = plot.plot_spatial_snapshots(
         gs[0, 0],
         pops,
@@ -295,11 +301,16 @@ def crosscorrelation_funcs_thalamic_pulses(plot, all_CCfuncs_thalamic_pulses):
     return
 
 
-def instantaneous_firing_rates(plot, all_sptrains_bintime):
+def instantaneous_firing_rates(plot, all_sptrains_bintime, length):
     """
     Creates a figure with histograms of instantaneous firing rates.
     """
-    print('Plotting instantaneous firing rates.')
+    print(f'Plotting instantaneous firing rates ({length}).')
+
+    if length == 'short':
+        raster_time_interval = plot.plot_dict['raster_time_interval_short']
+    elif length == 'long':
+        raster_time_interval = plot.plot_dict['raster_time_interval_long']
 
     if plot.net_dict['thalamic_input']:
         pops = plot.X
@@ -317,9 +328,9 @@ def instantaneous_firing_rates(plot, all_sptrains_bintime):
         ylabel=r'$\nu (s^{-1})$',
         sptrains=all_sptrains_bintime,
         time_step=plot.ana_dict['binsize_time'],
-        time_interval=plot.plot_dict['raster_time_interval'])
+        time_interval=raster_time_interval)
 
-    plot.savefig('instantaneous_rates')
+    plot.savefig(f'instantaneous_rates_{length}')
     return
 
 

@@ -47,7 +47,16 @@ functions = [
      [pl]],
 
     [figures.raster,
-     [pl, d['all_sptrains'], d['all_pos_sorting_arrays']]],
+     [pl, d['all_sptrains'], d['all_pos_sorting_arrays'], 'short']],
+
+    [figures.raster,
+     [pl, d['all_sptrains'], d['all_pos_sorting_arrays'], 'long']],
+
+    [figures.instantaneous_firing_rates,
+     [pl, d['all_sptrains_bintime'], 'short']],
+
+    [figures.instantaneous_firing_rates,
+     [pl, d['all_sptrains_bintime'], 'long']],
 
     [figures.statistics_overview,
      [pl, d['all_FRs'], d['all_LVs'], d['all_CCs_distances'], d['all_PSDs']]],
@@ -60,9 +69,6 @@ functions = [
 
     [figures.crosscorrelation_funcs_thalamic_pulses,
      [pl, d['all_CCfuncs_thalamic_pulses']]],
-
-    [figures.instantaneous_firing_rates,
-     [pl, d['all_sptrains_bintime']]],
 ]
 
 pt.run_serial_functions_in_parallel(functions, os.path.basename(__file__))

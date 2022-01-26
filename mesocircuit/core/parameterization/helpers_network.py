@@ -89,12 +89,17 @@ def derive_dependent_parameters(base_net_dict):
     PSP_matrix_mean[1::2, 0::2] *= net_dict['rel_weight_exc_to_inh']
 
     # conversion from PSPs to PSCs
-    PSC_over_PSP = postsynaptic_potential_to_current(
+    PSC_over_PSP_ex = postsynaptic_potential_to_current(
         net_dict['neuron_params']['C_m'],
         net_dict['neuron_params']['tau_m'],
-        net_dict['neuron_params']['tau_syn'])
-    net_dict['full_weight_matrix_mean'] = PSP_matrix_mean * PSC_over_PSP
-    net_dict['full_weight_ext'] = net_dict['PSP_exc_mean'] * PSC_over_PSP
+        net_dict['neuron_params']['tau_syn_ex'])
+    net_dict['full_weight_matrix_mean'] = PSP_matrix_mean * PSC_over_PSP_ex
+    # if time constants different: compensate by adjusting inhibitory weights
+    if net_dict['neuron_params']['tau_syn_ex'] != net_dict['neuron_params']['tau_syn_in']:
+        frac_tau_syn = (net_dict['neuron_params']['tau_syn_ex'] /
+                        net_dict['neuron_params']['tau_syn_in'])
+        net_dict['full_weight_matrix_mean'][:,1::2] *= frac_tau_syn
+    net_dict['full_weight_ext'] = net_dict['PSP_exc_mean'] * PSC_over_PSP_ex
 
     # 1mm2 neuron number dependent on the base model
     num_neurons_1mm2 = np.zeros(net_dict['num_pops'])
@@ -143,14 +148,24 @@ def derive_dependent_parameters(base_net_dict):
 
     net_dict['indegrees_1mm2'] = np.round(indegrees_1mm2).astype(int)
 
-    # indegrees are scaled only if the extent is > 1 and
+    # in-degrees are scaled only if the extent is > 1 and
     # connect_method is 'fixedindegree_exp' or distr_indegree_exp;
     # otherwise the indegrees from the 1mm2 network are preserved
     if (net_dict['extent'] > 1. and net_dict['connect_method']
-            in ['fixedindegree_exp', 'distr_indegree_exp']):
+            in ['fixedindegree_exp', 'distr_indegree_exp', 'distr_indegree_gauss']):
         # scale indegrees from disc of 1mm2 to disc of radius extent/2.
-        net_dict['K_area_scaling'] = scale_indegrees_to_extent(
-            net_dict['extent'], net_dict['beta'])
+        if net_dict['K_area_scale_method'] == 'PD2014':
+            net_dict['K_area_scaling'] = scale_indegrees_to_extent(
+                extent=net_dict['extent'],
+                decay=np.ones_like(net_dict['beta']) * 0.3, profile='gaussian')
+        elif net_dict['K_area_scale_method'] == 'beta':
+            net_dict['K_area_scaling'] = scale_indegrees_to_extent(
+                extent=net_dict['extent'],
+                decay=net_dict['beta'], profile='exponential')
+        elif net_dict['K_area_scale_method'] == 'old':
+            net_dict['K_area_scaling'] = old_indegree_scaling()
+        else:
+            raise Exception ('K_area_scale_method incorrect.')
 
         # elementwise multiplication because K_area_scaling is a matrix
         full_indegrees = np.multiply(
@@ -165,13 +180,34 @@ def derive_dependent_parameters(base_net_dict):
 
     # adjust external indegrees to compensate for changed interal indegrees.
     # this does not apply to thalamus
-    full_ext_indegrees = adjust_ext_indegrees_to_preserve_mean_input(
-        indegrees_1mm2[:, :-1], full_indegrees[:, :-1],
-        ext_indegrees_1mm2,
-        net_dict['mean_rates_' + net_dict['base_model']],
-        net_dict['bg_rate'],
-        net_dict['full_weight_matrix_mean'][:, :-1],
-        net_dict['full_weight_ext'])
+    if net_dict['use_old_external_indegrees']:
+        full_ext_indegrees =  np.array([1701.752083840871, 1621.1260232237535,
+                                        1864.2670612706677, 2443.1073800264094,
+                                        1939.3421758918564, 1724.031970381723,
+                                        3051.092229479683, 2245.9301959805216])
+    else:
+        full_ext_indegrees = adjust_ext_indegrees_to_preserve_mean_input(
+            indegrees_1mm2[:, :-1], full_indegrees[:, :-1],
+            ext_indegrees_1mm2,
+            net_dict['mean_rates_' + net_dict['base_model']],
+            net_dict['bg_rate'],
+            net_dict['full_weight_matrix_mean'][:, :-1],
+            net_dict['full_weight_ext'])
+
+
+    if net_dict['use_old_full_num_synapses']:
+        full_num_synapses = np.array(
+            [[828882273.000247, 392373667.961514, 379559653.820154, 177882649.346106, 62060854.238871, -0.0, 43300793.76242, -0.0, 0.],
+             [312286600.613029, 89730383.554041, 77382503.429251, 31553447.415552, 40984338.606205, -0.0, 6748860.463846, -0.0, 0.],
+             [66788887.061005, 14434115.3848, 457490148.137505, 264727072.297861, 13627055.533483, 133952.826066, 273856633.522986, -0.0, 37310957.265509],
+             [150193546.203107, 1773566.976223, 182931727.34158, 106203163.37557, 1677819.868631, -0.0, 160119167.736337, -0.0, 5865966.713957],
+             [193400955.023919, 33747733.417738, 102879922.954544, 2898312.47049, 37512090.889222, 39236078.439484, 27267785.471299, -0.0, 0.],
+             [23140305.947658, 3200662.840475, 11486196.96599, 245608.859384, 4751682.267154, 6233644.993468, 2523097.347322, -0.0, 0.],
+             [88907168.023082, 10606303.565132, 127442417.574458, 25062536.950038, 76562189.60893, 5782052.956883, 157215604.064241, 184383740.844691, 12742511.126558],
+             [42517558.793266, 329037.040456, 4202790.94696, 154504.650571, 7584616.411093, 480652.990745, 53551271.623572, 24121713.759947, 997799.00007]])
+
+        full_indegrees = (full_num_synapses /
+                          full_num_neurons[:-1][:, np.newaxis]) 
 
     net_dict['full_indegrees'] = np.round(full_indegrees).astype(int)
     net_dict['full_ext_indegrees'] = np.round(full_ext_indegrees).astype(int)
@@ -210,7 +246,7 @@ def derive_dependent_parameters(base_net_dict):
                 net_dict['K_scaling'],
                 net_dict['full_weight_matrix_mean'],
                 net_dict['full_weight_ext'],
-                net_dict['neuron_params']['tau_syn'],
+                net_dict['neuron_params']['tau_syn_ex'],
                 net_dict['mean_rates_' + net_dict['base_model']],
                 net_dict['full_DC_amp'],
                 net_dict['poisson_input'],
@@ -222,12 +258,18 @@ def derive_dependent_parameters(base_net_dict):
 
     # p0 is computed for non-fixed in-degrees
     # connectivity profile: p0 * exp(-r/beta)
-    if net_dict['connect_method'] == 'distr_indegree_exp':
+    if net_dict['connect_method'] in [
+        'distr_indegree_exp', 'distr_indegree_gauss']:
+        if net_dict['connect_method'] == 'distr_indegree_exp':
+            profile = 'exponential'
+        elif net_dict['connect_method'] == 'distr_indegree_gauss':
+            profile = 'gaussian'
         net_dict['p0_raw'], net_dict['p0'], net_dict['repeat_connect'] = \
             zero_distance_conn_prob_exp(num_neurons,
                                         indegrees,
                                         net_dict['extent'],
-                                        net_dict['beta'])
+                                        net_dict['beta'],
+                                        profile)
     else:
         net_dict['repeat_connect'] = np.ones_like(indegrees, dtype=int)
 
@@ -238,19 +280,36 @@ def derive_dependent_parameters(base_net_dict):
     return net_dict
 
 
-def scale_indegrees_to_extent(extent, beta):
+def old_indegree_scaling():
+    # includes old conn_prob_modifications
+    # TC set manually
+    t = 1.2
+    K_indegree_scaling = \
+        np.array([[1.146, 1.105, 1.179, 1.157, 1.185, 1.000, 1.199, 1.000, t],
+                 [1.126, 1.124, 1.185, 1.174, 1.16 , 1.000, 1.201, 1.000, t],
+                 [1.199, 1.2  , 1.175, 0.956, 1.199, 1.203, 1.178, 1.000, t],
+                 [1.164, 1.202, 1.158, 1.279, 1.201, 1.000, 1.143, 1.000, t],
+                 [1.146, 1.168, 1.175, 1.2  , 1.156, 1.025, 1.192, 1.000, t],
+                 [1.172, 1.188, 1.189, 1.202, 0.935, 0.911, 1.198, 1.000, t],
+                 [1.194, 1.199, 1.191, 1.194, 1.171, 1.192, 1.181, 1.071, t],
+                 [1.183, 1.203, 1.201, 1.203, 1.188, 1.199, 1.166, 1.120, t]])
+    return K_indegree_scaling
+
+
+def scale_indegrees_to_extent(extent, decay, profile):
     """
     Computes a matrix of factors to scale indegrees from a disc of area 1mm2 to
-    a disc with radius of half of the extent. The latter corresponds to the
-    radius of the cut-off mask used by the net_dict['connect_method'] is
-    'fixedindegree_exp'.
+    a disc with radius of half of the extent.
 
     Parameters
     ----------
     extent
         Side length (in mm) of square sheets where neurons are distributed.
-    beta
-        Matrix of decay parameters of exponential spatial profile (in mm).
+    decay
+        Matrix of decay parameters (in mm).
+    profile
+        Function of spatial connectivity profile.
+        Options are 'exponential' or 'gaussian'. 
 
     Returns
     -------
@@ -258,15 +317,24 @@ def scale_indegrees_to_extent(extent, beta):
         Matrix of scaling factors to be applied to indegrees_1mm2.
     """
 
-    def expression(beta, radius):
-        frac = radius / beta
-        return 1. - np.exp(-frac) * (1. + frac)
+    def expression(radius, decay, profile):
+        """
+        int( r * profile(r,decay), r=0..R)
+        Skip factor decay**2 in result because only fraction is used.
+        """
+        frac = radius / decay
+        if profile == 'exponential':
+            return 1. - np.exp(-frac) * (1. + frac)
+        elif profile == 'gaussian':
+            return 1. - np.exp(-0.5 * frac**2)
+        else:
+            raise Exception('Connectivity profile incorrect.')
 
     radius_1mm2 = 1. / np.sqrt(np.pi)
     radius_area = extent / 2.
 
-    K_indegree_scaling = (expression(beta, radius_area) /
-                          expression(beta, radius_1mm2))
+    K_indegree_scaling = (expression(radius_area, decay, profile) /
+                          expression(radius_1mm2, decay, profile))
 
     return K_indegree_scaling
 
@@ -332,7 +400,7 @@ def adjust_ext_indegrees_to_preserve_mean_input(
     return full_ext_indegrees
 
 
-def zero_distance_conn_prob_exp(num_neurons, indegrees, extent, beta):
+def zero_distance_conn_prob_exp(num_neurons, indegrees, extent, decay, profile):
     """
     Computes the zero-distance connection probability and repeat factors for
     the connect_method 'distr_indegree_exp'.
@@ -348,8 +416,11 @@ def zero_distance_conn_prob_exp(num_neurons, indegrees, extent, beta):
         Indegree matrix.
     extent
         Side length (in mm) of square sheets where neurons are distributed.
-    beta
-        Matrix of decay parameters of exponential spatial profile (in mm).
+    decay
+        Matrix of decay parameters (in mm).
+    profile
+        Function of spatial connectivity profile.
+        Options are 'exponential' or 'gaussian'. 
 
     Returns
     -------
@@ -366,8 +437,15 @@ def zero_distance_conn_prob_exp(num_neurons, indegrees, extent, beta):
     conn_prob_uniform = indegrees / (num_neurons * np.pi / 4.)
 
     radius = extent / 2.
-    p0_raw = (conn_prob_uniform * 0.5 * radius**2 /
-              (beta * (beta - np.exp(-radius / beta) * (beta + radius))))
+
+    frac = radius / decay
+    p0_raw = conn_prob_uniform * 0.5 * frac**2
+    if profile == 'exponential':
+        p0_raw *= ( 1. - np.exp(-frac) * (1. + frac) )
+    elif profile == 'gaussian':
+        p0_raw *= ( 1. - np.exp(-0.5 * frac**2))
+    else:
+        raise Exception('Connectivity profile incorrect.')
 
     repeat_connect = np.ones_like(indegrees, dtype=int)
     p0 = copy.copy(p0_raw)

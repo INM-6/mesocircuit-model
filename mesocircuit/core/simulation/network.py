@@ -342,8 +342,8 @@ class Network:
                                          positions=positions)
                 population.set(
                     tau_m=self.net_dict['neuron_params']['tau_m'],
-                    tau_syn_ex=self.net_dict['neuron_params']['tau_syn'],
-                    tau_syn_in=self.net_dict['neuron_params']['tau_syn'],
+                    tau_syn_ex=self.net_dict['neuron_params']['tau_syn_ex'],
+                    tau_syn_in=self.net_dict['neuron_params']['tau_syn_in'],
                     E_L=self.net_dict['neuron_params']['E_L'],
                     V_th=self.net_dict['neuron_params']['V_th'],
                     V_reset=self.net_dict['neuron_params']['V_reset'],
@@ -579,11 +579,23 @@ class Network:
                                     beta=self.net_dict['beta'][i][j]),
                             'mask': {'circular': {
                                 'radius': self.net_dict['extent'] / 2.}}}
+                    # TODO only temporary
+                    elif self.net_dict['connect_method'] == 'distr_indegree_gauss':
+                        conn_dict_rec = {
+                            'rule': 'pairwise_bernoulli',
+                            'p': self.net_dict['p0'][i][j] *
+                            nest.spatial_distributions.gaussian(
+                                    x=nest.spatial.distance,
+                                    mean=0,
+                                    std=self.net_dict['beta'][i][j]),
+                            'mask': {'circular': {
+                                'radius': self.net_dict['extent'] / 2.}}}
                     else:
                         raise Exception('connect_method is incorrect.')
 
                     # allow_multapses: True is ineffective for rule
-                    # pairwise_bernoulli ('connect_method' == 'distr_indegree_exp')
+                    # pairwise_bernoulli
+                    # ('connect_method' == 'distr_indegree_exp', 'distr_indegree_gauss)
                     conn_dict_rec.update({'allow_autapses': False,
                                           'allow_multapses': True})
 
@@ -604,10 +616,7 @@ class Network:
                         delay_param = (
                             (self.net_dict['delay_offset_matrix'][i][j] +
                              nest.spatial.distance /
-                             self.net_dict['prop_speed_matrix'][i][j]) *
-                            nest.random.normal(
-                                mean=1.,
-                                std=self.net_dict['delay_lin_rel_std']))
+                             self.net_dict['prop_speed_matrix'][i][j]))
 
                     syn_dict = {
                         'synapse_model': 'static_synapse',

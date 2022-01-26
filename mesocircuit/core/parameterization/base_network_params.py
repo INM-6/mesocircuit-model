@@ -54,6 +54,8 @@ net_dict = {
              [568.214412020203, 78.1506995350578, 282.524967334319, 5.33709891502392, 146.307555909299, 187.593064274647, 64.0388656508819, 0.001459301922844],
              [159.401948962628, 19.9785159873622, 227.441084484738, 46.0107686142342, 138.832688971888, 10.5525583810149, 287.535665222409, 355.683175924637],
              [368.658922577975, 2.77868306292702, 31.990783610677, 2.64327372576867, 67.4774463423829, 4.20258522768281, 478.851911854799, 220.365998044097]]),
+    # use the total number of synapses from the arxiv preprint
+    'use_old_full_num_synapses': False,    
     # connection probabilities from thalamus
     'conn_probs_th_1mm2':
         np.array([0.0, 0.0, 0.0983, 0.0619, 0.0, 0.0, 0.0512, 0.0196]),
@@ -102,9 +104,6 @@ net_dict = {
     'delay_offset_exc_inh': np.array([0.5, 0.5]),
     # propagation speed (in mm/ms)
     'prop_speed_exc_inh': np.array([0.3, 0.3]),
-    # relative standard deviation of the linear delay of excitatory and
-    # inhibitory connections
-    'delay_lin_rel_std': 0.1,
 
     # turn Poisson input on or off (True or False)
     # if False: DC input is applied for compensation
@@ -113,6 +112,8 @@ net_dict = {
     # as in 'populations')
     'K_ext_PD2014': np.array([1600, 1500, 2100, 1900, 2000, 1900, 2900, 2100]),
     'K_ext_SvA2018': 10. / 8. * np.array([1267, 1251, 1255, 1246, 1430, 1250, 1777, 1254]),
+    # overwrites external indegrees with the ones from the arxiv preprint
+    'use_old_external_indegrees': False,
     # rate of the Poisson generator (in spikes/s)
     'bg_rate': 8.,
     # delay from the Poisson generator to the network (in ms)
@@ -146,11 +147,18 @@ net_dict = {
         'C_m': 250.0,
         # membrane time constant (in ms)
         'tau_m': 10.0,
-        # time constant of postsynaptic currents (in ms)
-        'tau_syn': 0.5,
+        # time constants of postsynaptic currents (in ms)
+        'tau_syn_ex': 0.5,
+        'tau_syn_in': 0.5,
         # refractory period of the neurons after a spike (in ms)
         't_ref': 2.0},
 
+    # method for scaling the in-degrees if extent > 1
+    # 'PD2014': Gaussian decay with sigma 0.3 mm
+    # 'beta': exponential decay with the same beta as used for connections
+    # 'old': from old mesocircuit by scaling connection probabilities,
+    #        includes conn_prob_modifications 
+    'K_area_scale_method': 'beta',
     # method to draw recurrent network connections, options are:
     # 'fixedtotalnumber': same routine as in the original microcircuit, i.e.,
     #                     fixed total number of connections, no space
@@ -161,6 +169,7 @@ net_dict = {
     # 'distr_indegree_exp': distributed indegrees, distance-dependent connection
     #                      probabilities with an exponential profile, uses the
     #                      decay parameter 'beta' (default)
+    # 'distr_indegree_gauss': TODO only temporary, uses beta as sigma
     'connect_method': 'distr_indegree_exp',
     # decay parameter of exponential profile (in mm),
     # used if 'connect_medhod' is 'fixedindegree_exp',

@@ -132,28 +132,15 @@ def evaluate_parameterspaces(
                         parameterspaces[paramspace_key][dic],
                         ps_dicts[paramspace_key][dic])
 
-                    # ranges and values from parameter space that overwrite the
-                    # base parameters
-                    # TODO: this is not implemented for deeper dictionaries, yet
-                    # (could be handled as __merge_dictionaries())
-                    for param, val in ps_dicts[paramspace_key][dic].items():
-                        if isinstance(val, ps.ParameterRange):
-                            if dic not in parameterview[paramspace_key][
-                                    'custom_params']['ranges'].keys():
-                                parameterview[paramspace_key][
-                                    'custom_params']['ranges'][dic] = {}
-                            parameterview[paramspace_key][
-                                'custom_params']['ranges'][dic][param] = list(val)
-                        else:
-                            if dic not in parameterview[paramspace_key][
-                                    'custom_params']['values'].keys():
-                                parameterview[paramspace_key][
-                                    'custom_params']['values'][dic] = {}
-                            parameterview[paramspace_key][
-                                'custom_params']['values'][dic][param] = val
+                    # parameterview: ranges and values from parameter space that
+                    # overwrite the base parameters
+                    for param, value in ps_dicts[paramspace_key][dic].items():
+                        parameterview[paramspace_key]['custom_params'] = \
+                            __custom_params_for_parameterview(
+                                parameterview[paramspace_key]['custom_params'],
+                                dic, param, value)
 
-            # only sim_dict and net_dict enable parameter spaces and are used to
-            # compute a unique id
+            # only sim_dict and net_dict are used to compute a unique id
             dicts_unique = ['sim_dict', 'net_dict']
             sub_paramspace = ps.ParameterSpace(
                 {k: parameterspaces[paramspace_key][k] for k in dicts_unique})
@@ -174,9 +161,8 @@ def evaluate_parameterspaces(
                 # add parameterset values of ranges to parameterview
                 parameterview[paramspace_key]['paramsets'][ps_id] = {}
                 for dic in \
-                        parameterview[paramspace_key]['custom_params']['ranges']:
-                    parameterview[paramspace_key][
-                        'paramsets'][ps_id][dic] = {}
+                    parameterview[paramspace_key]['custom_params']['ranges']:
+                    parameterview[paramspace_key]['paramsets'][ps_id][dic] = {}
                     for param, val in \
                         parameterview[paramspace_key][
                             'custom_params']['ranges'][dic].items():
@@ -342,6 +328,8 @@ def params_for_lif_meanfield_tools(net_dict):
     The parameters for the full network are used.
     Currently the normal delay values are taken independent of which delay type
     is chosen.
+    Since LMT only allows for one synaptic time constant, the excitatory one is
+    used.
 
     Parameters
     ----------
@@ -377,7 +365,7 @@ def params_for_lif_meanfield_tools(net_dict):
                     'unit': 'mV'},
         'V_th_abs': {'val': net_dict['neuron_params']['V_th'],
                      'unit': 'mV'},
-        'tau_s': {'val': net_dict['neuron_params']['tau_syn'],
+        'tau_s': {'val': net_dict['neuron_params']['tau_syn_ex'],
                   'unit': 'ms'},
         'd_e': {'val': d_e_mean,
                 'unit': 'ms'},
@@ -416,7 +404,6 @@ def write_jobscripts(sys_dict, path):
     path
         Path to folder of ps_id.
     """
-
     for machine, dic in sys_dict.items():
         for name, scripts in [['network', ['run_network.py']],
                               ['analysis', ['run_analysis.py']],
@@ -760,6 +747,44 @@ def __merge_dictionaries(main_dict, new_dict):
         else:
             main_dict[key] = val
     return main_dict
+
+
+
+def __custom_params_for_parameterview(old_custom_params, dic, param, value):
+    """
+    """
+    def nested_dict_from_list(keylist, val):
+        dic = {keylist[-1]: val}
+        for key in reversed(keylist[:-1]):
+            dic = {key: dic}
+        return dic
+
+    def set_custom_range_or_value(keylist, val, custom_params):
+        if isinstance(val, dict):
+            for k,v in val.items():
+                keylist.append(k)
+                set_custom_range_or_value(keylist, v, custom_params)
+            return
+        elif isinstance(val, ps.ParameterRange):
+            custom_val = list(val) 
+            custom_type = 'ranges'
+        else:
+            custom_val = val
+            custom_type = 'values'
+
+        custom_dict = {}
+        custom_dict[custom_type] = {}
+        custom_dict[custom_type][dic] = {}
+        custom_dict[custom_type][dic] = nested_dict_from_list(keylist, custom_val)
+
+        custom_params = __merge_dictionaries(custom_params, custom_dict)
+        return
+
+    custom_params = dict(old_custom_params)
+    set_custom_range_or_value([param], value, custom_params)
+    return custom_params
+
+
 
 class NumpyEncoder(json.JSONEncoder):
     """

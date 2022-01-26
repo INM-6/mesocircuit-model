@@ -316,10 +316,10 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                binsize_space,
                                start_time='th_pulse_start',  # ms
                                step=1,  # multiplication
-                               nframes=8,
+                               nframes=30,
                                tickstep=2,
                                cbar=True,
-                               cbar_bottom=0.12,
+                               cbar_bottom=0.2,
                                cbar_height=0.02):
         """
         """
