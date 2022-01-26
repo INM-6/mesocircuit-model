@@ -127,7 +127,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                                 self.__merge_h5_files_populations_datatype)
         return
 
-    def compute_psd(self, x, Fs, detrend='mean', overlap=3/4):
+    def compute_psd(self, x, Fs, detrend='mean', overlap=3 / 4):
         """
         Compute power sprectrum `Pxx` of signal `x` using
         matplotlib.mlab.psd function
@@ -523,12 +523,14 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         map_y = map_y.ravel()
         map_x = map_x.ravel()
 
-        assert type(sptrains_bintime) is sp.coo.coo_matrix, \
+        assert isinstance(sptrains_bintime, sp.coo.coo_matrix), \
             'sptrains_bintime must be of type scipy.sparse.coo.coo_matrix'
         assert np.all(np.diff(sptrains_bintime.row) >= 0), \
             'sptrains_bintime.row must be in increasing order'
 
-        nspikes = np.asarray(sptrains_bintime.sum(axis=1)).flatten().astype(int)
+        nspikes = np.asarray(
+            sptrains_bintime.sum(
+                axis=1)).flatten().astype(int)
         data = sptrains_bintime.data
         col = sptrains_bintime.col
         row = np.zeros(sptrains_bintime.nnz, dtype=int)
@@ -547,7 +549,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         sptrains_csr = sp.coo_matrix(
             (data, (row, col)), shape=(map_x.size, sptrains_bintime.shape[1])
-            ).tocsr()
+        ).tocsr()
 
         try:
             assert(sptrains_bintime.sum() == sptrains_csr.sum())

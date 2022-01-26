@@ -289,8 +289,9 @@ class Network:
 
         # pass parameters to NEST kernel
 
-        # TODO adjust code on random number generator seeds if PR #1549 is merged
-        if 'grng_seed' in nest.GetKernelStatus(): # in NEST 2
+        # TODO adjust code on random number generator seeds if PR #1549 is
+        # merged
+        if 'grng_seed' in nest.GetKernelStatus():  # in NEST 2
             rng_seed = 'grng_seed'
         else:
             rng_seed = 'rng_seed'
@@ -306,7 +307,7 @@ class Network:
             # prefix
             'data_prefix': 'presim_'}
 
-        if rng_seed == 'grng_seed': # in NEST 2
+        if rng_seed == 'grng_seed':  # in NEST 2
             kernel_dict.update({'rng_seeds': rng_seeds})
 
         nest.SetKernelStatus(kernel_dict)

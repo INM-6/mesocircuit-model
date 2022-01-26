@@ -129,8 +129,7 @@ def evaluate_parameterspaces(
                     vdic)  # copy is needed
                 if dic in ps_dicts[paramspace_key]:
                     parameterspaces[paramspace_key][dic] = __merge_dictionaries(
-                        parameterspaces[paramspace_key][dic],
-                        ps_dicts[paramspace_key][dic])
+                        parameterspaces[paramspace_key][dic], ps_dicts[paramspace_key][dic])
 
                     # parameterview: ranges and values from parameter space that
                     # overwrite the base parameters
@@ -161,7 +160,7 @@ def evaluate_parameterspaces(
                 # add parameterset values of ranges to parameterview
                 parameterview[paramspace_key]['paramsets'][ps_id] = {}
                 for dic in \
-                    parameterview[paramspace_key]['custom_params']['ranges']:
+                        parameterview[paramspace_key]['custom_params']['ranges']:
                     parameterview[paramspace_key]['paramsets'][ps_id][dic] = {}
                     for param, val in \
                         parameterview[paramspace_key][
@@ -749,7 +748,6 @@ def __merge_dictionaries(main_dict, new_dict):
     return main_dict
 
 
-
 def __custom_params_for_parameterview(old_custom_params, dic, param, value):
     """
     """
@@ -761,12 +759,12 @@ def __custom_params_for_parameterview(old_custom_params, dic, param, value):
 
     def set_custom_range_or_value(keylist, val, custom_params):
         if isinstance(val, dict):
-            for k,v in val.items():
+            for k, v in val.items():
                 keylist.append(k)
                 set_custom_range_or_value(keylist, v, custom_params)
             return
         elif isinstance(val, ps.ParameterRange):
-            custom_val = list(val) 
+            custom_val = list(val)
             custom_type = 'ranges'
         else:
             custom_val = val
@@ -775,7 +773,8 @@ def __custom_params_for_parameterview(old_custom_params, dic, param, value):
         custom_dict = {}
         custom_dict[custom_type] = {}
         custom_dict[custom_type][dic] = {}
-        custom_dict[custom_type][dic] = nested_dict_from_list(keylist, custom_val)
+        custom_dict[custom_type][dic] = nested_dict_from_list(
+            keylist, custom_val)
 
         custom_params = __merge_dictionaries(custom_params, custom_dict)
         return
@@ -783,7 +782,6 @@ def __custom_params_for_parameterview(old_custom_params, dic, param, value):
     custom_params = dict(old_custom_params)
     set_custom_range_or_value([param], value, custom_params)
     return custom_params
-
 
 
 class NumpyEncoder(json.JSONEncoder):

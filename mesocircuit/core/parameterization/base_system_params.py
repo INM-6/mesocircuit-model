@@ -73,7 +73,7 @@ sys_dict = {
             # '$(nproc)' gives the number of available logical cores
             'num_mpi': ('$(sysctl -n hw.physicalcpu)'
                         if sys.platform == 'darwin' else '$(nproc)'),
-                        },
+        },
         'lfp_simulation': {
             'num_mpi': ('$(sysctl -n hw.physicalcpu)'
                         if sys.platform == 'darwin' else '$(nproc)'),
@@ -81,5 +81,5 @@ sys_dict = {
         'lfp_plotting': {
             'num_mpi': 1
         }
-        }
-        }
+    }
+}

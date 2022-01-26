@@ -18,6 +18,6 @@ def load_h5_to_sparse_X(X, h5data):
     """
     data_X = sp.coo_matrix((h5data[X]['data_row_col'][()][:, 0],
                             (h5data[X]['data_row_col'][()][:, 1],
-                            h5data[X]['data_row_col'][()][:, 2])),
+                             h5data[X]['data_row_col'][()][:, 2])),
                            shape=h5data[X]['shape'][()])
     return data_X.tocsr()
