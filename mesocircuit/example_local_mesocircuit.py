@@ -1,7 +1,7 @@
 import core.helpers.mesocircuit_framework as mesoframe
 import parametersets
 
-# minimal example to run base mesocircuit on hpc system
+# minimal example to run downscaled mesocircuit locally
 if 1:
     parameterview = mesoframe.evaluate_parameterspaces(
         custom_ps_dicts=parametersets.ps_dicts,
@@ -15,9 +15,8 @@ if 1:
         jobs=[
             'network',
             'analysis_and_plotting',
-            'lfp_simulation',
-            'lfp_plotting',
+            #'lfp_simulation',
+            #'lfp_plotting',
         ],
-        #machine='local',
-        machine='hpc'
+        machine='local',
         )

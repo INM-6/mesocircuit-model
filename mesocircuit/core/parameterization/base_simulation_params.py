@@ -16,8 +16,8 @@ sim_dict = {
     # if True, data will be overwritten,
     # if False, a NESTError is raised if the files already exist
     'overwrite_files': True,
-    # master seed for NEST and NumPy
-    'master_seed': 55,
+    # random number generator seed
+    'rng_seed': 55,
 
     # The full simulation time is the sum of a presimulation time and the main
     # simulation time.

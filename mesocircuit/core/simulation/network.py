@@ -112,7 +112,7 @@ class Network:
         if nest.Rank() == 0:
             print('Pre-simulating {} ms.'.format(t_presim))
 
-        nest.SetKernelStatus({'data_prefix': 'presim_'})
+        nest.data_prefix = 'presim_'
         nest.Simulate(t_presim)
 
         return
@@ -129,7 +129,7 @@ class Network:
         if nest.Rank() == 0:
             print('Simulating {} ms.'.format(t_sim))
 
-        nest.SetKernelStatus({'data_prefix': 'sim_'})
+        nest.data_prefix = 'sim_'
         nest.Simulate(t_sim)
 
         # dump recorded spikes to HDF5 file
@@ -249,9 +249,6 @@ class Network:
         """ Initializes the NEST kernel.
 
         Reset the NEST kernel and pass parameters to it.
-        The number of seeds for random number generation are computed based on
-        the total number of virtual processes
-        (number of MPI processes x number of threads per MPI process).
 
         Parameters
         ----------
@@ -262,55 +259,27 @@ class Network:
         nest.ResetKernel()
 
         # automatically set thread number such that the the total number of
-        # virtual processes does not exceed the number of available logical
+        # virtual processes does not exceed the number of available physical
         # cores
         if local_num_threads == 'auto':
             nproc = mp.cpu_count() // 2  # disable multithreading
-            local_threads = int(nproc / nest.GetKernelStatus('num_processes'))
+            local_threads = int(nproc / nest.num_processes)
         else:
             local_threads = int(local_num_threads)
 
-        nest.SetKernelStatus(
-            {'local_num_threads': local_threads})
-        N_vp = nest.GetKernelStatus('total_num_virtual_procs')
-
-        # set seeds for random number generation
-        master_seed = self.sim_dict['master_seed']
-        grng_seed = master_seed + N_vp
-        rng_seeds = (master_seed + N_vp + 1 + np.arange(N_vp)).tolist()
+        nest.local_num_threads = local_threads
+        nest.resolution = self.sim_dict['sim_resolution']
+        nest.rng_seed = self.sim_dict['rng_seed']
+        nest.overwrite_files = self.sim_dict['overwrite_files']
+        nest.print_time = self.sim_dict['print_time']
+        nest.data_path = 'raw_data'
+        nest.data_prefix = 'presim_'
 
         if nest.Rank() == 0:
-            print('Master seed: {} '.format(master_seed))
-            print('  Total number of virtual processes: {}'.format(N_vp))
-            print('  Global random number generator seed: {}'.format(grng_seed))
-            print(
-                '  Seeds for random number generators of virtual processes (old): ' +
-                '{}'.format(rng_seeds))
-
-        # pass parameters to NEST kernel
-
-        # TODO adjust code on random number generator seeds if PR #1549 is
-        # merged
-        if 'grng_seed' in nest.GetKernelStatus():  # in NEST 2
-            rng_seed = 'grng_seed'
-        else:
-            rng_seed = 'rng_seed'
-
-        self.sim_resolution = self.sim_dict['sim_resolution']
-        kernel_dict = {
-            'resolution': self.sim_resolution,
-            rng_seed: grng_seed,
-            'overwrite_files': self.sim_dict['overwrite_files'],
-            'print_time': self.sim_dict['print_time'],
-            'data_path': 'raw_data',
-            # set presimulation-prefix already here to avoid empty files without
-            # prefix
-            'data_prefix': 'presim_'}
-
-        if rng_seed == 'grng_seed':  # in NEST 2
-            kernel_dict.update({'rng_seeds': rng_seeds})
-
-        nest.SetKernelStatus(kernel_dict)
+            print('RNG seed: {} '.format(
+                nest.rng_seed))
+            print('Total number of virtual processes: {}'.format(
+                nest.total_num_virtual_procs))
         return
 
     def __create_neuronal_populations(self):
@@ -631,7 +600,7 @@ class Network:
                             max=w_max),
                         'delay': nest.math.redraw(
                             delay_param,
-                            min=self.sim_resolution,
+                            min=nest.resolution,
                             max=np.Inf)}
 
                     # repeat_connect is 1 apart from rule pairwise_bernoulli
