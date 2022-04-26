@@ -58,7 +58,7 @@ sys_dict = {
     },
     # laptop
     'local': {
-        # per default, use as many threads as available (logical cores) for
+        # per default, use as many threads as available (physical cores) for
         # network simulation and as many MPI process as possible for
         # analysis and plotting
         'network': {
@@ -66,20 +66,19 @@ sys_dict = {
             'num_mpi': 1,
             # number of threads per MPI process
             # if 'auto', the number of threads is set such that the total
-            # number of virtual processes equals the number of logical
-            # cores
+            # number of virtual processes equals the number of physical cores
             'local_num_threads': 'auto'},
         'analysis_and_plotting': {
             # '$(nproc)' gives the number of available logical cores
             'num_mpi': ('$(sysctl -n hw.physicalcpu)'
-                        if sys.platform == 'darwin' else '$(nproc)'),
-                        },
+                        if sys.platform == 'darwin' else '$(($(nproc) / 2))'),
+        },
         'lfp_simulation': {
             'num_mpi': ('$(sysctl -n hw.physicalcpu)'
-                        if sys.platform == 'darwin' else '$(nproc)'),
+                        if sys.platform == 'darwin' else '$(($(nproc) / 2))'),
         },
         'lfp_plotting': {
             'num_mpi': 1
         }
-        }
-        }
+    }
+}

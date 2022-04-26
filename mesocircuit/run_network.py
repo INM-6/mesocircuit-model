@@ -10,7 +10,6 @@ Run a simulation of the mesocircuit model.
 import os
 import sys
 import pickle
-import nest
 import core.simulation.network as network
 import core.helpers.parallelism_time as pt
 

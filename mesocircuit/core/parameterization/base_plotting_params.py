@@ -65,8 +65,9 @@ plot_dict = {
 
 
     # parameters for plot_raster()
-    # time interval for short raster plots (in ms)
-    'raster_time_interval': np.array([500., 1500.]),
+    # time intervals for raster plots (in ms)
+    'raster_time_interval_short': np.array([600., 800.]),
+    'raster_time_interval_long': np.array([500., 1500.]),
     # sample step of raster plot (1 means all neurons are shown).
     # if not a number, but 'auto' is given, a sample step is automatically
     # computed
@@ -87,6 +88,6 @@ plot_dict = {
 
     # parameters for plot_spatial_snapshots()
     # maximum rate on color bar (in spikes/s)
-    'snapshots_max_rate': 1000.0
+    'snapshots_max_rate': 50.0
 
 }

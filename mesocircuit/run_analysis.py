@@ -7,7 +7,6 @@ Analyze the spiking network activity of the mesocircuit.
 ###############################################################################
 # Import the necessary modules and setup the time measurements.
 import os
-import sys
 import pickle
 import core.analysis.spike_analysis as spike_analysis
 import core.helpers.parallelism_time as pt

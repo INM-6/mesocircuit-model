@@ -39,6 +39,9 @@ def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
             fmt = str(raw)
         elif isinstance(raw, str):
             fmt = r'\_'.join(raw.split('_'))
+        elif isinstance(raw, list):
+            str_list = [str(i) for i in raw]
+            fmt = '[' + ', '.join(str_list) + ']'
         return fmt
 
     # load parameter space view, ranges and hash map
