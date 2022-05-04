@@ -20,6 +20,10 @@ ana_dict = {
         'positions': {'sortby': 'nodeid',
                       'fmt': ['%d', '%f', '%f']}},
 
+    # whether to analyze only spike data within a center disc of 1mm2,
+    # if False: all recorded data will be analyzed
+    'extract_1mm2': False,
+
     # quantities to be computed during the preprocessing phase.
     # order is important because of dependencies
     'datatypes_preprocess': np.array(['positions',

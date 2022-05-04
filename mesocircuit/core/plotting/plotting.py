@@ -61,6 +61,20 @@ class Plotting(base_class.BaseAnalysisPlotting):
         # inherit from parent class
         super().__init__(sim_dict, net_dict, ana_dict)
 
+        # overwrite N_X and N_Y if 1mm2 of data was extracted for analysis
+        if ana_dict['extract_1mm2']:
+            N_X_1mm2 = np.load(os.path.join('processed_data', 'N_X_1mm2.dat'),
+                               dtype=int)
+            if RANK == 0:
+                print(f'1mm2 of data has been extracted. '
+                      f'  Total number of neurons before extraction:\n    '
+                      f'{self.N_X}\n'
+                      f'  Number of extracted neurons for analysis:\n    '
+                      f'{N_X_1mm2}')
+
+            self.N_X = N_X_1mm2
+            self.N_Y = self.N_X[:-1]
+
         # plot_dict is not in parent class
         self.plot_dict = plot_dict
 
