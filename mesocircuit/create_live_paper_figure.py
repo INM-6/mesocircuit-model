@@ -47,10 +47,15 @@ def create_live_paper_figure(
 
 if __name__ == '__main__':
 
-    create_live_paper_figure(
-        data_dir='live_paper_figure',
-        base_key='local_mesocircuit',  # TODO
-        machine='local',  # TODO
-        run_parametersets=1,
-        run_figures=1
-    )
+    data_dir = 'live_paper_figure'
+
+    create_live_paper_figure(data_dir=data_dir)
+
+    # for testing:
+    #create_live_paper_figure(
+    #    data_dir=data_dir,
+    #    base_key='local_mesocircuit',  # TODO
+    #    machine='local',  # TODO
+    #    run_parametersets=1,
+    #    run_figures=1
+    #)
