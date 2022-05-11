@@ -238,6 +238,9 @@ net_dict = {
     # The final beta is beta_unscaled * beta_scaling.
     'beta_scaling': 1.,
 
+    # scaling factor for mask to be multiplied with the respective beta
+    'mask_scaling': 4.,
+
     # TODO maybe remove
     # If beta_exh_inh is not False, it must be a list with excitatory and
     # inhibitory decay parameters [beta_exc, beta_inh] which will be used to
