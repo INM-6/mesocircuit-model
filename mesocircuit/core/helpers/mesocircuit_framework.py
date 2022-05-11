@@ -423,7 +423,7 @@ def write_jobscripts(sys_dict, path):
             stdout = os.path.join('stdout', name + '.txt')
 
             # start jobscript
-            jobscript = ('#!/bin/bash -x\n')
+            jobscript = ('#!/bin/bash -x\nset -o pipefail\n')
 
             # define machine specifics
             if machine == 'hpc':
@@ -640,7 +640,9 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
     elif machine == 'local':
         print('Running ' + info)
         for job in jobs:
-            os.system(f'sh jobscripts/{machine}_{job}.sh')
+            retval = os.system(f'bash jobscripts/{machine}_{job}.sh')
+            if retval != 0:
+                raise Exception(f"os.system failed: {retval}")
 
     os.chdir(cwd)
     return
