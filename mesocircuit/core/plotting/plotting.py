@@ -1117,8 +1117,3 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
         plt.close()
         return
-
-    def plot_icon(self):
-        """
-        """
-        return
