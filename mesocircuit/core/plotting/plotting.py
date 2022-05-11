@@ -18,16 +18,9 @@ import os
 import warnings
 import h5py
 import numpy as np
-from mpi4py import MPI
 import matplotlib
 from ..helpers.io import load_h5_to_sparse_X
 matplotlib.use('Agg')
-
-# initialize MPI
-COMM = MPI.COMM_WORLD
-SIZE = COMM.Get_size()
-RANK = COMM.Get_rank()
-
 
 class Plotting(base_class.BaseAnalysisPlotting):
     """
@@ -56,9 +49,6 @@ class Plotting(base_class.BaseAnalysisPlotting):
         """
         Initializes some class attributes.
         """
-        if RANK == 0:
-            print('Instantiating a Plotting object.')
-
         # inherit from parent class
         super().__init__(sim_dict, net_dict, ana_dict)
 

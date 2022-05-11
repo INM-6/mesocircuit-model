@@ -7,8 +7,6 @@ Definition of figures plotted with Plotting class in plotting.py.
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import glob
 import h5py
 import matplotlib
 matplotlib.use('Agg')
@@ -151,7 +149,7 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays, length):
         pops = plot.Y
         num_neurons = plot.N_Y
 
-    # automatically compute a samatplotlib. step for this figure
+    # automatically compute a sample step for this figure
     if plot.plot_dict['raster_sample_step'] == 'auto':
         target_num_dots = 40000
         # assume an average firing rate of 4 Hz to estimate the number of
