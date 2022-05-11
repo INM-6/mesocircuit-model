@@ -6,7 +6,7 @@ import core.plotting.other_figures as other_figures
 def create_live_paper_figure(
         data_dir,
         base_key='base',
-        custom_params={
+        custom_params={ # TODO parameters not final
             'net_dict': {'thalamic_input': 'pulses'},
         },
         machine='hpc',
@@ -52,10 +52,11 @@ if __name__ == '__main__':
     create_live_paper_figure(data_dir=data_dir)
 
     # for testing:
-    #create_live_paper_figure(
-    #    data_dir=data_dir,
-    #    base_key='local_mesocircuit',  # TODO
-    #    machine='local',  # TODO
-    #    run_parametersets=1,
-    #    run_figures=1
-    #)
+    if 0:
+        create_live_paper_figure(
+            data_dir=data_dir,
+            base_key='local_mesocircuit',
+            machine='local',
+            run_parametersets=1,
+            run_figures=1
+        )
