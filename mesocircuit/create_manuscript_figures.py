@@ -2,11 +2,10 @@ import core.helpers.mesocircuit_framework as mesoframe
 import parametersets
 import core.plotting.ms_figures as ms_figures
 
-
 def create_figs_reference_vs_upscaled(
         data_dir,
         ref_model='microcircuit',
-        ups_model='mesocircuit',
+        ups_model='base',
         machine='hpc',
         run_parametersets=1,
         run_figures=1):
@@ -40,11 +39,14 @@ if __name__ == '__main__':
 
     data_dir = 'ms_figures'
 
-    if 1:
+    create_figs_reference_vs_upscaled(data_dir=data_dir)
+
+    # testing
+    if 0:
         create_figs_reference_vs_upscaled(
             data_dir=data_dir,
-            ref_model='local_mesocircuit',  # TODO microcircuit
-            ups_model='local_mesocircuit',  # TODO base mesocircuit
+            ref_model='local_mesocircuit',
+            ups_model='local_mesocircuit',
             machine='local',
-            run_parametersets=0,
-            run_figures=0)
+            run_parametersets=1,
+            run_figures=1)
