@@ -14,6 +14,7 @@ if 1:
         parameterview=parameterview,
         jobs=[
             'network',
+            #'analysis',
             'analysis_and_plotting',
             #'lfp_simulation',
             #'lfp_plotting',
