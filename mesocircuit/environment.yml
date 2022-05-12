@@ -32,6 +32,6 @@ dependencies:
   - pip
   - pip:
       - junitparser
-      - git+https://github.com/LFPy/LFPy
+      - git+https://github.com/LFPy/LFPy@v2.2.6
       - git+https://github.com/NeuralEnsemble/parameters
       - git+https://github.com/INM-6/hybridLFPy@nest3
