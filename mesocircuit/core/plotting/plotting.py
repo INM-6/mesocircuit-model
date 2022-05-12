@@ -6,27 +6,21 @@ Functions starting with 'plot_' plot to a gridspec cell and are used in figures.
 """
 
 import matplotlib.patheffects as PathEffects
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Rectangle, Circle
 from ..helpers import base_class
 from matplotlib.colors import SymLogNorm
 from matplotlib.ticker import MultipleLocator, MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import mpl_toolkits.mplot3d.art3d as art3d
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import os
 import warnings
 import h5py
 import numpy as np
-from mpi4py import MPI
 import matplotlib
 from ..helpers.io import load_h5_to_sparse_X
 matplotlib.use('Agg')
-
-# initialize MPI
-COMM = MPI.COMM_WORLD
-SIZE = COMM.Get_size()
-RANK = COMM.Get_rank()
-
 
 class Plotting(base_class.BaseAnalysisPlotting):
     """
@@ -55,9 +49,6 @@ class Plotting(base_class.BaseAnalysisPlotting):
         """
         Initializes some class attributes.
         """
-        if RANK == 0:
-            print('Instantiating a Plotting object.')
-
         # inherit from parent class
         super().__init__(sim_dict, net_dict, ana_dict)
 
@@ -80,6 +71,57 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
         # update the matplotlib.rcParams
         matplotlib.rcParams.update(self.plot_dict['rcParams'])
+        return
+
+    def plot_mesocircuit_icon(self, gs, elev=12, azim=-50, scale_fs=0.7):
+        """
+        Plots a schematic network icon to gridspec cell.
+
+        Parameters
+        ----------
+        gs
+            A gridspec cell to plot into.
+        elev
+            Elevation angle in z-plane.
+        azim
+            Azimuth angle in x,y-plane.
+        scale_fs
+            Scaling factor for font size.
+        """
+        ax = plt.subplot(gs, projection='3d')
+
+        pop_colors = self.plot_dict['pop_colors']
+        layer_labels = self.plot_dict['layer_labels']
+        for i, col in enumerate(pop_colors[::-1]):
+            if i == 0:  # TC
+                patch = Circle((0.5, 0.5), 0.1, facecolor=col)
+                z = -2 / (len(pop_colors) - 1)
+                xshift = 0.4
+                yshift = 0.4
+                label = self.plot_dict['pop_labels'][-1]
+            else:
+                patch = Rectangle((0, 0), 1, 1, facecolor=col)
+                z = i / (len(pop_colors) - 1)
+                xshift = -0.02
+                yshift = -0.02
+                label = layer_labels[::-1][int((i - 1) / 2)]
+            ax.add_patch(patch)
+            art3d.pathpatch_2d_to_3d(patch, z=z, zdir="z")
+            if not i % 2:
+                ax.text(1. - xshift, 1 - yshift, z, label,
+                        fontsize=matplotlib.rcParams['font.size'] * scale_fs,
+                        verticalalignment='top')
+
+        ax.text(1, 1, 1.05, '4 mm', 'x',
+                fontsize=matplotlib.rcParams['font.size'] * scale_fs,
+                horizontalalignment='right')
+        ax.text(0, 0, 1.05, '4 mm', 'y',
+                fontsize=matplotlib.rcParams['font.size'] * scale_fs,
+                horizontalalignment='left')
+
+        ax.grid(False)
+        ax.view_init(elev=elev, azim=azim)
+        plt.axis('off')
         return
 
     def plot_raster(self,
@@ -327,7 +369,6 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                populations,
                                all_inst_rates_bintime_binspace,
                                binsize_time,
-                               binsize_space,
                                start_time='th_pulse_start',  # ms
                                step=1,  # multiplication
                                nframes=30,
