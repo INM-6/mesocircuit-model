@@ -25,93 +25,104 @@ def parameters(plot):
               wspace=0.6, hspace=0.5)
 
     axes = []
+    if 'full_num_synapses' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_matrix(
+            axes[-1],
+            data=plot.net_dict['full_num_synapses'],
+            title='number of synapses',
+            show_num=False,
+            set_bad=[0])
 
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_matrix(
-        axes[-1],
-        data=plot.net_dict['full_num_synapses'],
-        title='number of synapses',
-        show_num=False,
-        set_bad=[0])
+    if 'full_indegrees' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_matrix(
+            axes[-1],
+            data=plot.net_dict['full_indegrees'],
+            title='in-degree',
+            show_num='all',
+            set_bad=[0])
 
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_matrix(
-        axes[-1],
-        data=plot.net_dict['full_indegrees'],
-        title='in-degree',
-        show_num='all',
-        set_bad=[0])
+    if 'beta' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_matrix(
+            axes[-1],
+            data=plot.net_dict['beta'],
+            title='beta (mm)',
+            num_format='{:.3f}')
 
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_matrix(
-        axes[-1],
-        data=plot.net_dict['beta'],
-        title='beta (mm)',
-        num_format='{:.3f}')
+    if 'K_area_scaling' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_matrix(
+            axes[-1],
+            data=plot.net_dict['K_area_scaling'],
+            title='in-degree scaling',
+            num_format='{:.3f}')
 
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_matrix(
-        axes[-1],
-        data=plot.net_dict['K_area_scaling'],
-        title='in-degree scaling',
-        num_format='{:.3f}')
+    if 'delay_offset_matrix' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_matrix(
+            axes[-1],
+            data=plot.net_dict['delay_offset_matrix'],
+            title='delay offset (ms)',
+            num_format='{:.2f}')
 
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_matrix(
-        axes[-1],
-        data=plot.net_dict['delay_offset_matrix'],
-        title='delay offset (ms)',
-        num_format='{:.2f}')
+    if 'prop_speed_matrix' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_matrix(
+            axes[-1],
+            data=plot.net_dict['prop_speed_matrix'],
+            title='propagation speed (mm/ms)',
+            num_format='{:.2f}')
 
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_matrix(
-        axes[-1],
-        data=plot.net_dict['prop_speed_matrix'],
-        title='propagation speed (mm/ms)',
-        num_format='{:.2f}')
+    if 'delay_lin_eff_mean' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_matrix(
+            axes[-1],
+            data=plot.net_dict['delay_lin_eff_mean'],
+            title='delay lin eff mean (ms)',
+            num_format='{:.2f}')
 
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_matrix(
-        axes[-1],
-        data=plot.net_dict['delay_lin_eff_mean'],
-        title='delay lin eff mean (ms)',
-        num_format='{:.2f}')
+    if 'delay_lin_eff_std' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_matrix(
+            axes[-1],
+            data=plot.net_dict['delay_lin_eff_std'],
+            title='delay lin eff std (ms)',
+            num_format='{:.2f}')
 
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_matrix(
-        axes[-1],
-        data=plot.net_dict['delay_lin_eff_std'],
-        title='delay lin eff std (ms)',
-        num_format='{:.2f}')
+    if 'full_weight_matrix_mean' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_matrix(
+            axes[-1],
+            data=plot.net_dict['full_weight_matrix_mean'],
+            title='mean weight (pA)',
+            num_format='{:.0f}')
 
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_matrix(
-        axes[-1],
-        data=plot.net_dict['full_weight_matrix_mean'],
-        title='mean weight (pA)',
-        num_format='{:.0f}')
+    if 'p0_raw' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_matrix(
+            axes[-1],
+            data=plot.net_dict['p0_raw'],
+            title='not full p0_raw',
+            show_num='all', num_format='{:.2f}',
+            set_bad=[0])
 
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_matrix(
-        axes[-1],
-        data=plot.net_dict['p0_raw'],
-        title='not full p0_raw',
-        show_num='all', num_format='{:.2f}',
-        set_bad=[0])
+    if 'full_num_neurons' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_vector(
+            axes[-1],
+            data=plot.net_dict['full_num_neurons'],
+            title='number of neurons',
+            show_num=False)
 
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_vector(
-        axes[-1],
-        data=plot.net_dict['full_num_neurons'],
-        title='number of neurons',
-        show_num=False)
-
-    axes.append(plt.subplot(gs[len(axes)]))
-    plot.plot_parameters_vector(
-        axes[-1],
-        data=plot.net_dict['full_ext_indegrees'],
-        title='external in-degree',
-        show_num='all')
+    if 'full_ext_indegrees' in plot.net_dict:
+        axes.append(plt.subplot(gs[len(axes)]))
+        plot.plot_parameters_vector(
+            axes[-1],
+            data=plot.net_dict['full_ext_indegrees'],
+            title='external in-degree',
+            show_num='all')
 
     labels = [
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N']
@@ -137,6 +148,9 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays, length):
     """
     print(f'Plotting spike raster ({length}).')
 
+    # population sizes
+    N_X = [all_pos_sorting_arrays[X].size for X in plot.X]
+
     if length == 'short':
         raster_time_interval = plot.plot_dict['raster_time_interval_short']
     elif length == 'long':
@@ -144,10 +158,10 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays, length):
 
     if plot.net_dict['thalamic_input']:
         pops = plot.X
-        num_neurons = plot.N_X
+        num_neurons = N_X
     else:
         pops = plot.Y
-        num_neurons = plot.N_Y
+        num_neurons = N_X[:-1]
 
     # automatically compute a sample step for this figure
     if plot.plot_dict['raster_sample_step'] == 'auto':

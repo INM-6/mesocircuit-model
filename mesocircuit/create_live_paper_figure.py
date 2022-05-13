@@ -1,12 +1,12 @@
 import core.helpers.mesocircuit_framework as mesoframe
 import parametersets
-import core.plotting.other_figures as other_figures
 
 
 def create_live_paper_figure(
         data_dir,
         base_key='base',
-        custom_params={ # TODO parameters not final
+        custom_key='evoked_live_paper',
+        custom_params={  # TODO parameters not final
             'net_dict': {'thalamic_input': 'pulses'},
         },
         machine='hpc',
@@ -14,17 +14,18 @@ def create_live_paper_figure(
         run_figures=1):
 
     custom_ps_dicts = mesoframe.extend_existing_parameterspaces(
-        custom_key=base_key,
+        custom_key=custom_key,
         custom_params=custom_params,
         base_key=base_key,
         base_ps_dicts=parametersets.ps_dicts)
-    print(f'Custom parameters of {base_key}:\n', custom_ps_dicts[base_key])
+    print(f'Custom parameters of {custom_key}:\n', custom_ps_dicts[custom_key])
 
     parameterview = mesoframe.evaluate_parameterspaces(
         custom_ps_dicts=custom_ps_dicts,
-        paramspace_keys=[base_key],
+        paramspace_keys=[custom_key],
         with_base_params=False,
         data_dir=data_dir)
+    print(parameterview)
 
     if run_parametersets:
         mesoframe.run_parametersets(
@@ -39,8 +40,12 @@ def create_live_paper_figure(
         )
 
     if run_figures:
+        # other_figures imports the Plotting class which initializes MPI,
+        # therefore it cannot be loaded before run_parametersets() is executed
+        # because this one launches run_*.py with MPI
+        import core.plotting.other_figures as other_figures
         other_figures.live_paper(
-            data_dir, base_key, parameterview)
+            data_dir, custom_key, parameterview)
 
     return
 
@@ -49,10 +54,9 @@ if __name__ == '__main__':
 
     data_dir = 'live_paper_figure'
 
-    create_live_paper_figure(data_dir=data_dir)
-
-    # for testing:
-    if 0:
+    if 1:
+        create_live_paper_figure(data_dir=data_dir)
+    else:  # for testing locally
         create_live_paper_figure(
             data_dir=data_dir,
             base_key='local_mesocircuit',
