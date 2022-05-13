@@ -90,37 +90,34 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                                              int,
                                              'spike_recorder')
 
-        if not (num_neurons == self.N_X).all():
+        if not (num_neurons == self.net_dict['num_neurons']).all():
             raise Exception('Neuron numbers do not match.')
 
-        # extract center disc of 1 mm2 of the data
-        if self.ana_dict['extract_1mm2']:
+        # population sizes
+        if not self.ana_dict['extract_1mm2']:
+            self.N_X = num_neurons
+        else:
+            assert self.net_dict['extent'] > 1. / np.sqrt(np.pi), (
+                'Disc of 1mm2 cannot be extracted because the extent length '
+                'is too small.')
             if RANK == 0:
                 print(
                     'Extracting data within center disc of 1mm2. '
                     'Only the data from these neurons will be analyzed. '
                     'Neuron numbers self.N_X and self.N_Y will be overwritten.')
 
-            assert self.net_dict['extent'] > 1. / np.sqrt(np.pi), (
-                'Disc of 1mm2 cannot be extracted because the extent length '
-                'is too small.')
             N_X_1mm2 = pt.parallelize_by_array(self.X,
                                                self.__extract_1mm2,
                                                int)
 
             if RANK == 0:
                 print(f'  Total number of neurons before extraction:\n    '
-                      f'{self.N_X}\n'
+                      f'{num_neurons}\n'
                       f'  Number of extracted neurons for analysis:\n    '
                       f'{N_X_1mm2}')
 
             self.N_X = N_X_1mm2.astype(int)
-            self.N_Y = self.N_X[:-1]
-
-            # save new N_X to file to be loaded for plotting
-            if RANK == 0:
-                np.savetxt(os.path.join('processed_data', 'N_X_1mm2.dat'),
-                           self.N_X, fmt='%i')
+        self.N_Y = self.N_X[:-1]  # without TC
 
         # minimal analysis as sanity check
         self.__first_glance_at_data(num_spikes)

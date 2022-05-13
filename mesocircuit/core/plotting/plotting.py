@@ -9,11 +9,12 @@ import matplotlib.patheffects as PathEffects
 from matplotlib.patches import Rectangle, Circle
 from ..helpers import base_class
 from matplotlib.colors import SymLogNorm
-from matplotlib.ticker import MultipleLocator, MaxNLocator
+from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import mpl_toolkits.mplot3d.art3d as art3d
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
+from mpi4py import MPI
 import os
 import warnings
 import h5py
@@ -21,6 +22,12 @@ import numpy as np
 import matplotlib
 from ..helpers.io import load_h5_to_sparse_X
 matplotlib.use('Agg')
+
+# initialize MPI
+COMM = MPI.COMM_WORLD
+SIZE = COMM.Get_size()
+RANK = COMM.Get_rank()
+
 
 class Plotting(base_class.BaseAnalysisPlotting):
     """
@@ -49,22 +56,11 @@ class Plotting(base_class.BaseAnalysisPlotting):
         """
         Initializes some class attributes.
         """
+        if RANK == 0:
+            print('Instantiating a Plotting object.')
+
         # inherit from parent class
         super().__init__(sim_dict, net_dict, ana_dict)
-
-        # overwrite N_X and N_Y if 1mm2 of data was extracted for analysis
-        if ana_dict['extract_1mm2']:
-            N_X_1mm2 = np.load(os.path.join('processed_data', 'N_X_1mm2.dat'),
-                               dtype=int)
-            if RANK == 0:
-                print(f'1mm2 of data has been extracted. '
-                      f'  Total number of neurons before extraction:\n    '
-                      f'{self.N_X}\n'
-                      f'  Number of extracted neurons for analysis:\n    '
-                      f'{N_X_1mm2}')
-
-            self.N_X = N_X_1mm2
-            self.N_Y = self.N_X[:-1]
 
         # plot_dict is not in parent class
         self.plot_dict = plot_dict
