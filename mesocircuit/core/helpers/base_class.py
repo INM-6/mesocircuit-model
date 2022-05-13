@@ -17,10 +17,6 @@ class BaseAnalysisPlotting:
         # postsynaptic populations (without thalamus)
         self.Y = self.net_dict['populations'][:-1]
 
-        # population sizes
-        self.N_X = self.net_dict['num_neurons']
-        self.N_Y = self.net_dict['num_neurons'][:-1]
-
         # temporal bins for raw and resampled spike trains,
         # pre-simulation and actual simulation are combined
         self.time_bins_sim = np.arange(

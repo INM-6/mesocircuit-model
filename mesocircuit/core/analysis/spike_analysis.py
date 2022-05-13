@@ -90,8 +90,34 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                                              int,
                                              'spike_recorder')
 
-        if not (num_neurons == self.N_X).all():
+        if not (num_neurons == self.net_dict['num_neurons']).all():
             raise Exception('Neuron numbers do not match.')
+
+        # population sizes
+        if not self.ana_dict['extract_1mm2']:
+            self.N_X = num_neurons
+        else:
+            assert self.net_dict['extent'] > 1. / np.sqrt(np.pi), (
+                'Disc of 1mm2 cannot be extracted because the extent length '
+                'is too small.')
+            if RANK == 0:
+                print(
+                    'Extracting data within center disc of 1mm2. '
+                    'Only the data from these neurons will be analyzed. '
+                    'Neuron numbers self.N_X and self.N_Y will be overwritten.')
+
+            N_X_1mm2 = pt.parallelize_by_array(self.X,
+                                               self.__extract_1mm2,
+                                               int)
+
+            if RANK == 0:
+                print(f'  Total number of neurons before extraction:\n    '
+                      f'{num_neurons}\n'
+                      f'  Number of extracted neurons for analysis:\n    '
+                      f'{N_X_1mm2}')
+
+            self.N_X = N_X_1mm2.astype(int)
+        self.N_Y = self.N_X[:-1]  # without TC
 
         # minimal analysis as sanity check
         self.__first_glance_at_data(num_spikes)
@@ -217,6 +243,81 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                    fmt=self.ana_dict['write_ascii'][datatype]['fmt'])
 
         return comb_data.size
+
+    def __extract_1mm2(self, i, X):
+        """
+        Extracts positions and spike data for center disc of 1mm2.
+        Previous files 'positions_{X}.dat' and 'spike_recorder_{X}.dat' are
+        moved to a new folder for reference.
+        Nodeids in the new data are adjusted such that they are again
+        continuously increasing.
+
+        Parameters
+        ----------
+        i
+            Iterator of populations
+            (to be set by outer parallel function).
+        X
+            Population names
+            (to be set by outer parallel function).
+
+        Returns
+        -------
+        num_neurons_1mm
+            Number of neurons in population X within 1mm2.
+        """
+        # find nodeids that belong to the neurons inside 1mm2
+        # center disc: pi * r**2 = 1
+        spikes, positions = self.__load_plain_spikes_and_positions(X)
+
+        condition = (positions['x-position_mm']**2 +
+                     positions['y-position_mm']**2) <= 1. / np.pi
+        node_ids = positions['nodeid'][condition]
+        num_neurons_1mm2 = len(node_ids)
+
+        # extracted positions
+        positions_1mm2 = positions[condition]
+        positions_1mm2['nodeid'] = np.arange(len(node_ids), dtype=int)
+
+        # extracted spike data
+        # lookup table for node ids:
+        # keys: ids from full set of neurons
+        # values: continuous ids for extracted data
+        nodeid_lookup = {}
+        for id_1mm2, id_full in enumerate(node_ids):
+            nodeid_lookup[id_full] = id_1mm2
+
+        spikes_1mm2 = np.zeros_like(spikes)
+        cnt = 0
+        dtype = self.ana_dict['read_nest_ascii_dtypes']['spike_recorder']
+        for sp in spikes:
+            if sp['nodeid'] in nodeid_lookup:
+                spikes_1mm2[cnt] = \
+                    np.array((nodeid_lookup[sp['nodeid']], sp['time_ms']),
+                             dtype=dtype)
+                cnt += 1
+        spikes_1mm2 = spikes_1mm2[:cnt]
+
+        # move original data to a new folder for backup
+        dir_path = os.path.join('processed_data', 'not_1mm2_extracted_data')
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+        for datatype in ['positions', 'spike_recorder']:
+            os.rename(os.path.join('processed_data', f'{datatype}_{X}.dat'),
+                      os.path.join(dir_path, f'{datatype}_{X}.dat'))
+
+        # write 1mm2 positions and spike data instead
+        for datatype in ['positions', 'spike_recorder']:
+            if datatype == 'positions':
+                data = positions_1mm2
+            elif datatype == 'spike_recorder':
+                data = spikes_1mm2
+            # same saving as after converting raw files
+            fn = os.path.join('processed_data', f'{datatype}_{X}.dat')
+            np.savetxt(fn, data, delimiter='\t',
+                       header='\t '.join(dtype['names']),
+                       fmt=self.ana_dict['write_ascii'][datatype]['fmt'])
+        return num_neurons_1mm2
 
     def __merge_raw_files_X(self, i, X, datatype):
         """
@@ -345,18 +446,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             (to be set by outer parralel function).
         """
 
-        # load plain spike data and positions
-        data_load = []
-        for datatype in self.ana_dict['read_nest_ascii_dtypes'].keys():
-            fn = os.path.join('processed_data', f'{datatype}_{X}.dat')
-            # ignore all warnings of np.loadtxt(), target in particular
-            # 'Empty input file'
-            with warnings.catch_warnings():
-                warnings.simplefilter('ignore')
-                data = np.loadtxt(
-                    fn, dtype=self.ana_dict['read_nest_ascii_dtypes'][datatype])
-            data_load.append(data)
-        spikes, positions = data_load
+        spikes, positions = self.__load_plain_spikes_and_positions(X)
 
         # order is important as some datasets rely on previous ones
         datasets = {}
@@ -416,6 +506,35 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             self.write_dataset_to_h5_X(
                 X, datatype, datasets[datatype], is_sparse, dataset_dtype)
         return
+
+    def __load_plain_spikes_and_positions(self, X):
+        """
+        Loads plain spike data and positions.
+
+        Parameters
+        ----------
+        X
+            Population name.
+
+        Returns
+        -------
+        spikes
+            Spike data of population X.
+        positions
+            Positions of population X.
+        """
+        data_load = []
+        for datatype in self.ana_dict['read_nest_ascii_dtypes'].keys():
+            fn = os.path.join('processed_data', f'{datatype}_{X}.dat')
+            # ignore all warnings of np.loadtxt(), target in particular
+            # 'Empty input file'
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                data = np.loadtxt(
+                    fn, dtype=self.ana_dict['read_nest_ascii_dtypes'][datatype])
+            data_load.append(data)
+        spikes, positions = data_load
+        return spikes, positions
 
     def __positions_X(self, X, positions):
         """
