@@ -61,6 +61,10 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         # inherit from parent class
         super().__init__(sim_dict, net_dict, ana_dict)
 
+        # population sizes
+        self.N_X = net_dict['num_neurons']
+        self.N_Y = self.N_X[:-1]  # without TC
+
         return
 
     def preprocess_data(self):
@@ -94,9 +98,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             raise Exception('Neuron numbers do not match.')
 
         # population sizes
-        if not self.ana_dict['extract_1mm2']:
-            self.N_X = num_neurons
-        else:
+        if self.ana_dict['extract_1mm2']:
             assert self.net_dict['extent'] > 1. / np.sqrt(np.pi), (
                 'Disc of 1mm2 cannot be extracted because the extent length '
                 'is too small.')
@@ -117,7 +119,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                       f'{N_X_1mm2}')
 
             self.N_X = N_X_1mm2.astype(int)
-        self.N_Y = self.N_X[:-1]  # without TC
+            self.N_Y = self.N_X[:-1]
 
         # minimal analysis as sanity check
         self.__first_glance_at_data(num_spikes)
