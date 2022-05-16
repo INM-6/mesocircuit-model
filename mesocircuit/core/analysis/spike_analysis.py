@@ -109,7 +109,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                     'Neuron numbers self.N_X and self.N_Y will be overwritten.')
 
             N_X_1mm2 = pt.parallelize_by_array(self.X,
-                                               self.__extract_1mm2,
+                                               self.__extract_data_for_1mm2,
                                                int)
 
             if RANK == 0:
@@ -246,13 +246,13 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         return comb_data.size
 
-    def __extract_1mm2(self, i, X):
+    def __extract_data_for_1mm2(self, i, X):
         """
         Extracts positions and spike data for center disc of 1mm2.
         Previous files 'positions_{X}.dat' and 'spike_recorder_{X}.dat' are
-        moved to a new folder for reference.
+        deleted.
         Nodeids in the new data are adjusted such that they are again
-        continuously increasing.
+        contiguously increasing.
 
         Parameters
         ----------
@@ -268,14 +268,60 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         num_neurons_1mm
             Number of neurons in population X within 1mm2.
         """
-        # find nodeids that belong to the neurons inside 1mm2
-        # center disc: pi * r**2 = 1
         spikes, positions = self.__load_plain_spikes_and_positions(X)
 
+        spikes_1mm2, positions_1mm2 = \
+            self._extract_center_disc_1mm2(
+                spikes, positions,
+                self.ana_dict['read_nest_ascii_dtypes']['spike_recorder'])
+
+        # delete original data
+        for datatype in ['positions', 'spike_recorder']:
+            os.remove(os.path.join('processed_data', f'{datatype}_{X}.dat'))
+
+        # write 1mm2 positions and spike data
+        for datatype in ['positions', 'spike_recorder']:
+            dtype = self.ana_dict['read_nest_ascii_dtypes'][datatype]
+            if datatype == 'positions':
+                data = positions_1mm2
+            elif datatype == 'spike_recorder':
+                data = spikes_1mm2
+            # same saving as after converting raw files
+            fn = os.path.join('processed_data', f'{datatype}_{X}.dat')
+            np.savetxt(fn, data, delimiter='\t',
+                       header='\t '.join(dtype['names']),
+                       fmt=self.ana_dict['write_ascii'][datatype]['fmt'])
+
+        num_neurons_1mm2 = len(positions_1mm2)
+        return num_neurons_1mm2
+
+    def _extract_center_disc_1mm2(self, spikes, positions, dtype_spikes):
+        """
+        Extracts nodeids that belong to the neurons inside 1mm2 center disc of
+        radius R: pi * R**2 = 1
+        Positions (x,y) with x^2 + y^2  <= 1/pi are accepted.
+        Final node ids will be contiguously increasing.
+
+        Parameters
+        ----------
+        spikes
+            Spike data of population X.
+        positions
+            Positions of population X.
+        dtype_spikes
+            dtype of spike data.
+
+        Returns
+        -------
+        spikes_1mm2
+            Extracted spike data of population X.
+        positions_1mm2
+            Extracted positions of population X.
+        """
+        # find nodes within disc
         condition = (positions['x-position_mm']**2 +
                      positions['y-position_mm']**2) <= 1. / np.pi
         node_ids = positions['nodeid'][condition]
-        num_neurons_1mm2 = len(node_ids)
 
         # extracted positions
         positions_1mm2 = positions[condition]
@@ -291,35 +337,15 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         spikes_1mm2 = np.zeros_like(spikes)
         cnt = 0
-        dtype = self.ana_dict['read_nest_ascii_dtypes']['spike_recorder']
         for sp in spikes:
             if sp['nodeid'] in nodeid_lookup:
                 spikes_1mm2[cnt] = \
                     np.array((nodeid_lookup[sp['nodeid']], sp['time_ms']),
-                             dtype=dtype)
+                             dtype=dtype_spikes)
                 cnt += 1
         spikes_1mm2 = spikes_1mm2[:cnt]
 
-        # move original data to a new folder for backup
-        dir_path = os.path.join('processed_data', 'not_1mm2_extracted_data')
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-        for datatype in ['positions', 'spike_recorder']:
-            os.rename(os.path.join('processed_data', f'{datatype}_{X}.dat'),
-                      os.path.join(dir_path, f'{datatype}_{X}.dat'))
-
-        # write 1mm2 positions and spike data instead
-        for datatype in ['positions', 'spike_recorder']:
-            if datatype == 'positions':
-                data = positions_1mm2
-            elif datatype == 'spike_recorder':
-                data = spikes_1mm2
-            # same saving as after converting raw files
-            fn = os.path.join('processed_data', f'{datatype}_{X}.dat')
-            np.savetxt(fn, data, delimiter='\t',
-                       header='\t '.join(dtype['names']),
-                       fmt=self.ana_dict['write_ascii'][datatype]['fmt'])
-        return num_neurons_1mm2
+        return spikes_1mm2, positions_1mm2
 
     def __merge_raw_files_X(self, i, X, datatype):
         """
