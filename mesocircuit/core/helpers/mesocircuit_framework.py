@@ -423,7 +423,7 @@ def write_jobscripts(sys_dict, path):
             stdout = os.path.join('stdout', name + '.txt')
 
             # start jobscript
-            jobscript = ('#!/bin/bash -x\nset -o pipefail\n')
+            jobscript = ('#!/bin/bash -x\n')
 
             # define machine specifics
             if machine == 'hpc':
@@ -454,6 +454,8 @@ def write_jobscripts(sys_dict, path):
 
             else:
                 raise NotImplementedError(f'machine {machine} not recognized')
+
+            jobscript += "set -o pipefail\n"
 
             # append executable(s),
             # number of local threads needed for network simulation,

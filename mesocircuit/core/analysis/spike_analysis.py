@@ -10,9 +10,6 @@ from ..helpers import base_class
 from ..helpers import parallelism_time as pt
 from ..helpers.io import load_h5_to_sparse_X
 from . import stats
-import fnmatch
-import re
-import tarfile
 from mpi4py import MPI
 import matplotlib.pyplot as plt
 import os
@@ -63,7 +60,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         # population sizes
         self.N_X = net_dict['num_neurons']
-        self.N_Y = self.N_X[:-1]  # without TC
 
         return
 
@@ -106,7 +102,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 print(
                     'Extracting data within center disc of 1mm2. '
                     'Only the data from these neurons will be analyzed. '
-                    'Neuron numbers self.N_X and self.N_Y will be overwritten.')
+                    'Neuron numbers self.N_X will be overwritten.')
 
             N_X_1mm2 = pt.parallelize_by_array(self.X,
                                                self.__extract_data_for_1mm2,
@@ -119,10 +115,9 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                       f'{N_X_1mm2}')
 
             self.N_X = N_X_1mm2.astype(int)
-            self.N_Y = self.N_X[:-1]
 
         # minimal analysis as sanity check
-        self.__first_glance_at_data(num_spikes)
+        self.__first_glance_at_data(self.N_X, num_spikes)
 
         # preprocess data of each population in parallel
         pt.parallelize_by_array(self.X,
@@ -295,7 +290,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         num_neurons_1mm2 = len(positions_1mm2)
         return num_neurons_1mm2
 
-    def _extract_center_disc_1mm2(self, spikes, positions, dtype_spikes):
+    def _extract_center_disc_1mm2(self, spikes, positions):
         """
         Extracts nodeids that belong to the neurons inside 1mm2 center disc of
         radius R: pi * R**2 = 1
@@ -308,8 +303,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             Spike data of population X.
         positions
             Positions of population X.
-        dtype_spikes
-            dtype of spike data.
 
         Returns
         -------
@@ -341,115 +334,32 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             if sp['nodeid'] in nodeid_lookup:
                 spikes_1mm2[cnt] = \
                     np.array((nodeid_lookup[sp['nodeid']], sp['time_ms']),
-                             dtype=dtype_spikes)
+                             dtype=spikes.dtype)
                 cnt += 1
         spikes_1mm2 = spikes_1mm2[:cnt]
 
         return spikes_1mm2, positions_1mm2
+ 
 
-    def __merge_raw_files_X(self, i, X, datatype):
-        """
-        Inner function to be used as argument of pt.parallelize_by_array()
-        with array=self.X.
-        Corresponding outer function: self.__preprocess_data()
-
-        Processes raw NEST output files with file extention .dat.
-
-        Raw NEST output files are loaded.
-        Files are merged so that only one file per population exists, since
-        there is typically one file per virtual process (as for spike files,
-        datatype='spike_recorder') or per MPI process (as for position files,
-        datatype='positions').
-        Node ids and, if applicable also, spike times are processed.
-        The processed node ids start at 0 for each population.
-        Files from pre-simulation and actual simulation are combined.
-        The final processed data is written to file.
-
-        Parameters
-        ----------
-        i
-            Iterator of populations
-            (to be set by outer parallel function).
-        X
-            Population names
-            (to be set by outer parallel function).
-        datatype
-            Options are 'spike_recorder' and 'positions'.
-
-        Returns
-        -------
-        num_rows
-            An array with the number of rows in the final files.
-            datatype = 'spike_recorder': number of spikes per population.
-            datatype = 'positions': number of neurons per population
-        """
-
-        if i == 0:
-            print('  Merging raw files:', datatype)
-
-        with tarfile.open('raw_data.tar', 'r') as f:
-
-            # gather names of single files in tar archive
-            # combine files from pre-simulation and actual simulation
-            regex = re.compile(fnmatch.translate('*' + datatype + '_' + X +
-                                                 '*.dat'))
-            members = [m for m in f.getmembers() if regex.search(m.name)]
-
-            # load data from single files and combine them
-            read_dtype = self.ana_dict['read_nest_ascii_dtypes'][datatype]
-            comb_data = np.array([[]], dtype=read_dtype)
-            # skip three rows in raw nest output
-            skiprows = 3 if datatype == 'spike_recorder' else 0
-            for fn in members:
-                # ignore all warnings of np.loadtxt(), target in particular
-                # 'Empty input file'
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')
-                    content = f.extractfile(fn)
-                    if content is not None:
-                        data = np.loadtxt(content,
-                                          dtype=read_dtype,
-                                          skiprows=skiprows)
-                comb_data = np.append(comb_data, data)
-
-            # change from raw to processed node ids:
-            # subtract the first one of the raw ids in each population
-            comb_data['nodeid'] -= self.nodeids_raw[i][0]
-
-            # sort the final data
-            comb_data = np.sort(
-                comb_data,
-                order=self.ana_dict['write_ascii'][datatype]['sortby'])
-
-            # number of rows corresponds to
-            # 'spike_recorder': number of spikes
-            # 'positions': number of neurons
-            num_rows = np.shape(comb_data)[0]
-
-            # write processed file
-            fn = os.path.join('processed_data', f'{datatype}_{X}.dat')
-            np.savetxt(fn, comb_data, delimiter='\t',
-                       header='\t '.join(read_dtype['names']),
-                       fmt=self.ana_dict['write_ascii'][datatype]['fmt'])
-        return num_rows
-
-    def __first_glance_at_data(self, num_spikes):
+    def __first_glance_at_data(self, N_X, num_spikes):
         """
         Prints a table offering a first glance on the data.
 
         Parameters
         ----------
+        N_X
+            Population sizes.
         num_spikes
             An array of spike counts per population.
         """
         # compute firing rates in 1/s
-        rates = num_spikes / self.N_X / \
+        rates = num_spikes / N_X / \
             ((self.sim_dict['t_sim'] + self.sim_dict['t_presim']) / 1000.)
 
         matrix = np.zeros((len(self.X) + 1, 3), dtype=object)
         matrix[0, :] = ['population', 'num_neurons', 'rate_s-1']
         matrix[1:, 0] = self.X
-        matrix[1:, 1] = self.N_X.astype(str)
+        matrix[1:, 1] = N_X.astype(str)
         matrix[1:, 2] = [str(np.around(rate, decimals=3)) for rate in rates]
 
         title = 'First glance at data'

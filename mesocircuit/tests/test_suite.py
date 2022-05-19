@@ -487,12 +487,12 @@ class TestSuite(unittest.TestCase):
         '''
         from core.analysis.spike_analysis import SpikeAnalysis
 
-        sim_dict, net_dict, ana_dict, dtype_spikes, spikes, positions = \
+        sim_dict, net_dict, ana_dict, spikes, positions = \
             self.dummy_definitions_for__extract_center_disc1mm2()
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         spikes_1mm2, positions_1mm2 = \
-            sana._extract_center_disc_1mm2(spikes, positions, dtype_spikes)
+            sana._extract_center_disc_1mm2(spikes, positions)
 
         bools = []
         for x, y in zip(positions_1mm2['x-position_mm'],
@@ -508,19 +508,19 @@ class TestSuite(unittest.TestCase):
         '''
         from core.analysis.spike_analysis import SpikeAnalysis
 
-        sim_dict, net_dict, ana_dict, dtype_spikes, spikes, positions = \
+        sim_dict, net_dict, ana_dict, spikes, positions = \
             self.dummy_definitions_for__extract_center_disc1mm2()
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         spikes_1mm2, positions_1mm2 = \
-            sana._extract_center_disc_1mm2(spikes, positions, dtype_spikes)
+            sana._extract_center_disc_1mm2(spikes, positions)
 
         spikes_1mm2_res = np.array([(4, 0.3),  # id was 6
                                     (0, 10.0),
                                     (1, 12.1),
                                     (4, 12.1),  # id was 6
                                     (3, 13.3),  # id was 4
-                                    ], dtype=dtype_spikes)
+                                    ], dtype=spikes.dtype)
 
         bools = []
         for i in np.arange(len(spikes_1mm2)):
@@ -570,4 +570,4 @@ class TestSuite(unittest.TestCase):
                               (5, 0.5, 0.7),  # outside
                               (6, 0.3, 0.1),
                               ], dtype=dtype_positions)
-        return sim_dict, net_dict, ana_dict, dtype_spikes, spikes, positions
+        return sim_dict, net_dict, ana_dict, spikes, positions
