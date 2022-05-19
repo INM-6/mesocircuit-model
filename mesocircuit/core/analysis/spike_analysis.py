@@ -293,7 +293,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         num_neurons_1mm2 = len(positions_1mm2)
         return num_neurons_1mm2
 
-    def _extract_center_disc_1mm2(self, spikes, positions, dtype_spikes):
+    def _extract_center_disc_1mm2(self, spikes, positions):
         """
         Extracts nodeids that belong to the neurons inside 1mm2 center disc of
         radius R: pi * R**2 = 1
@@ -306,8 +306,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             Spike data of population X.
         positions
             Positions of population X.
-        dtype_spikes
-            dtype of spike data.
 
         Returns
         -------
@@ -339,7 +337,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             if sp['nodeid'] in nodeid_lookup:
                 spikes_1mm2[cnt] = \
                     np.array((nodeid_lookup[sp['nodeid']], sp['time_ms']),
-                             dtype=dtype_spikes)
+                             dtype=spikes.dtype)
                 cnt += 1
         spikes_1mm2 = spikes_1mm2[:cnt]
 
