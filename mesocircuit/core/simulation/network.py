@@ -275,11 +275,11 @@ class Network:
         nest.data_path = 'raw_data'
         nest.data_prefix = 'presim_'
 
+        n_vp = nest.total_num_virtual_procs
+
         if nest.Rank() == 0:
-            print('RNG seed: {} '.format(
-                nest.rng_seed))
-            print('Total number of virtual processes: {}'.format(
-                nest.total_num_virtual_procs))
+            print(f'RNG seed: {self.sim_dict["rng_seed"]}')
+            print(f'Total number of virtual processes: {n_vp}')
         return
 
     def __create_neuronal_populations(self):
