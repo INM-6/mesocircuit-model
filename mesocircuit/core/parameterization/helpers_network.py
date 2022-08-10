@@ -255,6 +255,12 @@ def derive_dependent_parameters(base_net_dict):
         net_dict['weight_ext'] = net_dict['full_weight_ext']
         net_dict['DC_amp'] = net_dict['full_DC_amp']
 
+    # mask radius
+    mask_radius = net_dict['mask_scaling'] * net_dict['beta']
+    # maximum mask radius is half of the extent
+    mask_radius[mask_radius > net_dict['extent'] / 2.] = net_dict['extent'] / 2.
+    net_dict['mask_radius'] = mask_radius
+
     # p0 is computed for non-fixed in-degrees
     # connectivity profile: p0 * exp(-r/beta)
     if net_dict['connect_method'] in [
@@ -268,6 +274,7 @@ def derive_dependent_parameters(base_net_dict):
                                         indegrees,
                                         net_dict['extent'],
                                         net_dict['beta'],
+                                        net_dict['mask_radius'],
                                         profile)
     else:
         net_dict['repeat_connect'] = np.ones_like(indegrees, dtype=int)
@@ -404,6 +411,7 @@ def zero_distance_conn_prob_exp(
         indegrees,
         extent,
         decay,
+        mask_radius,
         profile):
     """
     Computes the zero-distance connection probability and repeat factors for
@@ -422,6 +430,8 @@ def zero_distance_conn_prob_exp(
         Side length (in mm) of square sheets where neurons are distributed.
     decay
         Matrix of decay parameters (in mm).
+    mask_radius
+        Matrix of mask radii (in mm).
     profile
         Function of spatial connectivity profile.
         Options are 'exponential' or 'gaussian'.
@@ -435,14 +445,12 @@ def zero_distance_conn_prob_exp(
     repeat_connect
         Factor for repeating the Connect() call.
     """
-    # connection probability inside of mask with radius extent / 2.
-    # without spatial profile.
-    # pi * (extent/2)**2 / extent**2 = pi /4
-    conn_prob_uniform = indegrees / (num_neurons * np.pi / 4.)
+    # connection probability inside of mask with given radius
+    # obtained by scaling neuron numbers with pi * R^2 / L^2
+    num_potential_sources = num_neurons * np.pi * mask_radius**2 / extent**2
+    conn_prob_uniform = indegrees / num_potential_sources
 
-    radius = extent / 2.
-
-    frac = radius / decay
+    frac = mask_radius / decay
     p0_raw = conn_prob_uniform * 0.5 * frac**2
     if profile == 'exponential':
         p0_raw *= (1. - np.exp(-frac) * (1. + frac))
