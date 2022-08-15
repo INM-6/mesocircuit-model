@@ -539,8 +539,7 @@ class Network:
                                 x=nest.spatial.distance,
                                 beta=self.net_dict['beta'][i][j]),
                             'mask': {'circular': {
-                                'radius': (self.net_dict['beta'][i][j]*
-                                           self.net_dict['mask_scaling'])}}}
+                                'radius': self.net_dict['mask_radius'][i][j]}}}
                     elif self.net_dict['connect_method'] == 'distr_indegree_exp':
                         conn_dict_rec = {
                             'rule': 'pairwise_bernoulli',
@@ -549,8 +548,7 @@ class Network:
                                     x=nest.spatial.distance,
                                     beta=self.net_dict['beta'][i][j]),
                             'mask': {'circular': {
-                                'radius': (self.net_dict['beta'][i][j]*
-                                           self.net_dict['mask_scaling'])}}}
+                                'radius': self.net_dict['mask_radius'][i][j]}}}
                     # TODO only temporary
                     elif self.net_dict['connect_method'] == 'distr_indegree_gauss':
                         conn_dict_rec = {
@@ -561,8 +559,7 @@ class Network:
                                     mean=0,
                                     std=self.net_dict['beta'][i][j]),
                             'mask': {'circular': {
-                                'radius': (self.net_dict['beta'][i][j]*
-                                           self.net_dict['mask_scaling'])}}}
+                                'radius': self.net_dict['mask_radius'][i][j]}}}
 
                     else:
                         raise Exception('connect_method is incorrect.')
