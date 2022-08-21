@@ -318,6 +318,7 @@ class Network:
                     V_th=self.net_dict['neuron_params']['V_th'],
                     V_reset=self.net_dict['neuron_params']['V_reset'],
                     t_ref=self.net_dict['neuron_params']['t_ref'],
+                    C_m=self.net_dict['neuron_params']['C_m'],
                     I_e=self.net_dict['DC_amp'][i])
 
                 if self.net_dict['V0_type'] == 'optimized':
