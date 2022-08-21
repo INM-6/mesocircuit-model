@@ -213,13 +213,13 @@ def evaluate_parameterspaces(
                 for p, h in enumerate(psets.keys()):
                     d0_dict, d0_param, d0_range = ranges[0]
                     for i, val0 in enumerate(d0_range):
-                        if psets[h][d0_dict][d0_param] == val0:
+                        if np.all(np.equal(psets[h][d0_dict][d0_param], val0)):
                             if dim == 1:
                                 hashmap[i] = h
                             else:
                                 d1_dict, d1_param, d1_range = ranges[1]
                                 for j, val1 in enumerate(d1_range):
-                                    if psets[h][d1_dict][d1_param] == val1:
+                                    if np.all(np.equal(psets[h][d1_dict][d1_param], val1)):
                                         if dim == 2:
                                             hashmap[i][j] = h
                                         else:

@@ -30,6 +30,7 @@ ps_dicts = {
         'net_dict': {
             **net_dict_microcircuit,
         },
+        'sys_dict': {'hpc': {'network': {'num_nodes': 1}}}
     },
 
     'local_microcircuit': {

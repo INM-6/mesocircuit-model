@@ -203,6 +203,7 @@ net_dict = {
         'C_m': 250.0,
         # membrane time constant (in ms)
         'tau_m': 10.0,
+        'tau_syn_default': 0.5,
         # time constants of postsynaptic currents (in ms)
         'tau_syn_ex': 0.5,
         'tau_syn_in': 0.5,

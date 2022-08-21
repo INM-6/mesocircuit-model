@@ -94,11 +94,21 @@ def derive_dependent_parameters(base_net_dict):
         net_dict['neuron_params']['tau_m'],
         net_dict['neuron_params']['tau_syn_ex'])
     net_dict['full_weight_matrix_mean'] = PSP_matrix_mean * PSC_over_PSP_ex
+
+    if net_dict['neuron_params']['tau_syn_ex'] != net_dict['neuron_params']['tau_syn_default']:
+        frac_tau_syn_ex = (net_dict['neuron_params']['tau_syn_default'] /
+                           net_dict['neuron_params']['tau_syn_ex'])
+        net_dict['full_weight_matrix_mean'][:, ::2] *= frac_tau_syn_ex
+    if net_dict['neuron_params']['tau_syn_in'] != net_dict['neuron_params']['tau_syn_default']:
+        frac_tau_syn_in = (net_dict['neuron_params']['tau_syn_default'] /
+                           net_dict['neuron_params']['tau_syn_in'])
+        net_dict['full_weight_matrix_mean'][:, 1::2] *= frac_tau_syn_in
+
     # if time constants different: compensate by adjusting inhibitory weights
-    if net_dict['neuron_params']['tau_syn_ex'] != net_dict['neuron_params']['tau_syn_in']:
-        frac_tau_syn = (net_dict['neuron_params']['tau_syn_ex'] /
-                        net_dict['neuron_params']['tau_syn_in'])
-        net_dict['full_weight_matrix_mean'][:, 1::2] *= frac_tau_syn
+    # if net_dict['neuron_params']['tau_syn_ex'] != net_dict['neuron_params']['tau_syn_in']:
+    #    frac_tau_syn = (net_dict['neuron_params']['tau_syn_ex'] /
+    #                    net_dict['neuron_params']['tau_syn_in'])
+    #    net_dict['full_weight_matrix_mean'][:, 1::2] *= frac_tau_syn
     net_dict['full_weight_ext'] = net_dict['PSP_exc_mean'] * PSC_over_PSP_ex
 
     # 1mm2 neuron number dependent on the base model
@@ -197,12 +207,18 @@ def derive_dependent_parameters(base_net_dict):
     if net_dict['use_old_full_num_synapses']:
         full_num_synapses = np.array(
             [[828882273.000247, 392373667.961514, 379559653.820154, 177882649.346106, 62060854.238871, -0.0, 43300793.76242, -0.0, 0.],
-             [312286600.613029, 89730383.554041, 77382503.429251, 31553447.415552, 40984338.606205, -0.0, 6748860.463846, -0.0, 0.],
-             [66788887.061005, 14434115.3848, 457490148.137505, 264727072.297861, 13627055.533483, 133952.826066, 273856633.522986, -0.0, 37310957.265509],
-             [150193546.203107, 1773566.976223, 182931727.34158, 106203163.37557, 1677819.868631, -0.0, 160119167.736337, -0.0, 5865966.713957],
-             [193400955.023919, 33747733.417738, 102879922.954544, 2898312.47049, 37512090.889222, 39236078.439484, 27267785.471299, -0.0, 0.],
-             [23140305.947658, 3200662.840475, 11486196.96599, 245608.859384, 4751682.267154, 6233644.993468, 2523097.347322, -0.0, 0.],
-             [88907168.023082, 10606303.565132, 127442417.574458, 25062536.950038, 76562189.60893, 5782052.956883, 157215604.064241, 184383740.844691, 12742511.126558],
+             [312286600.613029, 89730383.554041, 77382503.429251,
+                 31553447.415552, 40984338.606205, -0.0, 6748860.463846, -0.0, 0.],
+             [66788887.061005, 14434115.3848, 457490148.137505, 264727072.297861,
+                 13627055.533483, 133952.826066, 273856633.522986, -0.0, 37310957.265509],
+             [150193546.203107, 1773566.976223, 182931727.34158, 106203163.37557,
+                 1677819.868631, -0.0, 160119167.736337, -0.0, 5865966.713957],
+             [193400955.023919, 33747733.417738, 102879922.954544, 2898312.47049,
+                 37512090.889222, 39236078.439484, 27267785.471299, -0.0, 0.],
+             [23140305.947658, 3200662.840475, 11486196.96599, 245608.859384,
+                 4751682.267154, 6233644.993468, 2523097.347322, -0.0, 0.],
+             [88907168.023082, 10606303.565132, 127442417.574458, 25062536.950038, 76562189.60893,
+                 5782052.956883, 157215604.064241, 184383740.844691, 12742511.126558],
              [42517558.793266, 329037.040456, 4202790.94696, 154504.650571, 7584616.411093, 480652.990745, 53551271.623572, 24121713.759947, 997799.00007]])
 
         full_indegrees = (full_num_synapses /
@@ -258,7 +274,8 @@ def derive_dependent_parameters(base_net_dict):
     # mask radius
     mask_radius = net_dict['mask_scaling'] * net_dict['beta']
     # maximum mask radius is half of the extent
-    mask_radius[mask_radius > net_dict['extent'] / 2.] = net_dict['extent'] / 2.
+    mask_radius[mask_radius > net_dict['extent'] /
+                2.] = net_dict['extent'] / 2.
     net_dict['mask_radius'] = mask_radius
 
     # p0 is computed for non-fixed in-degrees

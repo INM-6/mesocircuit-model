@@ -7,7 +7,7 @@ def create_figs_reference_vs_upscaled(
         ref_model='microcircuit',
         ups_model='base',
         machine='hpc',
-        run_parametersets=1,
+        run_parametersets=0,
         run_figures=1):
 
     # extract 1mm2 from full upscaled model
