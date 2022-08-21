@@ -268,8 +268,8 @@ def derive_dependent_parameters(base_net_dict):
     # mask radius
     mask_radius = net_dict['mask_scaling'] * net_dict['beta']
     # maximum mask radius is half of the extent
-    mask_radius[mask_radius > net_dict['extent'] /
-                2.] = net_dict['extent'] / 2.
+    mask_radius[mask_radius > net_dict['extent'] / 2.] = \
+        net_dict['extent'] / 2.
     net_dict['mask_radius'] = mask_radius
 
     # p0 is computed for non-fixed in-degrees
