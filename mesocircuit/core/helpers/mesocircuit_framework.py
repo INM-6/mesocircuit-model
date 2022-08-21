@@ -8,7 +8,6 @@ Parameterspace evaluation and job execution.
 import numpy as np
 import parameters as ps
 import os
-import sys
 import subprocess
 import shutil
 import glob
@@ -727,7 +726,7 @@ def run_single_lmt(paramspace_key, ps_id, data_dir=auto_data_directory()):
     return
 
 
-def __merge_dictionaries(main_dict, new_dict):
+def __merge_dictionaries(main_dict, new_dict, path=None):
     """
     Merges new dictionary recursively into main dictionary.
 
@@ -737,24 +736,32 @@ def __merge_dictionaries(main_dict, new_dict):
         Main dictionary.
     new_dict
         New dictionary with entries to overwrite main_dict.
+    path
+        Path in case of nested dictionary.
 
     Returns
     -------
     main_dict
         Updated dictionary.
     """
-    for key, val in new_dict.items():
-        if isinstance(val, dict):
-            node = main_dict.setdefault(key, {})
-            __merge_dictionaries(node, val)
+    if path is None:
+        path = []
+    for key in new_dict:
+        if key in main_dict:
+            if isinstance(main_dict[key], dict) and isinstance(new_dict[key], dict):
+                __merge_dictionaries(
+                    main_dict[key], new_dict[key], path + [str(key)])
+            else:
+                main_dict[key] = new_dict[key]
         else:
-            main_dict[key] = val
+            main_dict[key] = new_dict[key]
     return main_dict
 
 
 def __custom_params_for_parameterview(old_custom_params, dic, param, value):
     """
     """
+
     def nested_dict_from_list(keylist, val):
         dic = {keylist[-1]: val}
         for key in reversed(keylist[:-1]):
@@ -762,14 +769,16 @@ def __custom_params_for_parameterview(old_custom_params, dic, param, value):
         return dic
 
     def set_custom_range_or_value(keylist, val, custom_params):
-        if isinstance(val, dict):
-            for k, v in val.items():
-                keylist.append(k)
-                set_custom_range_or_value(keylist, v, custom_params)
-            return
-        elif isinstance(val, ps.ParameterRange):
+        if isinstance(val, ps.ParameterRange):
             custom_val = list(val)
             custom_type = 'ranges'
+        elif isinstance(val, dict):
+            for k in val:
+                if isinstance(val[k], ps.ParameterRange):
+                    raise Exception(
+                        'ParameterRange in nested dict not implemented.')
+            custom_val = val
+            custom_type = 'values'
         else:
             custom_val = val
             custom_type = 'values'
