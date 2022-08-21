@@ -103,12 +103,6 @@ def derive_dependent_parameters(base_net_dict):
         frac_tau_syn_in = (net_dict['neuron_params']['tau_syn_default'] /
                            net_dict['neuron_params']['tau_syn_in'])
         net_dict['full_weight_matrix_mean'][:, 1::2] *= frac_tau_syn_in
-
-    # if time constants different: compensate by adjusting inhibitory weights
-    # if net_dict['neuron_params']['tau_syn_ex'] != net_dict['neuron_params']['tau_syn_in']:
-    #    frac_tau_syn = (net_dict['neuron_params']['tau_syn_ex'] /
-    #                    net_dict['neuron_params']['tau_syn_in'])
-    #    net_dict['full_weight_matrix_mean'][:, 1::2] *= frac_tau_syn
     net_dict['full_weight_ext'] = net_dict['PSP_exc_mean'] * PSC_over_PSP_ex
 
     # 1mm2 neuron number dependent on the base model
