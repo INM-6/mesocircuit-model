@@ -88,22 +88,27 @@ def derive_dependent_parameters(base_net_dict):
     # apply relative weight E to I
     PSP_matrix_mean[1::2, 0::2] *= net_dict['rel_weight_exc_to_inh']
 
-    # conversion from PSPs to PSCs
-    PSC_over_PSP_ex = postsynaptic_potential_to_current(
+    # conversion from PSPs to PSCs using the default synaptic time constant
+    PSC_over_PSP_default = postsynaptic_potential_to_current(
         net_dict['neuron_params']['C_m'],
         net_dict['neuron_params']['tau_m'],
-        net_dict['neuron_params']['tau_syn_ex'])
-    net_dict['full_weight_matrix_mean'] = PSP_matrix_mean * PSC_over_PSP_ex
+        net_dict['neuron_params']['tau_syn_default'])
 
-    if net_dict['neuron_params']['tau_syn_ex'] != net_dict['neuron_params']['tau_syn_default']:
-        frac_tau_syn_ex = (net_dict['neuron_params']['tau_syn_default'] /
-                           net_dict['neuron_params']['tau_syn_ex'])
-        net_dict['full_weight_matrix_mean'][:, ::2] *= frac_tau_syn_ex
-    if net_dict['neuron_params']['tau_syn_in'] != net_dict['neuron_params']['tau_syn_default']:
-        frac_tau_syn_in = (net_dict['neuron_params']['tau_syn_default'] /
-                           net_dict['neuron_params']['tau_syn_in'])
-        net_dict['full_weight_matrix_mean'][:, 1::2] *= frac_tau_syn_in
-    net_dict['full_weight_ext'] = net_dict['PSP_exc_mean'] * PSC_over_PSP_ex
+    # fractions of default synaptic time constants divided by excitatory and
+    # inhibitory ones
+    frac_tau_syn = get_exc_inh_matrix(
+        net_dict['neuron_params']['tau_syn_default'] /
+        net_dict['neuron_params']['tau_syn_ex'],
+        net_dict['neuron_params']['tau_syn_default'] /
+        net_dict['neuron_params']['tau_syn_in'],
+        net_dict['num_pops'])
+
+    # conversion to PSC taking into account changes in synaptic time constants
+    net_dict['full_weight_matrix_mean'] = \
+        PSP_matrix_mean * PSC_over_PSP_default * frac_tau_syn
+    # external weight is excitatory
+    net_dict['full_weight_ext'] = \
+        net_dict['PSP_exc_mean'] * PSC_over_PSP_default * frac_tau_syn[0, 0]
 
     # 1mm2 neuron number dependent on the base model
     num_neurons_1mm2 = np.zeros(net_dict['num_pops'])
