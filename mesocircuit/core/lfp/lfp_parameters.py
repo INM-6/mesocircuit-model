@@ -489,7 +489,8 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     PS.tau_yX = {}
     for y in PS.y:
         PS.tau_yX.update({
-            y: [net_dict['neuron_params']['tau_syn'] for X in PS.X]
+            y: [net_dict['neuron_params']['tau_syn_in'] if X.rfind('I') >= 0 
+                else net_dict['neuron_params']['tau_syn_ex'] for X in PS.X]
         })
 
     # set parameters for topology connections with spatial parameters
