@@ -765,7 +765,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
         # image
         block_data = np.ma.masked_invalid(block_data)
-        cm = matplotlib.cm.get_cmap(cmap)
+        cm = matplotlib.cm.get_cmap(cmap).copy()
         cm.set_bad('white')
 
         im = ax.imshow(block_data, cmap=cm)
