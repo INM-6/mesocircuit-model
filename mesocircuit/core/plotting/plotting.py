@@ -415,7 +415,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
         ax = plt.subplot(gs)
 
-        cmap = matplotlib.cm.Greys
+        cmap = matplotlib.cm.get_cmap('Greys').copy()
         cmap.set_under(color='black')
         im = ax.imshow(plot_data, interpolation='nearest', cmap=cmap,
                        vmin=vmin,
@@ -850,7 +850,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         # image
         col_data = col_data.reshape(-1, 1)  # column
         col_data = np.ma.masked_invalid(col_data)
-        cm = matplotlib.cm.get_cmap(cmap)
+        cm = matplotlib.cm.get_cmap(cmap).copy()
         cm.set_bad('white')
 
         im = ax.imshow(col_data, cmap=cm)
