@@ -31,7 +31,7 @@ def load_h5_to_sparse_X(X, h5data, sparsetype='csr'):
                             (h5data[X]['data_row_col'][()][:, 1],
                              h5data[X]['data_row_col'][()][:, 2])),
                            shape=h5data[X]['shape'][()])
-    if type == 'csr':
+    if sparsetype == 'csr':
         return data_X
     else:
-        return getattr(data_X, f'to{type}')()
+        return getattr(data_X, f'to{sparsetype}')()
