@@ -128,20 +128,6 @@ def derive_dependent_parameters(base_net_dict):
         PSC_ext_tau_syn_default * frac_tau_syn[0, 0]
 
     ############################################################################
-    # DC input with compensation for potentially missing Poisson input
-    ############################################################################
-
-    if net_dict['poisson_input']:
-        net_dict['full_DC_amp'] = np.zeros(net_dict['num_pops'] - 1)
-    else:
-        print('DC input compensates for missing Poisson input.')
-        # uses default synaptic time constant
-        net_dict['full_DC_amp'] = dc_input_compensating_poisson(
-            net_dict['bg_rate'], full_ext_indegrees,
-            net_dict['neuron_params']['tau_syn_default'],
-            PSC_ext_tau_syn_default)
-
-    ############################################################################
     # neuron numbers and indegrees for full model
     ############################################################################
 
@@ -265,6 +251,20 @@ def derive_dependent_parameters(base_net_dict):
     net_dict['full_num_synapses'] = np.round(full_num_synapses).astype(int)
     net_dict['full_num_synapses_sum'] = \
         np.round(np.sum(full_num_synapses)).astype(int)
+
+    ############################################################################
+    # DC input with compensation for potentially missing Poisson input
+    ############################################################################
+
+    if net_dict['poisson_input']:
+        net_dict['full_DC_amp'] = np.zeros(net_dict['num_pops'] - 1)
+    else:
+        print('DC input compensates for missing Poisson input.')
+        # uses default synaptic time constant
+        net_dict['full_DC_amp'] = dc_input_compensating_poisson(
+            net_dict['bg_rate'], full_ext_indegrees,
+            net_dict['neuron_params']['tau_syn_default'],
+            PSC_ext_tau_syn_default)
 
     ############################################################################
     # (down-)scale numbers of neurons and indegrees and finalize weights
