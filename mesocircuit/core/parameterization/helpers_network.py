@@ -37,6 +37,10 @@ def derive_dependent_parameters(base_net_dict):
     # shape for connectivity matrices etc.
     pop_shape = (net_dict['num_pops'] - 1, net_dict['num_pops'])
 
+    ############################################################################
+    # set up matrices for spatial profiles and delays
+    ############################################################################
+
     # decay parameters of exponential profile
     if np.all(net_dict['beta_exc_inh']):
         # matrix of decay parameters
@@ -77,7 +81,11 @@ def derive_dependent_parameters(base_net_dict):
                 net_dict['delay_offset_matrix'],
                 net_dict['prop_speed_matrix'])
 
-    # matrix of mean PSPs
+    ############################################################################
+    # PSCs from PSPs with default synaptic time constant
+    ############################################################################
+
+    # matrix of mean PSPs,
     # the mean PSP of the connection from L4E to L23E is doubled
     PSP_matrix_mean = get_exc_inh_matrix(
         net_dict['PSP_exc_mean'],
@@ -88,22 +96,40 @@ def derive_dependent_parameters(base_net_dict):
     # apply relative weight E to I
     PSP_matrix_mean[1::2, 0::2] *= net_dict['rel_weight_exc_to_inh']
 
-    # conversion from PSPs to PSCs
-    PSC_over_PSP_ex = postsynaptic_potential_to_current(
+    # conversion from PSPs to PSCs using the default synaptic time constant
+    PSC_over_PSP_default = postsynaptic_potential_to_current(
         net_dict['neuron_params']['C_m'],
         net_dict['neuron_params']['tau_m'],
-        net_dict['neuron_params']['tau_syn_ex'])
-    net_dict['full_weight_matrix_mean'] = PSP_matrix_mean * PSC_over_PSP_ex
+        net_dict['neuron_params']['tau_syn_default'])
 
-    if net_dict['neuron_params']['tau_syn_ex'] != net_dict['neuron_params']['tau_syn_default']:
-        frac_tau_syn_ex = (net_dict['neuron_params']['tau_syn_default'] /
-                           net_dict['neuron_params']['tau_syn_ex'])
-        net_dict['full_weight_matrix_mean'][:, ::2] *= frac_tau_syn_ex
-    if net_dict['neuron_params']['tau_syn_in'] != net_dict['neuron_params']['tau_syn_default']:
-        frac_tau_syn_in = (net_dict['neuron_params']['tau_syn_default'] /
-                           net_dict['neuron_params']['tau_syn_in'])
-        net_dict['full_weight_matrix_mean'][:, 1::2] *= frac_tau_syn_in
-    net_dict['full_weight_ext'] = net_dict['PSP_exc_mean'] * PSC_over_PSP_ex
+    PSC_matrix_mean_tau_syn_default = \
+        PSP_matrix_mean * PSC_over_PSP_default
+    PSC_ext_tau_syn_default = \
+        net_dict['PSP_exc_mean'] * PSC_over_PSP_default
+
+    ############################################################################
+    # PSCs including changes in synaptic time constants
+    ############################################################################
+
+    # fractions of default synaptic time constants divided by excitatory and
+    # inhibitory ones
+    frac_tau_syn = get_exc_inh_matrix(
+        net_dict['neuron_params']['tau_syn_default'] /
+        net_dict['neuron_params']['tau_syn_ex'],
+        net_dict['neuron_params']['tau_syn_default'] /
+        net_dict['neuron_params']['tau_syn_in'],
+        net_dict['num_pops'])
+
+    # PSCs taking into account changes in synaptic time constants
+    net_dict['full_weight_matrix_mean'] = \
+        PSC_matrix_mean_tau_syn_default * frac_tau_syn
+    # external weight is excitatory
+    net_dict['full_weight_ext'] = \
+        PSC_ext_tau_syn_default * frac_tau_syn[0, 0]
+
+    ############################################################################
+    # neuron numbers and indegrees for full model
+    ############################################################################
 
     # 1mm2 neuron number dependent on the base model
     num_neurons_1mm2 = np.zeros(net_dict['num_pops'])
@@ -177,12 +203,13 @@ def derive_dependent_parameters(base_net_dict):
     else:
         full_indegrees = indegrees_1mm2
 
-    # scale indegrees
+    # scale specific indegrees
     if len(net_dict['indegree_scaling']) > 0:
         for source, target, factor in net_dict['indegree_scaling']:
             full_indegrees[int(target)][int(source)] *= factor
 
-    # adjust external indegrees to compensate for changed interal indegrees.
+    # adjust external indegrees to compensate for changed interal indegrees
+    # (either from upscaling or from specific modifications),
     # this does not apply to thalamus
     if net_dict['use_old_external_indegrees']:
         full_ext_indegrees = np.array([1701.752083840871, 1621.1260232237535,
@@ -195,8 +222,8 @@ def derive_dependent_parameters(base_net_dict):
             ext_indegrees_1mm2,
             net_dict['mean_rates_' + net_dict['base_model']],
             net_dict['bg_rate'],
-            net_dict['full_weight_matrix_mean'][:, :-1],
-            net_dict['full_weight_ext'])
+            PSC_matrix_mean_tau_syn_default[:, :-1],
+            PSC_ext_tau_syn_default)
 
     if net_dict['use_old_full_num_synapses']:
         full_num_synapses = np.array(
@@ -225,7 +252,24 @@ def derive_dependent_parameters(base_net_dict):
     net_dict['full_num_synapses_sum'] = \
         np.round(np.sum(full_num_synapses)).astype(int)
 
-    # (down-)scale numbers of neurons and synapses
+    ############################################################################
+    # DC input with compensation for potentially missing Poisson input
+    ############################################################################
+
+    if net_dict['poisson_input']:
+        net_dict['full_DC_amp'] = np.zeros(net_dict['num_pops'] - 1)
+    else:
+        print('DC input compensates for missing Poisson input.')
+        # uses default synaptic time constant
+        net_dict['full_DC_amp'] = dc_input_compensating_poisson(
+            net_dict['bg_rate'], full_ext_indegrees,
+            net_dict['neuron_params']['tau_syn_default'],
+            PSC_ext_tau_syn_default)
+
+    ############################################################################
+    # (down-)scale numbers of neurons and indegrees and finalize weights
+    ############################################################################
+
     num_neurons = full_num_neurons * net_dict['N_scaling']
     indegrees = full_indegrees * net_dict['K_scaling']
     net_dict['num_neurons'] = np.round(num_neurons).astype(int)
@@ -236,34 +280,33 @@ def derive_dependent_parameters(base_net_dict):
     net_dict['ext_indegrees'] = np.round(full_ext_indegrees *
                                          net_dict['K_scaling']).astype(int)
 
-    # DC input compensates for potentially missing Poisson input
-    # not to thalamus
-    if net_dict['poisson_input']:
-        net_dict['full_DC_amp'] = np.zeros(net_dict['num_pops'] - 1)
-    else:
-        print('DC input compensates for missing Poisson input.')
-        net_dict['full_DC_amp'] = dc_input_compensating_poisson(
-            net_dict['bg_rate'], full_ext_indegrees,
-            net_dict['neuron_params']['tau_syn'],
-            net_dict['full_weight_ext'])
-
-    # adjust weights and DC amplitude if the indegree is scaled.
+    # adjust weights and DC amplitude if the indegree is scaled
     if net_dict['K_scaling'] != 1:
-        net_dict['weight_matrix_mean'], net_dict['weight_ext'], net_dict['DC_amp'] = \
+        # compute first with default synaptic time constants
+        PSC_matrix_mean_tau_syn_default_scale, PSC_ext_tau_syn_default_scale, net_dict['DC_amp'] = \
             adjust_weights_and_input_to_synapse_scaling(
                 full_indegrees,
                 net_dict['K_scaling'],
-                net_dict['full_weight_matrix_mean'],
-                net_dict['full_weight_ext'],
-                net_dict['neuron_params']['tau_syn_ex'],
+                PSC_matrix_mean_tau_syn_default,
+                PSC_ext_tau_syn_default,
+                net_dict['neuron_params']['tau_syn_default'],
                 net_dict['mean_rates_' + net_dict['base_model']],
                 net_dict['full_DC_amp'],
                 net_dict['poisson_input'],
                 net_dict['bg_rate'], full_ext_indegrees)
+
+        net_dict['weight_matrix_mean'] = \
+            PSC_matrix_mean_tau_syn_default_scale * frac_tau_syn
+        net_dict['weight_ext'] = \
+            PSC_ext_tau_syn_default_scale * frac_tau_syn[0, 0]
     else:
         net_dict['weight_matrix_mean'] = net_dict['full_weight_matrix_mean']
         net_dict['weight_ext'] = net_dict['full_weight_ext']
         net_dict['DC_amp'] = net_dict['full_DC_amp']
+
+    ############################################################################
+    # spatial connectivity
+    ############################################################################
 
     # mask radius
     mask_radius = net_dict['mask_scaling'] * net_dict['beta']
@@ -390,7 +433,7 @@ def adjust_ext_indegrees_to_preserve_mean_input(
     full_ext_indegrees
         Adjusted external indegrees.
     """
-    frac_psc = PSC_matrix_mean / PSC_ext  # g
+    frac_psc = PSC_matrix_mean / PSC_ext
     frac_rates = mean_rates / bg_rate
     diff_indegrees = indegrees_1mm2 - full_indegrees
 
@@ -400,8 +443,8 @@ def adjust_ext_indegrees_to_preserve_mean_input(
     full_ext_indegrees = ext_indegrees_1mm2 + sum_diff_rec_inputs
 
     # TODO could be converted into a unit test
-    #full = np.zeros_like(mean_rates)
-    #mm2 = np.zeros_like(mean_rates)
+    # full = np.zeros_like(mean_rates)
+    # mm2 = np.zeros_like(mean_rates)
     # for i in np.arange(len(PSC_matrix_mean)): # target
     #    rec_input_full = 0.
     #    rec_input_1mm2 = 0.
@@ -677,7 +720,8 @@ def postsynaptic_potential_to_current(C_m, tau_m, tau_syn):
     return PSC_over_PSP
 
 
-def dc_input_compensating_poisson(bg_rate, K_ext, tau_syn, PSC_ext):
+def dc_input_compensating_poisson(
+        bg_rate, K_ext, tau_syn_default, PSC_ext):
     """ Computes DC input if no Poisson input is provided to the mesocircuit.
 
     Parameters
@@ -686,26 +730,26 @@ def dc_input_compensating_poisson(bg_rate, K_ext, tau_syn, PSC_ext):
         Rate of external Poisson generators (in spikes/s).
     K_ext
         External indegrees.
-    tau_syn
-        Synaptic time constant (in ms).
+    tau_syn_default
+        Default synaptic time constant (in ms).
     PSC_ext
-        Weight of external connections (in pA).
+        External weight (in pA).
 
     Returns
     -------
     DC
         DC input (in pA) which compensates lacking Poisson input.
     """
-    DC = bg_rate * K_ext * PSC_ext * tau_syn * 0.001
+    DC = bg_rate * K_ext * PSC_ext * tau_syn_default * 0.001
     return DC
 
 
 def adjust_weights_and_input_to_synapse_scaling(
         full_indegrees,
         K_scaling,
-        mean_PSC_matrix,
+        PSC_matrix_mean,
         PSC_ext,
-        tau_syn,
+        tau_syn_default,
         full_mean_rates,
         DC_amp,
         poisson_input,
@@ -723,12 +767,12 @@ def adjust_weights_and_input_to_synapse_scaling(
         Indegree matrix of the full-scale network.
     K_scaling
         Scaling factor for indegrees.
-    mean_PSC_matrix
+    PSC_matrix_mean
         Weight matrix (in pA).
     PSC_ext
         External weight (in pA).
-    tau_syn
-        Synaptic time constant (in ms).
+    tau_syn_default
+        Default synaptic time constant (in ms).
     full_mean_rates
         Firing rates of the full network (in spikes/s).
     DC_amp
@@ -750,17 +794,20 @@ def adjust_weights_and_input_to_synapse_scaling(
         Adjusted DC input (in pA).
 
     """
-    PSC_matrix_new = mean_PSC_matrix / np.sqrt(K_scaling)
+    PSC_matrix_new = PSC_matrix_mean / np.sqrt(K_scaling)
     PSC_ext_new = PSC_ext / np.sqrt(K_scaling)
 
     # recurrent input of full network without thalamus
-    input_rec = np.sum(
-        mean_PSC_matrix[:, :-1] * full_indegrees[:, :-1] * full_mean_rates, axis=1)
+    input_rec = np.sum(PSC_matrix_mean[:, :-1]
+                       * full_indegrees[:, :-1]
+                       * full_mean_rates, axis=1)
 
     DC_amp_new = DC_amp \
-        + 0.001 * tau_syn * (1. - np.sqrt(K_scaling)) * input_rec
+        + 0.001 * tau_syn_default * (1. - np.sqrt(K_scaling)) * input_rec
 
     if poisson_input:
         input_ext = PSC_ext * K_ext * bg_rate
-        DC_amp_new += 0.001 * tau_syn * (1. - np.sqrt(K_scaling)) * input_ext
+        DC_amp_new += \
+            tau_syn_default * 0.001 * (1. - np.sqrt(K_scaling)) * input_ext
+
     return PSC_matrix_new, PSC_ext_new, DC_amp_new
