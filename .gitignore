@@ -150,3 +150,6 @@ cython_debug/
 *.dat
 mesocircuit/data
 x86_64
+arm64
+*.tsv
+*.zip

@@ -580,8 +580,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         map_y = map_y.ravel()
         map_x = map_x.ravel()
 
-        assert isinstance(sptrains_bintime, sp.coo.coo_matrix), \
-            'sptrains_bintime must be of type scipy.sparse.coo.coo_matrix'
+        assert isinstance(sptrains_bintime, sp.coo_matrix), \
+            'sptrains_bintime must be of type scipy.sparse.coo_matrix'
         assert np.all(np.diff(sptrains_bintime.row) >= 0), \
             'sptrains_bintime.row must be in increasing order'
 

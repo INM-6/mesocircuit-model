@@ -299,7 +299,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         PS.y))
 
     # define morphology file paths
-    testing = False  # if True, use ball-and-stick type morphologies
+    testing = True  # if True, use ball-and-stick type morphologies
     if testing:
         PS.PATH_m_y = os.path.join(file_prefix, 'morphologies')
         PS.m_y = [Y + '_' + y + '.hoc' for Y, y in PS.mapping_Yy]
@@ -381,6 +381,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     for y, _, depth, N_y in PS.y_zip_list:
         PS.populationParams.update({
             y: {
+                # 'number': 512 if testing else N_y,
                 'number': N_y,
                 'z_min': depth - 25,
                 'z_max': depth + 25,
@@ -474,7 +475,6 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     # distribution of delays added on top of per connection delay using either
     # fixed or linear distance-dependent delays
     PS.synDelayScale = {y: [None for X in PS.X] for y in PS.y}
-    # TODO@JSE: NOT SURE WHAT delay* entry in "net_dict" this corresponds to
 
     # PSC amplitues
     PS.J_YX = net_dict['weight_matrix_mean'] * 1e-3  # pA -> nA unit conversion
@@ -489,7 +489,8 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     PS.tau_yX = {}
     for y in PS.y:
         PS.tau_yX.update({
-            y: [net_dict['neuron_params']['tau_syn'] for X in PS.X]
+            y: [net_dict['neuron_params']['tau_syn_in'] if X.rfind('I') >= 0 
+                else net_dict['neuron_params']['tau_syn_ex'] for X in PS.X]
         })
 
     # set parameters for topology connections with spatial parameters
