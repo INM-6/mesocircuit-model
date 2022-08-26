@@ -46,7 +46,7 @@ sys_dict = {
             'num_nodes': 16,
             'num_mpi_per_node': 128,
             'local_num_threads': 1,  # not used
-            'wall_clock_time': '04:00:00'
+            'wall_clock_time': '01:30:00'
         },
         'lfp_plotting': {
             'partition': partition,
