@@ -474,7 +474,6 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     # distribution of delays added on top of per connection delay using either
     # fixed or linear distance-dependent delays
     PS.synDelayScale = {y: [None for X in PS.X] for y in PS.y}
-    # TODO@JSE: NOT SURE WHAT delay* entry in "net_dict" this corresponds to
 
     # PSC amplitues
     PS.J_YX = net_dict['weight_matrix_mean'] * 1e-3  # pA -> nA unit conversion
