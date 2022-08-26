@@ -13,7 +13,7 @@ def load_h5_to_sparse_X(X, h5data, sparsetype='csr'):
         Group name for datasets
         'data', 'row', 'col' vectors of equal length
         'shape' : shape of array tuple
-    h5data: 
+    h5data:
         Open .h5 file.
     sparsetype: str
         scipy.sparse matrix type in 
@@ -31,7 +31,7 @@ def load_h5_to_sparse_X(X, h5data, sparsetype='csr'):
                             (h5data[X]['data_row_col'][()][:, 1],
                              h5data[X]['data_row_col'][()][:, 2])),
                            shape=h5data[X]['shape'][()])
-    if sparsetype == 'csr':
+    if sparsetype == 'coo':
         return data_X
     else:
         return getattr(data_X, f'to{sparsetype}')()
