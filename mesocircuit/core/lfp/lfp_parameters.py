@@ -299,7 +299,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         PS.y))
 
     # define morphology file paths
-    testing = False  # if True, use ball-and-stick type morphologies
+    testing = True  # if True, use ball-and-stick type morphologies
     if testing:
         PS.PATH_m_y = os.path.join(file_prefix, 'morphologies')
         PS.m_y = [Y + '_' + y + '.hoc' for Y, y in PS.mapping_Yy]
@@ -381,7 +381,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     for y, _, depth, N_y in PS.y_zip_list:
         PS.populationParams.update({
             y: {
-                'number': N_y,
+                'number': 512 if testing else N_y,
                 'z_min': depth - 25,
                 'z_max': depth + 25,
             }
