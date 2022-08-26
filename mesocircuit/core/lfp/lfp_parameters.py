@@ -381,7 +381,8 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     for y, _, depth, N_y in PS.y_zip_list:
         PS.populationParams.update({
             y: {
-                'number': 512 if testing else N_y,
+                # 'number': 512 if testing else N_y,
+                'number': N_y,
                 'z_min': depth - 25,
                 'z_max': depth + 25,
             }
