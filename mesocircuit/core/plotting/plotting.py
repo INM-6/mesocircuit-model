@@ -329,7 +329,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                       xticklabels=False)
 
         # bottom: standard deviation of input
-        print('  Plotting boxcharts: standard deviation of inupt')
+        print('  Plotting boxcharts: standard deviation of input')
         axes[2] = self.plot_barcharts(gs_c0[2, 0],
                                       working_point['std_input'] * 1000.,
                                       xlabel='', ylabel=r'$\sigma$ (mV)')
