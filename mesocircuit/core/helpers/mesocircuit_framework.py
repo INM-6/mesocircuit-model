@@ -284,15 +284,16 @@ def evaluate_parameterset(ps_id, paramset, full_data_path):
             json_dump = json.dumps(
                 paramset[dic], cls=NumpyEncoder, indent=2, sort_keys=True)
             f.write(json_dump)
-    # parameters for LIF Meanfield Tools
-    lmt_dic = params_for_lif_meanfield_tools(paramset['net_dict'])
-    fname = os.path.join(full_data_path, 'parameters', 'lmt_dict')
+    # parameters for NNMT
+    nnmt_dic = params_for_neuronal_network_meanfield_tools(
+        paramset['net_dict'])
+    fname = os.path.join(full_data_path, 'parameters', 'nnmt_dict')
     with open(fname + '.yaml', 'w') as f:
-        yaml.dump(lmt_dic, f, default_flow_style=False)
+        yaml.dump(nnmt_dic, f, default_flow_style=False)
     shutil.copyfile(os.path.join('core/parameterization',
-                                 'lmt_analysis_params.yaml'),
+                                 'nnmt_analysis_params.yaml'),
                     os.path.join(full_data_path, 'parameters',
-                                 'lmt_ana_dict.yaml'))
+                                 'nnmt_ana_dict.yaml'))
 
     # copy code
     for d in ['simulation', 'analysis', 'plotting', 'helpers']:
@@ -318,15 +319,15 @@ def evaluate_parameterset(ps_id, paramset, full_data_path):
     return
 
 
-def params_for_lif_meanfield_tools(net_dict):
+def params_for_neuronal_network_meanfield_tools(net_dict):
     """
     Creates a dictionary with parameters for mean-field theoretical analysis
-    with LIF Meanfield Tools (https://github.com/INM-6/lif_meanfield_tools).
+    with NNMT - the Neuronal Network Meanfield Toolbox
+    (https://github.com/INM-6/nnmt).
 
     The parameters for the full network are used.
-    Currently the normal delay values are taken independent of which delay type
-    is chosen.
-    Since LMT only allows for one synaptic time constant, the excitatory one is
+    A normally distributed delay is assumed.
+    Since NNMT only allows for one synaptic time constant, the default one is
     used.
 
     Parameters
@@ -363,7 +364,7 @@ def params_for_lif_meanfield_tools(net_dict):
                     'unit': 'mV'},
         'V_th_abs': {'val': net_dict['neuron_params']['V_th'],
                      'unit': 'mV'},
-        'tau_s': {'val': net_dict['neuron_params']['tau_syn_ex'],
+        'tau_s': {'val': net_dict['neuron_params']['tau_syn_default'],
                   'unit': 'ms'},
         'd_e': {'val': d_e_mean,
                 'unit': 'ms'},
@@ -377,6 +378,8 @@ def params_for_lif_meanfield_tools(net_dict):
         # use L23E -> L23E
         'w': {'val': net_dict['full_weight_matrix_mean'][0][0].tolist(),
               'unit': 'pA'},
+        'w_ext': {'val': net_dict['full_weight_matrix_mean'][0][0].tolist(),
+                  'unit': 'pA'},
         'K': net_dict['full_indegrees'][:, :-1].tolist(),
         'g': - net_dict['g'],
         'nu_ext': {'val': net_dict['bg_rate'],
@@ -649,10 +652,13 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
     return
 
 
-def run_single_lmt(paramspace_key, ps_id, data_dir=auto_data_directory()):
+def run_single_nnmt(paramspace_key, ps_id, data_dir=auto_data_directory()):
     """
-    Computes some theoretical quantities with LIF Meanfield Tools for a single
+    Computes some theoretical quantities with NNMT for a single
     parameter set.
+
+    NNMT is the Neuronal Network Meanfield Toolbox
+    (https://github.com/INM-6/nnmt).
 
     TODO move to a more appropriate place
 
@@ -666,42 +672,42 @@ def run_single_lmt(paramspace_key, ps_id, data_dir=auto_data_directory()):
         Absolute path to write data to.
     """
     from ..plotting import figures, plotting
-    import lif_meanfield_tools as lmt
-    ureg = lmt.ureg
+    import nnmt
 
     print(f'Computing theory for {paramspace_key} - {ps_id}.')
 
     os.chdir(os.path.join(data_dir, paramspace_key, ps_id))
 
-    # lmt network object
-    nw = lmt.Network(
+    # nnmt network object of type Microcircuit
+    nw = nnmt.models.Microcircuit(
         network_params=os.path.join(
-            'parameters', 'lmt_dict.yaml'), analysis_params=os.path.join(
-            'parameters', 'lmt_ana_dict.yaml'))
+            'parameters', 'nnmt_dict.yaml'), analysis_params=os.path.join(
+            'parameters', 'nnmt_ana_dict.yaml'))
 
-    # working point
-    wp = nw.working_point()
-
-    # power spectrum
-    power = nw.power_spectra()
+    # working point for exponentially shape post synaptic currents
+    wp = nnmt.lif.exp.working_point(nw)
+    # transfer function
+    nnmt.lif.exp.transfer_function(nw)
+    # delay distribution matrix
+    nnmt.network_properties.delay_dist_matrix(nw)
+    # effective connectivity matrix
+    nnmt.lif.exp.effective_connectivity(nw)
+    # power spectra
+    power = nnmt.lif.exp.power_spectra(nw)
     freqs = nw.analysis_params['omegas'] / (2. * np.pi)
 
     # sensitivity measure
-    pop_idx, freq_idx = np.unravel_index(np.argmax(power),
-                                         np.shape(power))
-    frequency = freqs[freq_idx]
+    sensitivity_dict = nnmt.lif.exp.sensitivity_measure_all_eigenmodes(nw)
+    # Look at the critical frequencies per eigenmode
+    for k, v in sensitivity_dict.items():
+        print(k, v['critical_frequency'])
 
-    sm = nw.sensitivity_measure(freq=frequency)
-    eigs = nw.eigenvalue_spectra('MH')
-    eigc = eigs[pop_idx][np.argmin(abs(eigs[pop_idx] - 1))]
-
-    Z = nw.sensitivity_measure(frequency)
-    k = np.asarray([1, 0]) - np.asarray([eigc.real, eigc.imag])
-    k /= np.sqrt(np.dot(k, k))
-    k_per = np.asarray([-k[1], k[0]])
-    k_per /= np.sqrt(np.dot(k_per, k_per))
-    Z_amp = Z.real * k[0] + Z.imag * k[1]
-    Z_freq = Z.real * k_per[0] + Z.imag * k_per[1]
+    ev = '5'  # TODO choose wisely and for low and high freq peaks
+    frequency = sensitivity_dict[ev]['critical_frequency']
+    projection_amp = sensitivity_dict[ev]['sensitivity_amp']
+    Z_amp = np.ma.masked_where(projection_amp == 0, projection_amp)
+    projection_freq = sensitivity_dict[ev]['sensitivity_freq']
+    Z_freq = np.ma.masked_where(projection_freq == 0, projection_freq)
 
     # corresponding plotting class
     dics = []
@@ -721,7 +727,7 @@ def run_single_lmt(paramspace_key, ps_id, data_dir=auto_data_directory()):
         power=power,
         sensitvity_amplitude=Z_amp,
         sensitivity_frequency=Z_freq,
-        sensitivity_popidx_freq=[pop_idx, frequency])
+        sensitivity_popidx_freq=[ev, frequency])
 
     return
 
