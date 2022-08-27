@@ -5,6 +5,7 @@ The Plotting Class defines plotting functions.
 Functions starting with 'plot_' plot to a gridspec cell and are used in figures.py.
 """
 
+from re import I
 import matplotlib.patheffects as PathEffects
 from matplotlib.patches import Rectangle, Circle
 from ..helpers import base_class
@@ -302,12 +303,11 @@ class Plotting(base_class.BaseAnalysisPlotting):
         return axes
 
     def plot_theory_overview(self, gs, working_point, frequencies, power,
-                             sensitvity_amplitude, sensitivity_frequency,
-                             sensitivity_popidx_freq):
+                             sensitivity):
         """
         """
         axes = [0] * 5
-        gs_cols = gridspec.GridSpecFromSubplotSpec(1, 12, subplot_spec=gs,
+        gs_cols = gridspec.GridSpecFromSubplotSpec(3, 12, subplot_spec=gs,
                                                    wspace=0.5)
 
         # column 0: barcharts
@@ -342,26 +342,45 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                          data=[frequencies, power])
 
         gs_c2 = gridspec.GridSpecFromSubplotSpec(
-            2, 1, subplot_spec=gs_cols[7:], hspace=0.3)
+            4, 4, subplot_spec=gs_cols[1:, :], hspace=0.3)
 
         # column 2: sensitivity measure
         print('  Plotting sensitivity measure')
-        freq = '({} Hz)'.format(sensitivity_popidx_freq[1].astype(int))
-        axes[4] = plt.subplot(gs_c2[0])
-        self.plot_matrix(ax=axes[4],
-                         data=sensitvity_amplitude,
-                         title=r'$\,Z^\mathrm{amp}$ ' + freq,
-                         xlabel='', ylabel='targets',
-                         xticklabels=[],
-                         yticklabels=self.plot_dict['pop_labels'][:-1])
+        for ev, sens in sensitivity.items():
+            k = int(ev)
+            frequency = sens['critical_frequency']
 
-        self.plot_matrix(ax=plt.subplot(gs_c2[1]),
-                         data=sensitivity_frequency,
-                         title=r'$\,Z^\mathrm{freq}$ ' + freq,
-                         xlabel='sources', ylabel='targets',
-                         xticklabels=self.plot_dict['pop_labels'][:-1],
-                         yticklabels=self.plot_dict['pop_labels'][:-1],
-                         xticklabelrotation=True)
+            projection_amp = sens['sensitivity_amp']
+            Z_amp = np.ma.masked_where(projection_amp == 0, projection_amp)
+            projection_freq = sens['sensitivity_freq']
+            Z_freq = np.ma.masked_where(projection_freq == 0, projection_freq)
+
+            freq = '({} Hz)'.format(np.round(frequency).astype(int))
+            row = 0 if k < 4 else 2
+            col = k % 4
+
+            ax = plt.subplot(gs_c2[row, col])
+            if k == 0:
+                axes[4] = ax
+            xl = 'sources' if k > 3 else ''
+            xtl = self.plot_dict['pop_labels'][:-1] if k > 3 else []
+            yl = 'targets' if k % 4 == 0 else ''
+            ytl = self.plot_dict['pop_labels'][:-1] if k % 4 == 0 else []
+
+            self.plot_matrix(ax=ax,
+                             data=Z_amp,
+                             title=r'$\,Z^\mathrm{amp}$ ' + freq,
+                             xlabel='', ylabel='targets',
+                             xticklabels=[],
+                             yticklabels=ytl)
+
+            self.plot_matrix(ax=plt.subplot(gs_c2[row+1, col]),
+                             data=Z_freq,
+                             title=r'$\,Z^\mathrm{freq}$ ' + freq,
+                             xlabel=xl, ylabel=yl,
+                             xticklabels=xtl,
+                             yticklabels=ytl,
+                             xticklabelrotation=True)
         return axes
 
     def plot_spatial_snapshots(self,

@@ -698,16 +698,6 @@ def run_single_nnmt(paramspace_key, ps_id, data_dir=auto_data_directory()):
 
     # sensitivity measure
     sensitivity_dict = nnmt.lif.exp.sensitivity_measure_all_eigenmodes(nw)
-    # Look at the critical frequencies per eigenmode
-    for k, v in sensitivity_dict.items():
-        print(k, v['critical_frequency'])
-
-    ev = '5'  # TODO choose wisely and for low and high freq peaks
-    frequency = sensitivity_dict[ev]['critical_frequency']
-    projection_amp = sensitivity_dict[ev]['sensitivity_amp']
-    Z_amp = np.ma.masked_where(projection_amp == 0, projection_amp)
-    projection_freq = sensitivity_dict[ev]['sensitivity_freq']
-    Z_freq = np.ma.masked_where(projection_freq == 0, projection_freq)
 
     # corresponding plotting class
     dics = []
@@ -725,9 +715,7 @@ def run_single_nnmt(paramspace_key, ps_id, data_dir=auto_data_directory()):
         working_point=wp,
         frequencies=freqs,
         power=power,
-        sensitvity_amplitude=Z_amp,
-        sensitivity_frequency=Z_freq,
-        sensitivity_popidx_freq=[ev, frequency])
+        sensitivity=sensitivity_dict)
 
     return
 

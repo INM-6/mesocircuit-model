@@ -346,18 +346,16 @@ def instantaneous_firing_rates(plot, all_sptrains_bintime, length):
 
 
 def theory_overview(
-        plot, working_point, frequencies, power,
-        sensitvity_amplitude, sensitivity_frequency, sensitivity_popidx_freq):
+        plot, working_point, frequencies, power, sensitivity):
     """
     """
     print('Plotting theory overview.')
 
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 4))
+    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 10))
     gs = gridspec.GridSpec(1, 1)
-    gs.update(left=0.1, right=0.98, bottom=0.15, top=0.93)
+    gs.update(left=0.1, right=0.98, bottom=0.05, top=0.98)
     axes = plot.plot_theory_overview(
-        gs[0], working_point, frequencies, power,
-        sensitvity_amplitude, sensitivity_frequency, sensitivity_popidx_freq)
+        gs[0], working_point, frequencies, power, sensitivity)
     labels = ['A', 'B', 'C', 'D', 'E']
     for i, label in enumerate(labels):
         plot.add_label(axes[i], label)
