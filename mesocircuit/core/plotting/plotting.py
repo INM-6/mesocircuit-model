@@ -5,6 +5,7 @@ The Plotting Class defines plotting functions.
 Functions starting with 'plot_' plot to a gridspec cell and are used in figures.py.
 """
 
+from re import I
 import matplotlib.patheffects as PathEffects
 from matplotlib.patches import Rectangle, Circle
 from ..helpers import base_class
@@ -196,7 +197,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
             ax.plot(x * time_step + time_interval[0],
                     -(np.sum(nums_shown) + y),
                     marker='$.$',
-                    markersize=matplotlib.rcParams['lines.markersize'] * markersize_scale,
+                    markersize=matplotlib.rcParams['lines.markersize'] *
+                    markersize_scale,
                     color=self.plot_dict['pop_colors'][i],
                     markeredgecolor='none',
                     linestyle='',
@@ -266,7 +268,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
         axes[3] = self.plot_layer_panels(gs_cols[0, 3:5],
                                          xlabel='FR (spikes/s)',
                                          plotfunc=self.plotfunc_distributions,
-                                         bins=bins_unscaled * self.plot_dict['distr_max_rate'],
+                                         bins=bins_unscaled *
+                                         self.plot_dict['distr_max_rate'],
                                          data=all_FRs,
                                          MaxNLocatorNBins=3,
                                          ylabel='p (a.u.)')
@@ -276,7 +279,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
         axes[4] = self.plot_layer_panels(gs_cols[0, 5:7],
                                          xlabel='LV',
                                          plotfunc=self.plotfunc_distributions,
-                                         bins=bins_unscaled * self.plot_dict['distr_max_lv'],
+                                         bins=bins_unscaled *
+                                         self.plot_dict['distr_max_lv'],
                                          data=all_LVs,
                                          MaxNLocatorNBins=3)
 
@@ -285,7 +289,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
         axes[5] = self.plot_layer_panels(gs_cols[0, 7:9],
                                          xlabel='CC',
                                          plotfunc=self.plotfunc_distributions,
-                                         bins=2. * (bins_unscaled - 0.5) * self.plot_dict['distr_max_cc'],
+                                         bins=2. * (bins_unscaled - 0.5) *
+                                         self.plot_dict['distr_max_cc'],
                                          data=all_CCs,
                                          MaxNLocatorNBins=2)
 
@@ -298,12 +303,11 @@ class Plotting(base_class.BaseAnalysisPlotting):
         return axes
 
     def plot_theory_overview(self, gs, working_point, frequencies, power,
-                             sensitvity_amplitude, sensitivity_frequency,
-                             sensitivity_popidx_freq):
+                             sensitivity):
         """
         """
         axes = [0] * 5
-        gs_cols = gridspec.GridSpecFromSubplotSpec(1, 12, subplot_spec=gs,
+        gs_cols = gridspec.GridSpecFromSubplotSpec(3, 12, subplot_spec=gs,
                                                    wspace=0.5)
 
         # column 0: barcharts
@@ -313,51 +317,70 @@ class Plotting(base_class.BaseAnalysisPlotting):
         # top: FRs
         print('  Plotting barcharts: rates')
         axes[0] = self.plot_barcharts(gs_c0[0, 0],
-                                      working_point['firing_rates'].magnitude,
+                                      working_point['firing_rates'],
                                       xlabel='', ylabel='FR (spikes/s)',
                                       xticklabels=False)
 
         # middle: mean input
         print('  Plotting barcharts: mean input')
         axes[1] = self.plot_barcharts(gs_c0[1, 0],
-                                      working_point['mean_input'].magnitude,
+                                      working_point['mean_input'] * 1000.,
                                       xlabel='', ylabel=r'$\mu$ (mV)',
                                       xticklabels=False)
 
         # bottom: standard deviation of input
-        print('  Plotting boxcharts: standard deviation of inupt')
+        print('  Plotting boxcharts: standard deviation of input')
         axes[2] = self.plot_barcharts(gs_c0[2, 0],
-                                      working_point['std_input'].magnitude,
+                                      working_point['std_input'] * 1000.,
                                       xlabel='', ylabel=r'$\sigma$ (mV)')
 
-       # column 1: PSDs
+        # column 1: PSDs
         print('  Plotting power')
         axes[3] = self.plot_layer_panels(gs_cols[0, 4:6],
-                                         xlabel=r'$f$ (Hz)', ylabel='power',
+                                         xlabel=r'$f$ (Hz)', ylabel='power ($1/s^2$)',
                                          plotfunc=self.plotfunc_theory_power_spectra,
                                          data=[frequencies, power])
 
         gs_c2 = gridspec.GridSpecFromSubplotSpec(
-            2, 1, subplot_spec=gs_cols[7:], hspace=0.3)
+            4, 4, subplot_spec=gs_cols[1:, :], hspace=0.3)
 
         # column 2: sensitivity measure
         print('  Plotting sensitivity measure')
-        freq = '({} Hz)'.format(sensitivity_popidx_freq[1].astype(int))
-        axes[4] = plt.subplot(gs_c2[0])
-        self.plot_matrix(ax=axes[4],
-                         data=sensitvity_amplitude,
-                         title=r'$\,Z^\mathrm{amp}$ ' + freq,
-                         xlabel='', ylabel='targets',
-                         xticklabels=[],
-                         yticklabels=self.plot_dict['pop_labels'][:-1])
+        for ev, sens in sensitivity.items():
+            k = int(ev)
+            frequency = sens['critical_frequency']
 
-        self.plot_matrix(ax=plt.subplot(gs_c2[1]),
-                         data=sensitivity_frequency,
-                         title=r'$\,Z^\mathrm{freq}$ ' + freq,
-                         xlabel='sources', ylabel='targets',
-                         xticklabels=self.plot_dict['pop_labels'][:-1],
-                         yticklabels=self.plot_dict['pop_labels'][:-1],
-                         xticklabelrotation=True)
+            projection_amp = sens['sensitivity_amp']
+            Z_amp = np.ma.masked_where(projection_amp == 0, projection_amp)
+            projection_freq = sens['sensitivity_freq']
+            Z_freq = np.ma.masked_where(projection_freq == 0, projection_freq)
+
+            freq = '({} Hz)'.format(np.round(frequency).astype(int))
+            row = 0 if k < 4 else 2
+            col = k % 4
+
+            ax = plt.subplot(gs_c2[row, col])
+            if k == 0:
+                axes[4] = ax
+            xl = 'sources' if k > 3 else ''
+            xtl = self.plot_dict['pop_labels'][:-1] if k > 3 else []
+            yl = 'targets' if k % 4 == 0 else ''
+            ytl = self.plot_dict['pop_labels'][:-1] if k % 4 == 0 else []
+
+            self.plot_matrix(ax=ax,
+                             data=Z_amp,
+                             title=r'$\,Z^\mathrm{amp}$ ' + freq,
+                             xlabel='', ylabel='targets',
+                             xticklabels=[],
+                             yticklabels=ytl)
+
+            self.plot_matrix(ax=plt.subplot(gs_c2[row+1, col]),
+                             data=Z_freq,
+                             title=r'$\,Z^\mathrm{freq}$ ' + freq,
+                             xlabel=xl, ylabel=yl,
+                             xticklabels=xtl,
+                             yticklabels=ytl,
+                             xticklabelrotation=True)
         return axes
 
     def plot_spatial_snapshots(self,
@@ -1025,10 +1048,10 @@ class Plotting(base_class.BaseAnalysisPlotting):
         """
         TODO
         """
-        frequencies = data[0].magnitude
-        power = data[1][i].magnitude
+        frequencies = data[0]
+        power = data[1]
 
-        ax.plot(frequencies, power,
+        ax.plot(frequencies, power[:, i],
                 linewidth=matplotlib.rcParams['lines.linewidth'],
                 color=self.plot_dict['pop_colors'][i])
 
