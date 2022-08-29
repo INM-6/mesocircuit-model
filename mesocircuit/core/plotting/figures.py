@@ -277,7 +277,8 @@ def spatial_snapshots(plot, all_inst_rates_bintime_binspace):
         gs[0, 0],
         pops,
         all_inst_rates_bintime_binspace,
-        plot.ana_dict['binsize_time'])
+        plot.ana_dict['binsize_time'],
+        orientation='horizontal')
     plot.savefig('spatial_snapshots')
     return
 

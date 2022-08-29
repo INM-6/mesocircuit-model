@@ -7,10 +7,10 @@ def create_live_paper_figure(
         base_key='base',
         custom_key='evoked_live_paper',
         custom_params={  # TODO parameters not final
-            'net_dict': {'thalamic_input': 'pulses', 'th_rel_radius': 0.05},
+            'net_dict': {'thalamic_input': 'pulses', 'th_rel_radius': 0.1},
         },
-        machine='hpc', 
-        run_parametersets=0, # get data (run simulation network and analysis)
+        machine='hpc',
+        run_parametersets=0,  # get data (run simulation network and analysis)
         run_figures=1):
 
     custom_ps_dicts = mesoframe.extend_existing_parameterspaces(
