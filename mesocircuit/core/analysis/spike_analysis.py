@@ -405,12 +405,12 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             # simulation resolution
             elif datatype == 'sptrains':
                 datasets[datatype] = self.__time_binned_sptrains_X(
-                    i, spikes, self.time_bins_sim, dtype=np.uint8)
+                    self.N_X[i], spikes, self.time_bins_sim, dtype=np.uint8)
 
             # time-binned spike trains
             elif datatype == 'sptrains_bintime':
                 datasets[datatype] = self.__time_binned_sptrains_X(
-                    i, spikes, self.time_bins_rs, dtype=np.uint8)
+                    self.N_X[i], spikes, self.time_bins_rs, dtype=np.uint8)
 
             # time-binned and space-binned spike trains
             elif datatype == 'sptrains_bintime_binspace':
@@ -486,7 +486,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                    'y-position_mm': positions['y-position_mm']}
         return pos_dic
 
-    def __time_binned_sptrains_X(self, i, spikes, time_bins, dtype):
+    def __time_binned_sptrains_X(self, N_X, spikes, time_bins, dtype):
         """
         Computes a spike train as a histogram with ones for each spike at a
         given time binning.
@@ -499,8 +499,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         Parameters
         ----------
-        i
-            Population index.
+        N_X
+            Size of population X.
         spikes: ndarray
             Array of node ids and spike times.
         time_bins: ndarray
@@ -515,7 +515,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         """
         # if no spikes were recorded, return an empty sparse matrix
-        shape = (self.N_X[i], time_bins.size)
+        shape = (N_X, time_bins.size)
 
         if spikes.size == 0:
             sptrains_bintime = sp.coo_matrix(shape, dtype=dtype)
