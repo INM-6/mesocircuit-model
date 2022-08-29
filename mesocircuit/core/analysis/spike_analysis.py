@@ -266,9 +266,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         spikes, positions = self.__load_plain_spikes_and_positions(X)
 
         spikes_1mm2, positions_1mm2 = \
-            self._extract_center_disc_1mm2(
-                spikes, positions,
-                self.ana_dict['read_nest_ascii_dtypes']['spike_recorder'])
+            self._extract_center_disc_1mm2(spikes, positions)
 
         # delete original data
         for datatype in ['positions', 'spike_recorder']:
@@ -339,7 +337,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         spikes_1mm2 = spikes_1mm2[:cnt]
 
         return spikes_1mm2, positions_1mm2
- 
 
     def __first_glance_at_data(self, N_X, num_spikes):
         """
@@ -609,7 +606,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         ).tocsr()
 
         try:
-            assert(sptrains_bintime.sum() == sptrains_csr.sum())
+            assert (sptrains_bintime.sum() == sptrains_csr.sum())
         except AssertionError as ae:
             raise ae(
                 'sptrains_bintime.sum()={0} != sptrains_coo.sum()={1}'.format(
