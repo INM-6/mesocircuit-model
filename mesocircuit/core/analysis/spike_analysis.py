@@ -266,9 +266,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         spikes, positions = self.__load_plain_spikes_and_positions(X)
 
         spikes_1mm2, positions_1mm2 = \
-            self._extract_center_disc_1mm2(
-                spikes, positions,
-                self.ana_dict['read_nest_ascii_dtypes']['spike_recorder'])
+            self._extract_center_disc_1mm2(spikes, positions)
 
         # delete original data
         for datatype in ['positions', 'spike_recorder']:

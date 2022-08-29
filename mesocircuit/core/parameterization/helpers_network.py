@@ -108,26 +108,6 @@ def derive_dependent_parameters(base_net_dict):
         net_dict['PSP_exc_mean'] * PSC_over_PSP_default
 
     ############################################################################
-    # PSCs including changes in synaptic time constants
-    ############################################################################
-
-    # fractions of default synaptic time constants divided by excitatory and
-    # inhibitory ones
-    frac_tau_syn = get_exc_inh_matrix(
-        net_dict['neuron_params']['tau_syn_default'] /
-        net_dict['neuron_params']['tau_syn_ex'],
-        net_dict['neuron_params']['tau_syn_default'] /
-        net_dict['neuron_params']['tau_syn_in'],
-        net_dict['num_pops'])
-
-    # PSCs taking into account changes in synaptic time constants
-    net_dict['full_weight_matrix_mean'] = \
-        PSC_matrix_mean_tau_syn_default * frac_tau_syn
-    # external weight is excitatory
-    net_dict['full_weight_ext'] = \
-        PSC_ext_tau_syn_default * frac_tau_syn[0, 0]
-
-    ############################################################################
     # neuron numbers and indegrees for full model
     ############################################################################
 
@@ -246,7 +226,6 @@ def derive_dependent_parameters(base_net_dict):
                           full_num_neurons[:-1][:, np.newaxis])
 
     net_dict['full_indegrees'] = np.round(full_indegrees).astype(int)
-    net_dict['full_ext_indegrees'] = np.round(full_ext_indegrees).astype(int)
     full_num_synapses = full_indegrees * full_num_neurons[:-1][:, np.newaxis]
     net_dict['full_num_synapses'] = np.round(full_num_synapses).astype(int)
     net_dict['full_num_synapses_sum'] = \
@@ -277,14 +256,14 @@ def derive_dependent_parameters(base_net_dict):
     net_dict['num_synapses'] = np.round(full_num_synapses *
                                         net_dict['N_scaling'] *
                                         net_dict['K_scaling']).astype(int)
-    net_dict['ext_indegrees'] = np.round(full_ext_indegrees *
-                                         net_dict['K_scaling']).astype(int)
+    ext_indegrees = np.round(full_ext_indegrees *
+                             net_dict['K_scaling']).astype(int)
 
     # adjust weights and DC amplitude if the indegree is scaled
     if net_dict['K_scaling'] != 1:
         # compute first with default synaptic time constants
         PSC_matrix_mean_tau_syn_default_scale, PSC_ext_tau_syn_default_scale, net_dict['DC_amp'] = \
-            adjust_weights_and_input_to_synapse_scaling(
+            adjust_weights_and_input_to_indegree_scaling(
                 full_indegrees,
                 net_dict['K_scaling'],
                 PSC_matrix_mean_tau_syn_default,
@@ -293,16 +272,46 @@ def derive_dependent_parameters(base_net_dict):
                 net_dict['mean_rates_' + net_dict['base_model']],
                 net_dict['full_DC_amp'],
                 net_dict['poisson_input'],
-                net_dict['bg_rate'], full_ext_indegrees)
+                net_dict['bg_rate'],
+                full_ext_indegrees)
 
-        net_dict['weight_matrix_mean'] = \
-            PSC_matrix_mean_tau_syn_default_scale * frac_tau_syn
-        net_dict['weight_ext'] = \
-            PSC_ext_tau_syn_default_scale * frac_tau_syn[0, 0]
     else:
-        net_dict['weight_matrix_mean'] = net_dict['full_weight_matrix_mean']
-        net_dict['weight_ext'] = net_dict['full_weight_ext']
+        PSC_matrix_mean_tau_syn_default_scale = PSC_matrix_mean_tau_syn_default
+        PSC_ext_tau_syn_default_scale = PSC_ext_tau_syn_default
         net_dict['DC_amp'] = net_dict['full_DC_amp']
+
+    ############################################################################
+    # scale specific external indegrees (changes are not compensated for)
+    ############################################################################
+
+    if len(net_dict['ext_indegree_scaling']) > 0:
+        for population, factor in net_dict['ext_indegree_scaling']:
+            full_ext_indegrees[int(population)] *= factor
+            ext_indegrees[int[population]] *= factor
+    net_dict['full_ext_indegrees'] = np.round(full_ext_indegrees).astype(int)
+    net_dict['ext_indegrees'] = np.round(ext_indegrees).astype(int)
+
+    ############################################################################
+    # scale weights for changed excitatatory and inhibitory time constants
+    ############################################################################
+
+    net_dict['full_weight_matrix_mean'], net_dict['full_weight_ext'] = \
+        adjust_weights_and_input_to_synaptic_time_constants(
+            PSC_matrix_mean_tau_syn_default,
+            PSC_ext_tau_syn_default,
+            net_dict['neuron_params']['tau_syn_default'],
+            net_dict['neuron_params']['tau_syn_ex'],
+            net_dict['neuron_params']['tau_syn_in'],
+            net_dict['num_pops'])
+
+    net_dict['weight_matrix_mean'], net_dict['weight_ext'] = \
+        adjust_weights_and_input_to_synaptic_time_constants(
+            PSC_matrix_mean_tau_syn_default_scale,
+            PSC_ext_tau_syn_default_scale,
+            net_dict['neuron_params']['tau_syn_default'],
+            net_dict['neuron_params']['tau_syn_ex'],
+            net_dict['neuron_params']['tau_syn_in'],
+            net_dict['num_pops'])
 
     ############################################################################
     # spatial connectivity
@@ -744,7 +753,7 @@ def dc_input_compensating_poisson(
     return DC
 
 
-def adjust_weights_and_input_to_synapse_scaling(
+def adjust_weights_and_input_to_indegree_scaling(
         full_indegrees,
         K_scaling,
         PSC_matrix_mean,
@@ -811,3 +820,49 @@ def adjust_weights_and_input_to_synapse_scaling(
             tau_syn_default * 0.001 * (1. - np.sqrt(K_scaling)) * input_ext
 
     return PSC_matrix_new, PSC_ext_new, DC_amp_new
+
+
+def adjust_weights_and_input_to_synaptic_time_constants(
+        PSC_matrix_mean,
+        PSC_ext,
+        tau_syn_default,
+        tau_syn_ex,
+        tau_syn_in,
+        num_pops):
+    """
+    Preserves mean input upon changed synapti time constants by weight changes.
+
+    Note that the variance of the input is not preserved.
+
+    Parameters
+    ----------
+    PSC_matrix_mean
+        Weight matrix (in pA).
+    PSC_ext
+        External weight (in pA).
+    tau_syn_default
+        Default synaptic time constant (in ms).
+    tau_syn_ex
+        Excitatory synaptic time constant (in ms).
+    tau_syn_in
+        Inhibitory synaptic time constant (in ms).
+    num_pops
+        Number of populations.
+
+    Returns
+    -------
+    PSC_matrix_new
+        Adjusted weight matrix (in pA).
+    PSC_ext_new
+        Adjusted external weight (in pA).
+    """
+    # fractions of default synaptic time constants divided by excitatory and
+    # inhibitory ones
+    frac_tau_syn = get_exc_inh_matrix(tau_syn_default / tau_syn_ex,
+                                      tau_syn_default / tau_syn_in,
+                                      num_pops)
+
+    # PSCs taking into account changes in synaptic time constants
+    PSC_matrix_new = PSC_matrix_mean * frac_tau_syn
+    PSC_ext_new = PSC_ext * tau_syn_default / tau_syn_ex
+    return PSC_matrix_new, PSC_ext_new
