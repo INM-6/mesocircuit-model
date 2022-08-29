@@ -348,6 +348,11 @@ def params_for_neuronal_network_meanfield_tools(net_dict):
         d_e_sd = float(np.mean(net_dict['delay_lin_eff_std'][:, ::2]))
         d_i_sd = float(np.mean(net_dict['delay_lin_eff_std'][:, 1::2]))
 
+    # reverse weight scaling with synaptic time constant
+    w = (net_dict['full_weight_matrix_mean'][0][0] *
+         net_dict['neuron_params']['tau_syn_ex'] /
+         net_dict['neuron_params']['tau_syn_default']).astype(list)
+
     dic = {
         # for correct parameter derivations, includes doubled weight L4E->L23E,
         # but rel_weight_exc_to_inh is not covered
@@ -376,9 +381,9 @@ def params_for_neuronal_network_meanfield_tools(net_dict):
                    'unit': 'ms'},
         'delay_dist': 'gaussian',  # not exact, but better than none
         # use L23E -> L23E
-        'w': {'val': net_dict['full_weight_matrix_mean'][0][0].tolist(),
+        'w': {'val': w,
               'unit': 'pA'},
-        'w_ext': {'val': net_dict['full_weight_matrix_mean'][0][0].tolist(),
+        'w_ext': {'val': w,
                   'unit': 'pA'},
         'K': net_dict['full_indegrees'][:, :-1].tolist(),
         'g': - net_dict['g'],
