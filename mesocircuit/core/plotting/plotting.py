@@ -388,13 +388,17 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                populations,
                                all_inst_rates_bintime_binspace,
                                binsize_time,
+                               orientation='horizontal',
                                start_time='th_pulse_start',  # ms
                                step=1,  # multiplication
                                nframes=30,
                                tickstep=2,
                                cbar=True,
-                               cbar_bottom=0.2,
-                               cbar_height=0.02):
+                               cbar_left=0.42,  # vertical
+                               cbar_width=0.02,  # vertical
+                               cbar_bottom=0.2,  # horizontal
+                               cbar_height=0.02  # horizontal
+                               ):
         """
         """
         # if the start time is a string, the respective entry from the stimulus
@@ -436,15 +440,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 plot_data0 = np.concatenate(
                     (plot_data, separator_pops), axis=0)
 
-        ax = plt.subplot(gs)
-
-        cmap = matplotlib.cm.get_cmap('Greys').copy()
-        cmap.set_under(color='black')
-        im = ax.imshow(plot_data, interpolation='nearest', cmap=cmap,
-                       vmin=vmin,
-                       vmax=self.plot_dict['snapshots_max_rate'])
-
         # ticks dependent on number of spatial bins
+        # (set up for default horizontal orientation)
         xy_ticks = [numbins / 2.]
         for t in np.arange(np.max([nframes - 1, len(populations) - 1])):
             xy_ticks.append(xy_ticks[-1] + numbins + 1.)
@@ -455,26 +452,57 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 int(ticklabels[1]) == ticklabels[1]):
             ticklabels = ticklabels.astype(int)
 
-        ax.set_xticks(xticks)
-        ax.set_xticklabels(ticklabels)
+        ax = plt.subplot(gs)
 
-        ax.set_yticks(xy_ticks[:len(populations)])
-        ax.set_yticklabels(self.plot_dict['pop_labels'][:len(populations)])
+        cmap = matplotlib.cm.get_cmap('Greys').copy()
+        cmap.set_under(color='black')
 
-        ax.set_xlabel('time (ms)')
+        if orientation == 'horizontal':
+            im = ax.imshow(plot_data, interpolation='nearest', cmap=cmap,
+                           vmin=vmin,
+                           vmax=self.plot_dict['snapshots_max_rate'])
+            ax.set_xticks(xticks)
+            ax.set_xticklabels(ticklabels)
+            ax.set_xlabel('time (ms)')
+
+            ax.set_yticks(xy_ticks[:len(populations)])
+            ax.set_yticklabels(self.plot_dict['pop_labels'][:len(populations)])
+
+        elif orientation == 'vertical':
+            im = ax.imshow(plot_data.T, interpolation='nearest', cmap=cmap,
+                           vmin=vmin,
+                           vmax=self.plot_dict['snapshots_max_rate'],
+                           origin='lower')
+            ax.set_yticks(xticks)
+            ax.set_yticklabels(ticklabels)
+            ax.set_ylabel('time (ms)')
+
+            ax.set_xticks(xy_ticks[:len(populations)])
+            ax.set_xticklabels(self.plot_dict['pop_labels'][:len(populations)],
+                               rotation=90)
 
         if cbar:
             fig = plt.gcf()
             rect = np.array(ax.get_position().bounds)
-            rect[0] += 0.0  # left
-            rect[2] -= 0.0  # width
-            rect[1] -= cbar_bottom  # bottom
-            rect[3] = cbar_height  # height
 
-            cax = fig.add_axes(rect)
-            cb = fig.colorbar(
-                im, cax=cax, orientation='horizontal', extend='max')
-            cax.xaxis.set_label_position('bottom')
+            if orientation == 'horizontal':
+                rect[0] += 0.0  # left
+                rect[2] += 0.0  # width
+                rect[1] -= cbar_bottom  # bottom
+                rect[3] = cbar_height  # height
+                cax = fig.add_axes(rect)
+                cb = fig.colorbar(
+                    im, cax=cax, orientation='horizontal', extend='max')
+                cax.xaxis.set_label_position('bottom')
+            elif orientation == 'vertical':
+                rect[0] += cbar_left  # left
+                rect[2] = cbar_width  # width
+                rect[1] += 0.0  # bottom
+                rect[3] += 0.0  # height
+                cax = fig.add_axes(rect)
+                cb = fig.colorbar(
+                    im, cax=cax, orientation='vertical', extend='max')
+
             cb.set_label('FR (spikes/s)')
             cb.locator = MaxNLocator(nbins=5)
             cb.update_ticks()  # necessary for location
