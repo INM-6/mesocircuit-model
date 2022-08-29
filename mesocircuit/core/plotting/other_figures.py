@@ -22,7 +22,7 @@ def live_paper(data_dir, model, parameterview):
     model_path = os.path.join(data_dir, model, hash)
 
     # load data
-    d ={}
+    d = {}
     for all_datatype in ['all_sptrains', 'all_pos_sorting_arrays',
                          'all_inst_rates_bintime_binspace']:
         fn = os.path.join(
@@ -36,7 +36,7 @@ def live_paper(data_dir, model, parameterview):
     dics = []
     for dic in ['sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
         with open(os.path.join(model_path, 'parameters', f'{dic}.pkl'),
-                    'rb') as f:
+                  'rb') as f:
             dics.append(pickle.load(f))
     sim_dict, net_dict, ana_dict, plot_dict = dics
     plot = Plotting(sim_dict, net_dict, ana_dict, plot_dict)
@@ -47,33 +47,32 @@ def live_paper(data_dir, model, parameterview):
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'],
                               plot.plot_dict['fig_width_1col']))
     gs = gridspec.GridSpec(10, 5)
-    gs.update(left=0.12, right=1, bottom=0.09, top=0.99, wspace=2)
+    gs.update(left=0.12, right=1, bottom=0.12, top=0.98, wspace=0.2)
+
+    # network sketch
+    plot.plot_mesocircuit_icon(gs[:3, :2])
 
     # raster
     plot.plot_raster(
-        gs[:, :2],
-        populations=plot.X,
+        gs[3:, :2],
+        populations=plot.Y,  # TODO consider adding TC back in
         all_sptrains=d['all_sptrains'],
         all_pos_sorting_arrays=d['all_pos_sorting_arrays'],
         time_step=plot.sim_dict['sim_resolution'],
         time_interval=plot.plot_dict['raster_time_interval_short'],
         sample_step=1)
 
-    # network sketch
-    plot.plot_mesocircuit_icon(gs[:3,2:])
-
     # spatial snapshots
     plot.plot_spatial_snapshots(
-        gs[3:, 2:],
+        gs[:, 2:],
         populations=plot.X,
         all_inst_rates_bintime_binspace=d['all_inst_rates_bintime_binspace'],
         binsize_time=plot.ana_dict['binsize_time'],
-        step=2,  # multiplication
-        nframes=6, #30,
-        tickstep=2, #1,
-        cbar=False, #True,
-        cbar_bottom=0.12, #0.2,
-        cbar_height=0.02)
+        orientation='vertical',
+        cbar=True,
+        cbar_left=0.28,
+        cbar_width=0.01,
+    )
 
     # TODO modify and use savefig
-    plt.savefig(os.path.join(data_dir, 'live_paper.pdf'))
+    plt.savefig(os.path.join(data_dir, 'live_paper.pdf'), dpi=600)
