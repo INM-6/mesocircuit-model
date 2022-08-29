@@ -339,7 +339,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         spikes_1mm2 = spikes_1mm2[:cnt]
 
         return spikes_1mm2, positions_1mm2
- 
 
     def __first_glance_at_data(self, N_X, num_spikes):
         """
@@ -399,30 +398,30 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             # positions
             if datatype == 'positions':
                 datasets[datatype] = self.__positions_X(
-                    X, positions)
+                    positions)
                 is_sparse = False
 
             # spike trains with a temporal binsize corresponding to the
             # simulation resolution
             elif datatype == 'sptrains':
                 datasets[datatype] = self.__time_binned_sptrains_X(
-                    X, spikes, self.time_bins_sim, dtype=np.uint8)
+                    self.N_X[i], spikes, self.time_bins_sim, dtype=np.uint8)
 
             # time-binned spike trains
             elif datatype == 'sptrains_bintime':
                 datasets[datatype] = self.__time_binned_sptrains_X(
-                    X, spikes, self.time_bins_rs, dtype=np.uint8)
+                    self.N_X[i], spikes, self.time_bins_rs, dtype=np.uint8)
 
             # time-binned and space-binned spike trains
             elif datatype == 'sptrains_bintime_binspace':
                 datasets[datatype] = self._time_and_space_binned_sptrains_X(
-                    X, datasets['positions'], datasets['sptrains_bintime'],
+                    datasets['positions'], datasets['sptrains_bintime'],
                     dtype=np.uint16)
 
             # neuron count in each spatial bin
             elif datatype == 'neuron_count_binspace':
                 datasets[datatype] = self.__neuron_count_per_spatial_bin_X(
-                    X, datasets['positions'])
+                    datasets['positions'])
                 is_sparse = False
                 dataset_dtype = int
 
@@ -430,14 +429,14 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             elif datatype == 'inst_rates_bintime_binspace':
                 datasets[datatype] = \
                     self.__instantaneous_time_and_space_binned_rates_X(
-                        X, datasets['sptrains_bintime_binspace'],
+                        datasets['sptrains_bintime_binspace'],
                         self.ana_dict['binsize_time'],
                         datasets['neuron_count_binspace'])
 
             # position sorting arrays
             elif datatype == 'pos_sorting_arrays':
                 datasets[datatype] = self.__pos_sorting_array_X(
-                    X, datasets['positions'])
+                    datasets['positions'])
                 is_sparse = False
                 dataset_dtype = int
 
@@ -474,14 +473,12 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         spikes, positions = data_load
         return spikes, positions
 
-    def __positions_X(self, X, positions):
+    def __positions_X(self, positions):
         """
         Brings positions in format for writing.
 
         Parameters
         ----------
-        X
-            Population name.
         positions
             Positions of population X.
         """
@@ -489,7 +486,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                    'y-position_mm': positions['y-position_mm']}
         return pos_dic
 
-    def __time_binned_sptrains_X(self, X, spikes, time_bins, dtype):
+    def __time_binned_sptrains_X(self, N_X, spikes, time_bins, dtype):
         """
         Computes a spike train as a histogram with ones for each spike at a
         given time binning.
@@ -502,8 +499,8 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         Parameters
         ----------
-        X: str
-            Population name.
+        N_X
+            Size of population X.
         spikes: ndarray
             Array of node ids and spike times.
         time_bins: ndarray
@@ -518,8 +515,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         """
         # if no spikes were recorded, return an empty sparse matrix
-        i = np.where(self.X == X)[0][0]  # TODO
-        shape = (self.N_X[i], time_bins.size)
+        shape = (N_X, time_bins.size)
 
         if spikes.size == 0:
             sptrains_bintime = sp.coo_matrix(shape, dtype=dtype)
@@ -542,7 +538,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         return sptrains_bintime
 
     def _time_and_space_binned_sptrains_X(
-            self, X, positions, sptrains_bintime, dtype):
+            self, positions, sptrains_bintime, dtype):
         """
         Computes space-binned spike trains from time-binned spike trains.
 
@@ -554,8 +550,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         Parameters
         ----------
-        X: str
-            Population name.
         positions: dict
             Positions of population X.
         sptrains_bintime: scipy.sparse.coo.coo_matrix
@@ -586,8 +580,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             'sptrains_bintime.row must be in increasing order'
 
         nspikes = np.asarray(
-            sptrains_bintime.sum(
-                axis=1)).flatten().astype(int)
+            sptrains_bintime.sum(axis=1)).flatten().astype(int)
         data = sptrains_bintime.data
         col = sptrains_bintime.col
         row = np.zeros(sptrains_bintime.nnz, dtype=int)
@@ -605,26 +598,21 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             j += n
 
         sptrains_csr = sp.coo_matrix(
-            (data, (row, col)), shape=(map_x.size, sptrains_bintime.shape[1])
-        ).tocsr()
+            (data, (row, col)), shape=(map_x.size, sptrains_bintime.shape[1]),
+            dtype=dtype).tocsr()
 
-        try:
-            assert(sptrains_bintime.sum() == sptrains_csr.sum())
-        except AssertionError as ae:
-            raise ae(
-                'sptrains_bintime.sum()={0} != sptrains_coo.sum()={1}'.format(
-                    sptrains_bintime.sum(), sptrains_csr.sum()))
+        assert sptrains_bintime.sum() == sptrains_csr.sum(), \
+            'sptrains_bintime.sum()={0} != sptrains_csr.sum()={1}'.format(
+            sptrains_bintime.sum(), sptrains_csr.sum())
 
         return sptrains_csr
 
-    def __neuron_count_per_spatial_bin_X(self, X, positions):
+    def __neuron_count_per_spatial_bin_X(self, positions):
         """
         Counts the number of neurons in each spatial bin.
 
         Parameters
         ----------
-        X
-            Population name.
         positions
             Positions of population X.
 
@@ -640,7 +628,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         return pos_hist
 
     def __instantaneous_time_and_space_binned_rates_X(
-            self, X, sptrains_bintime_binspace, binsize_time, neuron_count_binspace):
+            self, sptrains_bintime_binspace, binsize_time, neuron_count_binspace):
         """
         Computes the time- and space-binned rates averaged over neurons in a
         spatial bin.
@@ -653,8 +641,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         Parameters
         ----------
-        X
-            Population name.
         sptrains_bintime_binspace
             Time-and space-binned spike trains.
         binsize_time
@@ -683,15 +669,13 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         inst_rates = inst_rates.tocsr()
         return inst_rates
 
-    def __pos_sorting_array_X(self, X, positions):
+    def __pos_sorting_array_X(self, positions):
         """
         Computes an array with indices for sorting node ids according to the
         given sorting axis.
 
         Parameters
         ----------
-        X
-            Population name.
         positions
             Positions of population X.
 
@@ -779,11 +763,11 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 # per-neuron firing rates
                 if datatype == 'FRs':
                     dataset = self.__compute_rates(
-                        X, d['sptrains_X'], self.time_statistics)
+                        d['sptrains_X'], self.time_statistics)
 
                 # local coefficients of variation
                 elif datatype == 'LVs':
-                    dataset = self.__compute_lvs(X, d['sptrains_X'])
+                    dataset = self.__compute_lvs(d['sptrains_X'])
 
                 # correlation coefficients with distances
                 elif datatype == 'CCs_distances':
@@ -794,7 +778,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 # power spectral densities
                 elif datatype == 'PSDs':
                     dataset = self.__compute_psds(
-                        X, d['sptrains_bintime_X'], self.ana_dict['binsize_time'])
+                        d['sptrains_bintime_X'], self.ana_dict['binsize_time'])
 
                 # distance-dependent cross-correlation functions with the
                 # thalamic population TC only for pulses
@@ -816,15 +800,13 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             self.write_dataset_to_h5_X(X, datatype, dataset, is_sparse=False)
         return
 
-    def __compute_rates(self, X, sptrains_X, duration):
+    def __compute_rates(self, sptrains_X, duration):
         """
         Computes the firing rate of each neuron by dividing the spike count by
         the analyzed simulation time.
 
         Parameters
         ----------
-        X
-            Population name.
         sptrains_X
             Sptrains of population X in sparse csr format.
         duration
@@ -835,7 +817,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         rates = count * 1.E3 / duration  # in 1/s
         return rates
 
-    def __compute_lvs(self, X, sptrains_X):
+    def __compute_lvs(self, sptrains_X):
         """
         Computes local coefficients of variation from inter-spike intervals.
 
@@ -855,8 +837,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         Parameters
         ----------
-        X
-            Population name.
         sptrains_X
             Sptrains of population X in sparse csr format.
 
@@ -953,14 +933,12 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                    'distances_mm': distances}
         return ccs_dic
 
-    def __compute_psds(self, X, sptrains_X, binsize_time):
+    def __compute_psds(self, sptrains_X, binsize_time):
         """
         Computes population-rate power spectral densities.
 
         Parameters
         ----------
-        X
-            Population name.
         sptrains_X
             Sptrains of population X in sparse csr format.
         binsize_time

@@ -44,7 +44,7 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
@@ -72,7 +72,7 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
@@ -106,7 +106,7 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
@@ -140,7 +140,7 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
@@ -179,12 +179,12 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
         sptrains_bin_space_time = sana._time_and_space_binned_sptrains_X(
-            X, positions, sptrains_bin_time,
+            positions, sptrains_bin_time,
             dtype=np.uint16)
 
         gt = np.eye((sana.space_bins.size - 1)**2)
@@ -219,12 +219,12 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
         sptrains_bin_space_time = sana._time_and_space_binned_sptrains_X(
-            X, positions, sptrains_bin_time,
+            positions, sptrains_bin_time,
             dtype=np.uint16)
 
         gt = np.eye((sana.space_bins.size - 1)**2)
@@ -260,12 +260,12 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
         sptrains_bin_space_time = sana._time_and_space_binned_sptrains_X(
-            X, positions, sptrains_bin_time,
+            positions, sptrains_bin_time,
             dtype=np.uint16)
 
         gt = np.eye((sana.space_bins.size - 1)**2)
@@ -300,13 +300,13 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
         try:
             sptrains_bin_space_time = sana._time_and_space_binned_sptrains_X(
-                X, positions, sptrains_bin_time,
+                positions, sptrains_bin_time,
                 dtype=np.uint16)
         except NotImplementedError:
             pass
@@ -340,13 +340,13 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
         try:
             sptrains_bin_space_time = sana._time_and_space_binned_sptrains_X(
-                X, positions, sptrains_bin_time,
+                positions, sptrains_bin_time,
                 dtype=np.uint16)
         except NotImplementedError:
             pass
@@ -382,12 +382,12 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
         sptrains_bin_space_time = sana._time_and_space_binned_sptrains_X(
-            X, positions, sptrains_bin_time,
+            positions, sptrains_bin_time,
             dtype=np.uint16)
 
         gt = np.c_[np.eye((sana.space_bins.size - 1)**2),
@@ -423,12 +423,12 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
         sptrains_bin_space_time = sana._time_and_space_binned_sptrains_X(
-            X, positions, sptrains_bin_time,
+            positions, sptrains_bin_time,
             dtype=np.uint16)
 
         gt = np.zeros(((sana.space_bins.size - 1)**2, time_bins.size))
@@ -466,12 +466,12 @@ class TestSuite(unittest.TestCase):
         sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
-            X=X,
+            N_X=N_X,
             spikes=spikes,
             time_bins=time_bins, dtype=int)
 
         sptrains_bin_space_time = sana._time_and_space_binned_sptrains_X(
-            X, positions, sptrains_bin_time,
+            positions, sptrains_bin_time,
             dtype=np.uint16)
 
         gt = np.zeros(((sana.space_bins.size - 1)**2, time_bins.size))
