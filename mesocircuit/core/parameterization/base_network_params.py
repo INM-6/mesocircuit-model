@@ -115,7 +115,8 @@ net_dict = {
     # connection probabilities from thalamus
     'conn_probs_th_1mm2':
         np.array([0.0, 0.0, 0.0983, 0.0619, 0.0, 0.0, 0.0512, 0.0196]),
-    # scaling factors for indegrees.
+    # scaling factors for indegrees; the working point is preserved by adjusting
+    # the external indegrees.
     # entries have the format: [source, target, factor]
     'indegree_scaling': np.array([]),
     # mean rates of the different populations in the non-scaled version of the
@@ -171,6 +172,9 @@ net_dict = {
     # overwrites external indegrees with the ones from the arxiv preprint
     'use_old_external_indegrees': False,
     # rate of the Poisson generator (in spikes/s)
+    # scaling factor for external indegrees; changes are not compensated for.
+    # entries have the format: [population, factor]
+    'ext_indegree_scaling': np.array([]),
     'bg_rate': 8.,
     # delay from the Poisson generator to the network (in ms)
     'delay_poisson': 1.5,
