@@ -339,7 +339,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         spikes_1mm2 = spikes_1mm2[:cnt]
 
         return spikes_1mm2, positions_1mm2
- 
 
     def __first_glance_at_data(self, N_X, num_spikes):
         """
@@ -586,8 +585,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             'sptrains_bintime.row must be in increasing order'
 
         nspikes = np.asarray(
-            sptrains_bintime.sum(
-                axis=1)).flatten().astype(int)
+            sptrains_bintime.sum(axis=1)).flatten().astype(int)
         data = sptrains_bintime.data
         col = sptrains_bintime.col
         row = np.zeros(sptrains_bintime.nnz, dtype=int)
@@ -605,15 +603,12 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             j += n
 
         sptrains_csr = sp.coo_matrix(
-            (data, (row, col)), shape=(map_x.size, sptrains_bintime.shape[1])
-        ).tocsr()
+            (data, (row, col)), shape=(map_x.size, sptrains_bintime.shape[1]),
+            dtype=dtype).tocsr()
 
-        try:
-            assert(sptrains_bintime.sum() == sptrains_csr.sum())
-        except AssertionError as ae:
-            raise ae(
-                'sptrains_bintime.sum()={0} != sptrains_coo.sum()={1}'.format(
-                    sptrains_bintime.sum(), sptrains_csr.sum()))
+        assert sptrains_bintime.sum() == sptrains_csr.sum(), \
+            'sptrains_bintime.sum()={0} != sptrains_csr.sum()={1}'.format(
+            sptrains_bintime.sum(), sptrains_csr.sum())
 
         return sptrains_csr
 
