@@ -287,7 +287,7 @@ def derive_dependent_parameters(base_net_dict):
     if len(net_dict['ext_indegree_scaling']) > 0:
         for population, factor in net_dict['ext_indegree_scaling']:
             full_ext_indegrees[int(population)] *= factor
-            ext_indegrees[int[population]] *= factor
+            ext_indegrees[int(population)] *= factor
     net_dict['full_ext_indegrees'] = np.round(full_ext_indegrees).astype(int)
     net_dict['ext_indegrees'] = np.round(ext_indegrees).astype(int)
 
