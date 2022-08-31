@@ -398,6 +398,20 @@ def params_for_neuronal_network_meanfield_tools(net_dict):
     return dic
 
 
+def get_y(path):
+    '''get a list of cell type names'''
+    from ..lfp.lfp_parameters import get_parameters
+    path_lfp_data = 'lfp'
+    dics = []
+    for dic in ['sim_dict', 'net_dict']:
+        with open(f'{path}/parameters/{dic}.pkl', 'rb') as f:
+            dics.append(pickle.load(f))
+    PS = get_parameters(path_lfp_data=path_lfp_data,
+                        sim_dict=dics[0],
+                        net_dict=dics[1])
+    return PS.y
+
+
 def write_jobscripts(sys_dict, path):
     """
     Writes a jobscript for each machine (hpc, local) and each step
@@ -411,19 +425,6 @@ def write_jobscripts(sys_dict, path):
     path
         Path to folder of ps_id.
     """
-    def get_y(path):
-        '''get a list of cell type names'''
-        from ..lfp.lfp_parameters import get_parameters
-        path_lfp_data = 'lfp'
-        dics = []
-        for dic in ['sim_dict', 'net_dict']:
-            with open(f'{path}/parameters/{dic}.pkl', 'rb') as f:
-                dics.append(pickle.load(f))
-        PS = get_parameters(path_lfp_data=path_lfp_data,
-                            sim_dict=dics[0],
-                            net_dict=dics[1])
-        return PS.y
-
     for machine, dic in sys_dict.items():
         for name, scripts, scriptargs in [['network', ['run_network.py'], ['']],
                                     ['analysis', ['run_analysis.py'], ['']],
@@ -446,12 +447,12 @@ def write_jobscripts(sys_dict, path):
             stdout = os.path.join('stdout', name + '.txt')
 
             # start jobscript
-            jobscript = ('#!/bin/bash -x\n')
+            jobscript = '#!/bin/bash -x\n'
 
             # define machine specifics
             if machine == 'hpc':
                 # assume SLURM, append resource definitions
-                jobscript += (
+                '''jobscript += (
                     "#SBATCH --job-name=meso\n"
                     f"#SBATCH --partition={dic['partition']}\n"
                     f"#SBATCH --output={stdout}\n"
@@ -462,6 +463,18 @@ def write_jobscripts(sys_dict, path):
                     f"#SBATCH --time={dic['wall_clock_time']}\n"
                     "export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n"
                     "unset DISPLAY\n")
+                    '''
+                jobscript += """#SBATCH --job-name=meso\n
+#SBATCH --partition={}\n
+#SBATCH --output={}\n
+#SBATCH --error={}\n
+#SBATCH --nodes={}\n
+#SBATCH --ntasks-per-node={}\n
+#SBATCH --cpus-per-task={}\n
+#SBATCH --time={}\n
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n
+unset DISPLAY\n
+"""
                 run_cmd = 'srun --mpi=pmi2'
 
             elif machine == 'local':
@@ -492,9 +505,15 @@ def write_jobscripts(sys_dict, path):
                     f'python3 -u code/{py} {arg} {o_0 if i == 0 else o_1}'
                     for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
             elif name == 'lfp_simulation':
-                executables = [
-                    f'{run_cmd} python3 -u code/{py} {arg} {o_0 if i == 0 else o_1}'
-                    for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
+                executables = []
+                for i, (py, arg) in enumerate(zip(scripts, scriptargs)):
+                    y = arg.replace('(', '').replace(')', '')
+                    stdout = os.path.join('stdout', f'{name}_{y}.txt')
+                    o_0 = f'2>&1 | tee {stdout}' if machine == 'local' else ''
+                    o_1 = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
+                    executables += [
+                        f'{run_cmd} python3 -u code/{py} "{arg}" {o_0 if i == 0 else o_1}'
+                        ]
             elif name == 'lfp_postprocess':
                 executables = [
                     f'{run_cmd} python3 -u code/{py} {arg} {o_0 if i == 0 else o_1}'
@@ -504,12 +523,43 @@ def write_jobscripts(sys_dict, path):
                     f'{run_cmd} python3 -u code/{py} {arg} {t} {o_0 if i == 0 else o_1}'
                     for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
             sep = '\n\n' + 'wait' + '\n\n'
-            jobscript += sep.join(executables)
+            if name == 'lfp_simulation':
+                # write separate jobscripts for each postsynaptic cell type
+                for executable, arg in zip(executables, scriptargs):
+                    stdout = os.path.join('stdout', f'{name}_{arg}.txt')
+                    js = copy.copy(jobscript)
+                    js += executable
+                    if machine == 'hpc':
+                        js = js.format(
+                            dic['partition'],
+                            stdout,
+                            stdout,
+                            dic['num_nodes'],
+                            dic['num_mpi_per_node'],
+                            dic['local_num_threads'],
+                            dic['wall_clock_time']
+                        )
+                    y = arg.replace('(', '').replace(')', '')
+                    fname = os.path.join(path, 'jobscripts', f"{machine}_{name}_{y}.sh")
+                    with open(fname, 'w') as f:
+                        f.write(js)
+            else:
+                jobscript += sep.join(executables)
+                if machine == 'hpc':
+                    jobscript = jobscript.format(
+                        dic['partition'],
+                        stdout,
+                        stdout,
+                        dic['num_nodes'],
+                        dic['num_mpi_per_node'],
+                        dic['local_num_threads'],
+                        dic['wall_clock_time']
+                    )
 
-            # write jobscript
-            fname = os.path.join(path, 'jobscripts', f"{machine}_{name}.sh")
-            with open(fname, 'w') as f:
-                f.write(jobscript)
+                # write jobscript
+                fname = os.path.join(path, 'jobscripts', f"{machine}_{name}.sh")
+                with open(fname, 'w') as f:
+                    f.write(jobscript)
     return
 
 
@@ -669,9 +719,16 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
     elif machine == 'local':
         print('Running ' + info)
         for job in jobs:
-            retval = os.system(f'bash jobscripts/{machine}_{job}.sh')
-            if retval != 0:
-                raise Exception(f"os.system failed: {retval}")
+            if job == 'lfp_simulation':
+                for y in get_y(full_data_path):
+                    y = y.replace('(', '').replace(')', '')
+                    retval = os.system(f'bash jobscripts/{machine}_{job}_{y}.sh')
+                    if retval != 0:
+                        raise Exception(f"os.system failed: {retval}")
+            else:
+                retval = os.system(f'bash jobscripts/{machine}_{job}.sh')
+                if retval != 0:
+                    raise Exception(f"os.system failed: {retval}")
 
     os.chdir(cwd)
     return
