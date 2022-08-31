@@ -46,16 +46,20 @@ def live_paper(data_dir, model, parameterview):
     print('Plotting live paper figure.')
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'],
                               plot.plot_dict['fig_width_1col']))
-    gs = gridspec.GridSpec(10, 5)
-    gs.update(left=0.12, right=1, bottom=0.12, top=0.98, wspace=0.2)
+    gs = gridspec.GridSpec(5, 10)
+    gs.update(left=0.12, right=0.97, bottom=0.03,
+              top=1.02, hspace=0)
 
     # network sketch
-    plot.plot_mesocircuit_icon(gs[:3, :2])
+    plot.plot_mesocircuit_icon(gs[0, -3:-1])
+
+    gs_bottom = gridspec.GridSpecFromSubplotSpec(
+        2, 1, subplot_spec=gs[1:, :], hspace=0.2)
 
     # raster
     plot.plot_raster(
-        gs[3:, :2],
-        populations=plot.Y,  # TODO consider adding TC back in
+        gs_bottom[0, 0],
+        populations=plot.X,
         all_sptrains=d['all_sptrains'],
         all_pos_sorting_arrays=d['all_pos_sorting_arrays'],
         time_step=plot.sim_dict['sim_resolution'],
@@ -64,12 +68,13 @@ def live_paper(data_dir, model, parameterview):
 
     # spatial snapshots
     plot.plot_spatial_snapshots(
-        gs[:, 2:],
+        gs_bottom[1, 0],
         populations=plot.X,
         all_inst_rates_bintime_binspace=d['all_inst_rates_bintime_binspace'],
         binsize_time=plot.ana_dict['binsize_time'],
-        orientation='vertical',
-        cbar=True,
+        orientation='horizontal',
+        tickstep=4,
+        cbar=False,
         cbar_left=0.28,
         cbar_width=0.01,
     )
