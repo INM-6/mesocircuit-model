@@ -129,8 +129,10 @@ class Plotting(base_class.BaseAnalysisPlotting):
                     time_step,
                     time_interval,
                     sample_step,
-                    xlabels=True,
-                    ylabels=True,
+                    xticklabels=True,
+                    xlabel=True,
+                    yticks=True,
+                    yticklabels=True,
                     markersize_scale=0.25):
         """
         Plots spike raster to gridspec cell.
@@ -155,10 +157,12 @@ class Plotting(base_class.BaseAnalysisPlotting):
         sample_step
             Every sample_step'th neuron is shown (default being 1 means that all
             neurons are shown).
-        xlabels
-            Boolean indicating if x-labels shall be plotted.
-        ylabels
-            Boolean indicating if y-labels shall be plotted.
+        xticklabels
+            Boolean indicating if x-ticklabels shall be plotted.
+        xlabel
+            Boolean indicating if x-label shall be plotted.
+        yticklabels
+            Boolean indicating if y-ticklabels shall be plotted.
         markersize_scale
             Scaling factor for marker size.
 
@@ -217,11 +221,11 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
         ax.set_yticks(yticks)
 
-        if xlabels:
+        if xlabel:
             ax.set_xlabel('time (ms)')
-        else:
+        if not xticklabels:
             ax.set_xticklabels([])
-        if ylabels:
+        if yticklabels:
             ax.set_yticklabels(self.plot_dict['pop_labels'][:len(nums_shown)])
         else:
             ax.set_yticklabels([])

@@ -47,28 +47,34 @@ def live_paper(data_dir, model, parameterview):
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'],
                               plot.plot_dict['fig_width_1col']))
     gs = gridspec.GridSpec(5, 10)
-    gs.update(left=0.12, right=0.97, bottom=0.03,
+    gs.update(left=0.08, right=0.98, bottom=0.05,
               top=1.02, hspace=0)
 
     # network sketch
     plot.plot_mesocircuit_icon(gs[0, -3:-1])
 
     gs_bottom = gridspec.GridSpecFromSubplotSpec(
-        2, 1, subplot_spec=gs[1:, :], hspace=0.2)
+        5, 1, subplot_spec=gs[1:, :], hspace=0.35)
+
+    plt.rc('axes', labelsize=5)
+    plt.rc('xtick', labelsize=5)
+    plt.rc('ytick', labelsize=5)
 
     # raster
     plot.plot_raster(
-        gs_bottom[0, 0],
-        populations=plot.X,
+        gs_bottom[:3, 0],
+        populations=plot.Y,
         all_sptrains=d['all_sptrains'],
         all_pos_sorting_arrays=d['all_pos_sorting_arrays'],
         time_step=plot.sim_dict['sim_resolution'],
         time_interval=plot.plot_dict['raster_time_interval_short'],
-        sample_step=1)
+        sample_step=1,
+        xlabel=False)
+    plt.gca().tick_params(axis='both', which='major', pad=0.2)
 
     # spatial snapshots
     plot.plot_spatial_snapshots(
-        gs_bottom[1, 0],
+        gs_bottom[3:, 0],
         populations=plot.X,
         all_inst_rates_bintime_binspace=d['all_inst_rates_bintime_binspace'],
         binsize_time=plot.ana_dict['binsize_time'],
@@ -76,8 +82,8 @@ def live_paper(data_dir, model, parameterview):
         tickstep=4,
         cbar=False,
         cbar_left=0.28,
-        cbar_width=0.01,
-    )
+        cbar_width=0.01)
+    plt.gca().tick_params(axis='both', which='major', pad=0.2)
 
     # TODO modify and use savefig
     plt.savefig(os.path.join(data_dir, 'live_paper.pdf'), dpi=600)
