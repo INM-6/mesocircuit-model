@@ -30,16 +30,6 @@ net_dict_favorite = {
     'ext_indegree_scaling': np.array([[0, 1.15], [2, 1.1]]),
 }
 
-net_dict_favorite_evoked = {
-    'base_model': 'SvA2018',
-    'g': -11.,
-    'neuron_params': {'tau_syn_ex': 2., 'tau_syn_in': 8.},
-    'indegree_scaling': np.array([[5, 4, 0.75], [3, 3, 1.8], [7, 7, 0.9]]),
-    'ext_indegree_scaling': np.array([[0, 1.15], [2, 1.1]]),
-    'thalamic_input': 'pulses', 'th_rel_radius':  0.1,
-}
-
-
 ##########################################################################
 
 # main dictionary as used by evaluate_parameterspaces() in helpers.py
@@ -55,7 +45,8 @@ ps_dicts = {
 
     'favorite_evoked': {
         'net_dict': {
-            **net_dict_favorite_evoked,
+            **net_dict_favorite,
+            'thalamic_input': 'pulses',
         },
         'sys_dict': {'hpc': {'network': {'num_nodes': 16}}}
     },
