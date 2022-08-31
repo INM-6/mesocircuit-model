@@ -47,7 +47,7 @@ def live_paper(data_dir, model, parameterview):
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'],
                               plot.plot_dict['fig_width_1col']))
     gs = gridspec.GridSpec(5, 10)
-    gs.update(left=0.08, right=0.98, bottom=0.05,
+    gs.update(left=0.12, right=0.96, bottom=0.08,
               top=1.02, hspace=0)
 
     # network sketch
@@ -56,9 +56,11 @@ def live_paper(data_dir, model, parameterview):
     gs_bottom = gridspec.GridSpecFromSubplotSpec(
         5, 1, subplot_spec=gs[1:, :], hspace=0.35)
 
-    plt.rc('axes', labelsize=5)
-    plt.rc('xtick', labelsize=5)
-    plt.rc('ytick', labelsize=5)
+    fs = 8
+    pad = 0.2
+    plt.rc('axes', labelsize=fs)
+    plt.rc('xtick', labelsize=fs)
+    plt.rc('ytick', labelsize=fs)
 
     # raster
     plot.plot_raster(
@@ -68,9 +70,11 @@ def live_paper(data_dir, model, parameterview):
         all_pos_sorting_arrays=d['all_pos_sorting_arrays'],
         time_step=plot.sim_dict['sim_resolution'],
         time_interval=plot.plot_dict['raster_time_interval_short'],
-        sample_step=1,
+        sample_step=100,
         xlabel=False)
-    plt.gca().tick_params(axis='both', which='major', pad=0.2)
+    plt.gca().tick_params(axis='both', which='major', pad=pad)
+    plt.axvline(x=net_dict['th_start'], color='k')
+    plt.title('TC', pad=pad, fontsize=fs)
 
     # spatial snapshots
     plot.plot_spatial_snapshots(
