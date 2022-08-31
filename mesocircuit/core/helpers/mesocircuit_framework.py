@@ -305,6 +305,7 @@ def evaluate_parameterset(ps_id, paramset, full_data_path):
                 'run_analysis.py',
                 'run_plotting.py',
                 'run_lfp_simulation.py',
+                'run_lfp_postprocess.py',
                 'run_lfp_plotting.py']
 
     for f in filelist:
@@ -410,19 +411,34 @@ def write_jobscripts(sys_dict, path):
     path
         Path to folder of ps_id.
     """
+    def get_y(path):
+        '''get a list of cell type names'''
+        from ..lfp.lfp_parameters import get_parameters
+        path_lfp_data = 'lfp'
+        dics = []
+        for dic in ['sim_dict', 'net_dict']:
+            with open(f'{path}/parameters/{dic}.pkl', 'rb') as f:
+                dics.append(pickle.load(f))
+        PS = get_parameters(path_lfp_data=path_lfp_data,
+                            sim_dict=dics[0],
+                            net_dict=dics[1])
+        return PS.y
+
     for machine, dic in sys_dict.items():
-        for name, scripts in [['network', ['run_network.py']],
-                              ['analysis', ['run_analysis.py']],
-                              ['plotting', ['run_plotting.py']],
-                              ['analysis_and_plotting', ['run_analysis.py',
-                                                         'run_plotting.py']],
-                              ['lfp_simulation', ['run_lfp_simulation.py']],
-                              ['lfp_plotting', ['run_lfp_plotting.py']]
-                              ]:
+        for name, scripts, scriptargs in [['network', ['run_network.py'], ['']],
+                                    ['analysis', ['run_analysis.py'], ['']],
+                                    ['plotting', ['run_plotting.py'], ['']],
+                                    ['analysis_and_plotting', ['run_analysis.py',
+                                                                'run_plotting.py'], [''] * 2],
+                                    ['lfp_simulation', ['run_lfp_simulation.py'] * len(get_y(path)), get_y(path)],
+                                    ['lfp_postprocess', ['run_lfp_postprocess.py'], ['']],
+                                    ['lfp_plotting', ['run_lfp_plotting.py'], ['']]
+                                    ]:
 
             # key of sys_dict defining resources
             res = (name
-                   if name in ['network', 'lfp_simulation', 'lfp_plotting']
+                   if name in ['network', 'lfp_simulation', 
+                               'lfp_postprocess', 'lfp_plotting']
                    else 'analysis_and_plotting')
             dic = sys_dict[machine][res]
 
@@ -473,16 +489,20 @@ def write_jobscripts(sys_dict, path):
             if name == 'lfp_plotting':
                 # should be run serially!
                 executables = [
-                    f'python3 -u code/{py} {o_0 if i == 0 else o_1}'
-                    for i, py in enumerate(scripts)]
+                    f'python3 -u code/{py} {arg} {o_0 if i == 0 else o_1}'
+                    for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
             elif name == 'lfp_simulation':
                 executables = [
-                    f'{run_cmd} python3 -u code/{py} {o_0 if i == 0 else o_1}'
-                    for i, py in enumerate(scripts)]
+                    f'{run_cmd} python3 -u code/{py} {arg} {o_0 if i == 0 else o_1}'
+                    for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
+            elif name == 'lfp_postprocess':
+                executables = [
+                    f'{run_cmd} python3 -u code/{py} {arg} {o_0 if i == 0 else o_1}'
+                    for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
             else:
                 executables = [
-                    f'{run_cmd} python3 -u code/{py} {t} {o_0 if i == 0 else o_1}'
-                    for i, py in enumerate(scripts)]
+                    f'{run_cmd} python3 -u code/{py} {arg} {t} {o_0 if i == 0 else o_1}'
+                    for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
             sep = '\n\n' + 'wait' + '\n\n'
             jobscript += sep.join(executables)
 

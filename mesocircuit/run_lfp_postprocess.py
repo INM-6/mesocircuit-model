@@ -105,11 +105,8 @@ sim_dict, net_dict, sys_dict = dics
 ##########################################################################
 # set up the file destination
 ##########################################################################
-# path_lfp_data = os.path.join(os.path.split(path_parameters)[0], 'lfp')
 path_lfp_data = 'lfp'
 if RANK == 0:
-    # if not os.path.isdir(os.path.split(path_lfp_data)[0]):
-    #     os.mkdir(os.path.split(path_lfp_data)[0])
     if not os.path.isdir(path_lfp_data):
         os.mkdir(path_lfp_data)
 
@@ -132,21 +129,6 @@ tic = time()
 ticc = tic
 
 
-##########################################################################
-# Create an object representation containing the spiking activity of the
-# network simulation output that uses sqlite3.
-##########################################################################
-networkSim = CachedTopoNetwork(**PS.network_params)
-
-# tic toc
-tocc = time()
-if RANK == 0:
-    simstats.write('CachedNetwork {}\n'.format(tocc - ticc))
-
-toc = time() - tic
-print(('NEST simulation and gdf file processing done in  %.3f seconds' % toc))
-
-
 ##############################################################################
 # Create predictor for extracellular potentials that utilize periodic
 # boundary conditions in 2D, similar to network connectivity.
@@ -159,65 +141,13 @@ if PROPERRUN:
     probes.append(VolumetricCurrentSourceDensity(cell=None, **PS.CSDParams))
     probes.append(CurrentDipoleMoment(cell=None))
 
-##############################################################################
-# Create multicompartment neuron populations for LFP predictions
-##############################################################################
-if PROPERRUN:
-    # iterate over each cell type, and create populationulation object
-    for i, y in enumerate(PS.y):
-        # create population:
-        ticc = time()
-        pop = TopoPopulation(
-            cellParams=PS.cellParams[y],
-            rand_rot_axis=PS.rand_rot_axis[y],
-            simulationParams=PS.simulationParams,
-            populationParams=PS.populationParams[y],
-            y=y,
-            layerBoundaries=PS.layerBoundaries,
-            probes=probes,
-            savelist=PS.savelist,
-            savefolder=PS.savefolder,
-            dt_output=PS.dt_output,
-            POPULATIONSEED=SIMULATIONSEED + i,
-            X=PS.X,
-            networkSim=networkSim,
-            k_yXL=PS.k_yXL[y],
-            synParams=PS.synParams[y],
-            synDelayLoc=PS.synDelayLoc[y],
-            synDelayScale=PS.synDelayScale[y],
-            J_yX=PS.J_yX[y],
-            tau_yX=PS.tau_yX[y],
-            # TopoPopulation kwargs
-            topology_connections=PS.topology_connections,
-        )
-
-        tocc = time()
-        if RANK == 0:
-            simstats.write('Population_{} {}\n'.format(y, tocc - ticc))
-
-        # run population simulation and collect the data
-        ticc = time()
-        pop.run()
-        tocc = time()
-        if RANK == 0:
-            simstats.write('run_{} {}\n'.format(y, tocc - ticc))
-
-        ticc = time()
-        pop.collect_data()
-        tocc = time()
-
-        if RANK == 0:
-            simstats.write('collect_{} {}\n'.format(y, tocc - ticc))
-
-        # object no longer needed
-        del pop
 
 ##############################################################################
 # Postprocess the simulation output (sum up contributions by each cell type)
 ##############################################################################
 # reset seed, but output should be deterministic from now on
 np.random.seed(SIMULATIONSEED)
-'''
+
 if PROPERRUN:
     ticc = time()
     # do some postprocessing on the collected data, i.e., superposition
@@ -246,14 +176,11 @@ if PROPERRUN:
     if RANK == 0:
         simstats.write('postprocess {}\n'.format(tocc - ticc))
         simstats.close()
-'''
 
 COMM.Barrier()
 
 # tic toc
 print(('Execution time: %.3f seconds' % (time() - tic)))
-
-
 
 
 COMM.Barrier()

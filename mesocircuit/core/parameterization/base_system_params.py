@@ -48,6 +48,13 @@ sys_dict = {
             'local_num_threads': 1,  # not used
             'wall_clock_time': '01:30:00'
         },
+        'lfp_postprocess': {
+            'partition': partition,
+            'num_nodes': 1,
+            'num_mpi_per_node': 8,
+            'local_num_threads': 1,  # not used
+            'wall_clock_time': '00:15:00'
+        },
         'lfp_plotting': {
             'partition': partition,
             'num_nodes': 1,
@@ -76,6 +83,10 @@ sys_dict = {
         'lfp_simulation': {
             'num_mpi': ('$(sysctl -n hw.physicalcpu)'
                         if sys.platform == 'darwin' else '$(($(nproc) / 2))'),
+        },
+        'lfp_postprocess': {
+            'num_mpi': ('$(sysctl -n hw.physicalcpu)'
+                        if sys.platform == 'darwin' else '$(($(nproc) / 2))')
         },
         'lfp_plotting': {
             'num_mpi': 1
