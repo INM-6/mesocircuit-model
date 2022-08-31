@@ -281,7 +281,7 @@ net_dict = {
     # thalamic_input = 'pulses'
     # only thalamic neurons within a circle in the center are stimulated.
     # the radius is th_rel_radius * extent
-    'th_rel_radius': 0.3,
+    'th_rel_radius': 0.1,
     # time of first pulse (in ms)
     'th_pulse_start': 700.0,
     # pulse interval (in ms)
