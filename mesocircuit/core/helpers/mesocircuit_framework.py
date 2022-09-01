@@ -704,10 +704,9 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
                     f'--dependency=afterok:{dependency} jobscripts/{js}'
                     )
             output = subprocess.getoutput(submit)
-            print(output)
+            print(output, submit)
             jobid.append(output.split(' ')[-1])
         return jobid
-
 
     if machine == 'hpc':
         print('Submitting ' + info)
@@ -716,7 +715,7 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
         else:
             submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{machine}_{jobs[0]}.sh'
             output = subprocess.getoutput(submit)
-            print(output)
+            print(output, submit)
             jobid = output.split(' ')[-1]
         # submit any subsequent jobs with dependency
         if len(jobs) > 1:
@@ -734,7 +733,7 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
                         f'--dependency=afterok:{afterok} jobscripts/{machine}_{job}.sh'
                         )
                     output = subprocess.getoutput(submit)
-                    print(output)
+                    print(output, submit)
                     jobid = output.split(' ')[-1]
                 else:
                     submit = (
@@ -742,7 +741,7 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
                         f'--dependency=afterok:{jobid} jobscripts/{machine}_{job}.sh'
                         )
                     output = subprocess.getoutput(submit)
-                    print(output)
+                    print(output, submit)
                     jobid = output.split(' ')[-1]
 
     elif machine == 'local':
