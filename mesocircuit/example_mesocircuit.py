@@ -11,7 +11,7 @@ if 1:
         jobs=[
             'network',
             'analysis_and_plotting',
-            #'lfp_simulation',
-            #'lfp_plotting',
+            'lfp_simulation',
+            'lfp_plotting',
         ],
         machine='hpc')

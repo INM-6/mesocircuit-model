@@ -38,7 +38,7 @@ import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
-# import sys
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from time import time
@@ -165,52 +165,53 @@ if PROPERRUN:
 if PROPERRUN:
     # iterate over each cell type, and create populationulation object
     for i, y in enumerate(PS.y):
-        # create population:
-        ticc = time()
-        pop = TopoPopulation(
-            cellParams=PS.cellParams[y],
-            rand_rot_axis=PS.rand_rot_axis[y],
-            simulationParams=PS.simulationParams,
-            populationParams=PS.populationParams[y],
-            y=y,
-            layerBoundaries=PS.layerBoundaries,
-            probes=probes,
-            savelist=PS.savelist,
-            savefolder=PS.savefolder,
-            dt_output=PS.dt_output,
-            POPULATIONSEED=SIMULATIONSEED + i,
-            X=PS.X,
-            networkSim=networkSim,
-            k_yXL=PS.k_yXL[y],
-            synParams=PS.synParams[y],
-            synDelayLoc=PS.synDelayLoc[y],
-            synDelayScale=PS.synDelayScale[y],
-            J_yX=PS.J_yX[y],
-            tau_yX=PS.tau_yX[y],
-            # TopoPopulation kwargs
-            topology_connections=PS.topology_connections,
-        )
+        if y == sys.argv[1]:
+            # create population:
+            ticc = time()
+            pop = TopoPopulation(
+                cellParams=PS.cellParams[y],
+                rand_rot_axis=PS.rand_rot_axis[y],
+                simulationParams=PS.simulationParams,
+                populationParams=PS.populationParams[y],
+                y=y,
+                layerBoundaries=PS.layerBoundaries,
+                probes=probes,
+                savelist=PS.savelist,
+                savefolder=PS.savefolder,
+                dt_output=PS.dt_output,
+                POPULATIONSEED=SIMULATIONSEED + i,
+                X=PS.X,
+                networkSim=networkSim,
+                k_yXL=PS.k_yXL[y],
+                synParams=PS.synParams[y],
+                synDelayLoc=PS.synDelayLoc[y],
+                synDelayScale=PS.synDelayScale[y],
+                J_yX=PS.J_yX[y],
+                tau_yX=PS.tau_yX[y],
+                # TopoPopulation kwargs
+                topology_connections=PS.topology_connections,
+            )
 
-        tocc = time()
-        if RANK == 0:
-            simstats.write('Population_{} {}\n'.format(y, tocc - ticc))
+            tocc = time()
+            if RANK == 0:
+                simstats.write('Population_{} {}\n'.format(y, tocc - ticc))
 
-        # run population simulation and collect the data
-        ticc = time()
-        pop.run()
-        tocc = time()
-        if RANK == 0:
-            simstats.write('run_{} {}\n'.format(y, tocc - ticc))
+            # run population simulation and collect the data
+            ticc = time()
+            pop.run()
+            tocc = time()
+            if RANK == 0:
+                simstats.write('run_{} {}\n'.format(y, tocc - ticc))
 
-        ticc = time()
-        pop.collect_data()
-        tocc = time()
+            ticc = time()
+            pop.collect_data()
+            tocc = time()
 
-        if RANK == 0:
-            simstats.write('collect_{} {}\n'.format(y, tocc - ticc))
+            if RANK == 0:
+                simstats.write('collect_{} {}\n'.format(y, tocc - ticc))
 
-        # object no longer needed
-        del pop
+            # object no longer needed
+            del pop
 
 ##############################################################################
 # Postprocess the simulation output (sum up contributions by each cell type)

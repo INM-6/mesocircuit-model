@@ -452,28 +452,16 @@ def write_jobscripts(sys_dict, path):
             # define machine specifics
             if machine == 'hpc':
                 # assume SLURM, append resource definitions
-                '''jobscript += (
-                    "#SBATCH --job-name=meso\n"
-                    f"#SBATCH --partition={dic['partition']}\n"
-                    f"#SBATCH --output={stdout}\n"
-                    f"#SBATCH --error={stdout}\n"
-                    f"#SBATCH --nodes={dic['num_nodes']}\n"
-                    f"#SBATCH --ntasks-per-node={dic['num_mpi_per_node']}\n"
-                    f"#SBATCH --cpus-per-task={dic['local_num_threads']}\n"
-                    f"#SBATCH --time={dic['wall_clock_time']}\n"
-                    "export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n"
-                    "unset DISPLAY\n")
-                    '''
-                jobscript += """#SBATCH --job-name=meso\n
-#SBATCH --partition={}\n
-#SBATCH --output={}\n
-#SBATCH --error={}\n
-#SBATCH --nodes={}\n
-#SBATCH --ntasks-per-node={}\n
-#SBATCH --cpus-per-task={}\n
-#SBATCH --time={}\n
-export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n
-unset DISPLAY\n
+                jobscript += """#SBATCH --job-name=meso
+#SBATCH --partition={}
+#SBATCH --output={}
+#SBATCH --error={}
+#SBATCH --nodes={}
+#SBATCH --ntasks-per-node={}
+#SBATCH --cpus-per-task={}
+#SBATCH --time={}
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+unset DISPLAY
 """
                 run_cmd = 'srun --mpi=pmi2'
 
@@ -700,21 +688,57 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
     jobinfo = ' and '.join(jobs) if len(jobs) > 1 else jobs[0]
     info = f'{jobinfo} for {paramspace_key} - {ps_id}.'
 
-    if machine == 'hpc':
-        print('Submitting ' + info)
-        submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{machine}_{jobs[0]}.sh'
-        output = subprocess.getoutput(submit)
-        print(output)
-        jobid = output.split(' ')[-1]
-        # submit potential following jobs with dependency
-        if len(jobs) > 1:
-            for i, job in enumerate(jobs[1:]):
-                submit = (
-                    f'sbatch --account $BUDGET_ACCOUNTS ' +
-                    f'--dependency=afterok:{jobid} jobscripts/{machine}_{job}.sh')
+    def submit_lfp_simulation_jobs(dependency=None):
+        # these jobs can run in parallel
+        if dependency is None:
+            lfp_job_scripts = [f'hpc_lfp_simulation_{y}.sh' for y in get_y(full_data_path)]
+            jobid = []  # job == lfp_postprocess require all lfp_simulation jobs to have finished
+            for js in lfp_job_scripts:
+                if dependency is None:
+                    submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{js}'
+                else:
+                    submit = (
+                        f'sbatch --account $BUDGET_ACCOUNTS ' + 
+                        f'--dependency=afterok:{dependency} jobscripts/{js}')
                 output = subprocess.getoutput(submit)
                 print(output)
-                jobid = output.split(' ')[-1]
+                jobid.append(output.split(' ')[-1])
+        return jobid
+
+
+    if machine == 'hpc':
+        print('Submitting ' + info)
+        if jobs[0] == 'lfp_simulation':
+            jobid = submit_lfp_simulation_jobs()
+        else:
+            submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{machine}_{jobs[0]}.sh'
+            output = subprocess.getoutput(submit)
+            print(output)
+            jobid = output.split(' ')[-1]
+        # submit any subsequent jobs with dependency
+        if len(jobs) > 1:
+            for i, job in enumerate(jobs[1:]):
+                if job == 'lfp_simulation':
+                    submit_lfp_simulation_jobs(dependency=jobid)
+                elif job == 'lfp_postprocess':
+                    # has multiple dependencies
+                    if isinstance(jobid, (list, tuple)):
+                        afterok = ':'.join(jobid)
+                    else:
+                        afterok = jobid
+                    submit = (
+                        f'sbatch --account $BUDGET_ACCOUNTS ' +
+                        f'--dependency=afterok:{afterok} jobscripts/{machine}_{job}.sh')
+                    output = subprocess.getoutput(submit)
+                    print(output)
+                    jobid = output.split(' ')[-1]
+                else:
+                    submit = (
+                        f'sbatch --account $BUDGET_ACCOUNTS ' +
+                        f'--dependency=afterok:{jobid} jobscripts/{machine}_{job}.sh')
+                    output = subprocess.getoutput(submit)
+                    print(output)
+                    jobid = output.split(' ')[-1]
 
     elif machine == 'local':
         print('Running ' + info)
