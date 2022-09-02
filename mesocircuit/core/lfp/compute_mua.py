@@ -36,9 +36,9 @@ def write_mua_file(sim_dict, net_dict, ana_dict,
         with h5py.File(os.path.join(os.path.split(path_lfp_data)[0],
                                     'processed_data',
                                     'all_sptrains_bintime.h5'), 'r') as f:
-            sptrains_bintime = load_h5_to_sparse_X(X, f, sparsetype='coo')
+            sptrains_bintime = load_h5_to_sparse_X(X=X, h5data=f, sparsetype='coo')
         tmp = sana._time_and_space_binned_sptrains_X(
-            X, positions, sptrains_bintime,
+            positions=positions, sptrains_bintime=sptrains_bintime,
             dtype=np.uint16)
         if MUA is None:
             MUA = tmp
