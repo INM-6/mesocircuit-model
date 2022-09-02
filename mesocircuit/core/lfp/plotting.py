@@ -440,7 +440,6 @@ def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
     ax.plot(tvec, data[tinds] - data[tinds].mean(), 'k')
     ax.set_title(title)
     ax.set_ylabel(ylabel)
-    ax.set_xticklabels([])
     remove_axis_junk(ax)
 
 
@@ -472,7 +471,6 @@ def plot_single_channel_csd_data(
     ax.plot(tvec, data[tinds] - data[tinds].mean(), 'k')
     ax.set_title(title)
     ax.set_ylabel(ylabel)
-    ax.set_xticklabels([])
     remove_axis_junk(ax)
 
 
@@ -481,6 +479,7 @@ def plot_spectrum(ax, fname,
                   title=r'$PSD_\mathrm{LFP}$',
                   psd_max_freq=500,
                   TRANSIENT=500,
+                  plot_type='loglog',
                   **kwargs):
     """
     Plot average spectrum of multichannel data +- one standard deviation
@@ -498,9 +497,12 @@ def plot_spectrum(ax, fname,
         max frequency in plot
     TRANSIENT: float
         transient period removed from analysis (ms)
+    plot_type: str
+        str in ['loglog', 'semilogy', 'semilogx', 'plot']
     **kwargs
         parameters to plt.mlab.psd
     """
+    assert plot_type in ['loglog', 'semilogy', 'semilogx', 'plot'], 'unsupported axes_type'
     with h5py.File(fname, 'r') as f:
         Fs = f['srate'][()]
         T0 = int(Fs * TRANSIENT / 1000)  # t < T0 transient
@@ -520,7 +522,7 @@ def plot_spectrum(ax, fname,
     spectra = spectra[:, freqs <= psd_max_freq]
     freqs = freqs[freqs <= psd_max_freq]
 
-    ax.loglog(freqs, spectra.mean(axis=0), 'k-', zorder=0)
+    getattr(ax, plot_type)(freqs, spectra.mean(axis=0), 'k-', zorder=0)
     ax.fill_between(freqs,
                     spectra.mean(axis=0) - spectra.std(axis=0),
                     spectra.mean(axis=0) + spectra.std(axis=0),
