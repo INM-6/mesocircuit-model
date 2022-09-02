@@ -43,7 +43,7 @@ sys_dict = {
         },
         'lfp_simulation': {
             'partition': partition,
-            'num_nodes': 1,
+            'num_nodes': 16,
             'num_mpi_per_node': 128,
             'local_num_threads': 1,  # not used
             'wall_clock_time': '00:15:00'

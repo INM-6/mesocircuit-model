@@ -72,12 +72,11 @@ RANK = COMM.Get_rank()
 
 
 # if True, execute full model. If False, do only the plotting.
-# Simulation results must exist.
+# Network simulation results must exist.
 PROPERRUN = True
 
 # check if mod file for synapse model specified in expsyni.mod is loaded.
 # if not, compile and load it.
-# nmodl_dir = os.path.join('code', 'core', 'lfp')
 nmodl_dir = os.path.join('code', 'core', 'lfp')
 try:
     assert neuron.load_mechanisms(nmodl_dir)
@@ -108,8 +107,6 @@ sim_dict, net_dict, sys_dict = dics
 # path_lfp_data = os.path.join(os.path.split(path_parameters)[0], 'lfp')
 path_lfp_data = 'lfp'
 if RANK == 0:
-    # if not os.path.isdir(os.path.split(path_lfp_data)[0]):
-    #     os.mkdir(os.path.split(path_lfp_data)[0])
     if not os.path.isdir(path_lfp_data):
         os.mkdir(path_lfp_data)
 
@@ -125,7 +122,7 @@ PS = get_parameters(path_lfp_data=path_lfp_data,
 
 # create file for simulation time(s) to file
 if RANK == 0:
-    simstats = open(os.path.join(PS.savefolder, 'simstats.dat'), 'w')
+    simstats = open(os.path.join(PS.savefolder, f'simstats_{sys.argv[1]}.dat'), 'w')
 
 # tic toc
 tic = time()
@@ -213,48 +210,8 @@ if PROPERRUN:
             # object no longer needed
             del pop
 
-##############################################################################
-# Postprocess the simulation output (sum up contributions by each cell type)
-##############################################################################
-# reset seed, but output should be deterministic from now on
-np.random.seed(SIMULATIONSEED)
-'''
-if PROPERRUN:
-    ticc = time()
-    # do some postprocessing on the collected data, i.e., superposition
-    # of population LFPs, CSDs etc
-    postproc = PostProcess(y=PS.y,
-                           dt_output=PS.dt_output,
-                           savefolder=PS.savefolder,
-                           mapping_Yy=PS.mapping_Yy,
-                           savelist=PS.savelist,
-                           probes=probes,
-                           cells_subfolder=os.path.split(
-                               PS.cells_path)[-1],
-                           populations_subfolder=os.path.split(
-                               PS.populations_path)[-1],
-                           figures_subfolder=os.path.split(
-                               PS.figures_subfolder)[-1],
-                           )
-
-    # run through the procedure
-    postproc.run()
-
-    # create tar-archive with output for plotting, ssh-ing etc.
-    # postproc.create_tar_archive()
-
-    tocc = time()
-    if RANK == 0:
-        simstats.write('postprocess {}\n'.format(tocc - ticc))
-        simstats.close()
-'''
-
-COMM.Barrier()
-
 # tic toc
 print(('Execution time: %.3f seconds' % (time() - tic)))
-
-
 
 
 COMM.Barrier()
