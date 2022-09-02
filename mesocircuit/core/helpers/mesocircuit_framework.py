@@ -514,7 +514,8 @@ unset DISPLAY
             if name == 'lfp_simulation':
                 # write separate jobscripts for each postsynaptic cell type
                 for executable, arg in zip(executables, scriptargs):
-                    stdout = os.path.join('stdout', f'{name}_{arg}.txt')
+                    y = arg.replace('(', '').replace(')', '')
+                    stdout = os.path.join('stdout', f'{name}_{y}.txt')
                     js = copy.copy(jobscript)
                     js += executable
                     if machine == 'hpc':
