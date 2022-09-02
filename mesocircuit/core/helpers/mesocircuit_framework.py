@@ -690,36 +690,38 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
 
     def submit_lfp_simulation_jobs(dependency=None):
         # these jobs can run in parallel
-        if dependency is None:
-            lfp_job_scripts = [f'hpc_lfp_simulation_{y}.sh' for y in get_y(full_data_path)]
-            jobid = []  # job == lfp_postprocess require all lfp_simulation jobs to have finished
-            for js in lfp_job_scripts:
-                if dependency is None:
-                    submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{js}'
-                else:
-                    submit = (
-                        f'sbatch --account $BUDGET_ACCOUNTS ' + 
-                        f'--dependency=afterok:{dependency} jobscripts/{js}')
-                output = subprocess.getoutput(submit)
-                print(output)
-                jobid.append(output.split(' ')[-1])
+        lfp_job_scripts = []
+        for y in get_y(full_data_path):
+            y = y.replace('(', '').replace(')', '')
+            lfp_job_scripts.append(f'hpc_lfp_simulation_{y}.sh')
+        jobid = []  # job == lfp_postprocess require all lfp_simulation jobs to have finished
+        for js in lfp_job_scripts:
+            if dependency is None:
+                submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{js}'
+            else:
+                submit = (
+                    f'sbatch --account $BUDGET_ACCOUNTS ' + 
+                    f'--dependency=afterok:{dependency} jobscripts/{js}'
+                    )
+            output = subprocess.getoutput(submit)
+            print(output, submit)
+            jobid.append(output.split(' ')[-1])
         return jobid
-
 
     if machine == 'hpc':
         print('Submitting ' + info)
         if jobs[0] == 'lfp_simulation':
-            jobid = submit_lfp_simulation_jobs()
+            jobid = submit_lfp_simulation_jobs(dependency=None)
         else:
             submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{machine}_{jobs[0]}.sh'
             output = subprocess.getoutput(submit)
-            print(output)
+            print(output, submit)
             jobid = output.split(' ')[-1]
         # submit any subsequent jobs with dependency
         if len(jobs) > 1:
             for i, job in enumerate(jobs[1:]):
                 if job == 'lfp_simulation':
-                    submit_lfp_simulation_jobs(dependency=jobid)
+                    jobid = submit_lfp_simulation_jobs(dependency=jobid)
                 elif job == 'lfp_postprocess':
                     # has multiple dependencies
                     if isinstance(jobid, (list, tuple)):
@@ -728,16 +730,18 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
                         afterok = jobid
                     submit = (
                         f'sbatch --account $BUDGET_ACCOUNTS ' +
-                        f'--dependency=afterok:{afterok} jobscripts/{machine}_{job}.sh')
+                        f'--dependency=afterok:{afterok} jobscripts/{machine}_{job}.sh'
+                        )
                     output = subprocess.getoutput(submit)
-                    print(output)
+                    print(output, submit)
                     jobid = output.split(' ')[-1]
                 else:
                     submit = (
                         f'sbatch --account $BUDGET_ACCOUNTS ' +
-                        f'--dependency=afterok:{jobid} jobscripts/{machine}_{job}.sh')
+                        f'--dependency=afterok:{jobid} jobscripts/{machine}_{job}.sh'
+                        )
                     output = subprocess.getoutput(submit)
-                    print(output)
+                    print(output, submit)
                     jobid = output.split(' ')[-1]
 
     elif machine == 'local':
