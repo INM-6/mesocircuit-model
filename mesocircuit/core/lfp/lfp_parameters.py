@@ -382,7 +382,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         PS.populationParams.update({
             y: {
                 'number': 32768 if testing else N_y,
-                'number': N_y,
+                # 'number': N_y,
                 'z_min': depth - 25,
                 'z_max': depth + 25,
             }
