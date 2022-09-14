@@ -66,9 +66,9 @@ df.to_csv('simstats.csv', index=False)
 
 df = pd.read_csv('simstats.csv')
 # sum
-df['sum'] =  df[['CachedNetwork', 'Population', 'run', 'collect']].sum(axis=1)
+df['sum'] =  np.round(df[['CachedNetwork', 'Population', 'run', 'collect']].sum(axis=1)).astype(int)
 # per second of total simulation duration
-df['per_s'] = df['sum'] / (sim_dict['t_presim'] + sim_dict['t_sim']) * 1E3
+df['per_s'] = np.round(df['sum'] / (sim_dict['t_presim'] + sim_dict['t_sim']) * 1E3).astype(int)
 
 fig, ax = plt.subplots(1,1, sharex=True)
 df.plot(ax=ax)
@@ -78,7 +78,9 @@ ax.set_xlabel('cell type ($y$)')
 ax.set_ylabel('time (s)')
 ax.set_title('simulation time')
 
+# print(df)
 print(df[['y', 'per_s']])
+# print(df[['per_s']].to_numpy().flatten().tolist())
 
 # plt.show()
 # raise Exception

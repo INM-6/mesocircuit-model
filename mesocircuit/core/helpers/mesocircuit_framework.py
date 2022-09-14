@@ -5,8 +5,6 @@ Parameterspace evaluation and job execution.
 
 """
 
-import numpy as np
-import parameters as ps
 import os
 import subprocess
 import shutil
@@ -14,9 +12,12 @@ import glob
 import operator
 import pickle
 import json
-import yaml
 import hashlib
 import copy
+from time import strftime, gmtime
+import yaml
+import numpy as np
+import parameters as ps
 
 from ..parameterization import helpers_network as helpnet
 
@@ -513,12 +514,18 @@ unset DISPLAY
             sep = '\n\n' + 'wait' + '\n\n'
             if name == 'lfp_simulation':
                 # write separate jobscripts for each postsynaptic cell type
-                for executable, arg in zip(executables, scriptargs):
+                for i, (executable, arg) in enumerate(zip(executables, scriptargs)):
                     y = arg.replace('(', '').replace(')', '')
                     stdout = os.path.join('stdout', f'{name}_{y}.txt')
                     js = copy.copy(jobscript)
                     js += executable
                     if machine == 'hpc':
+                        # compute walltime specific to each cell type y:
+                        _wt = int(round((sim_dict['t_presim'] + sim_dict['t_sim']) / 1E3 *
+                                         dic['wall_clock_time'][i] 
+                                         ))
+                        wt = strftime("%H:%M:%S", gmtime(_wt))
+                        # fill in work string
                         js = js.format(
                             dic['partition'],
                             stdout,
@@ -526,7 +533,7 @@ unset DISPLAY
                             dic['num_nodes'],
                             dic['num_mpi_per_node'],
                             dic['local_num_threads'],
-                            dic['wall_clock_time']
+                            wt  # dic['wall_clock_time']
                         )
                     y = arg.replace('(', '').replace(')', '')
                     fname = os.path.join(path, 'jobscripts', f"{machine}_{name}_{y}.sh")
