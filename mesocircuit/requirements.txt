@@ -5,6 +5,7 @@ matplotlib
 Cython
 PrettyTable
 h5py
+pandas
 mpi4py
 MEAutility
 neuron>=7.7.2

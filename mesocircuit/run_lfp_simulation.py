@@ -43,7 +43,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from time import time
 import neuron  # needs to be imported before MPI
-from hybridLFPy import PostProcess, CachedTopoNetwork, TopoPopulation
+from hybridLFPy import CachedTopoNetwork, TopoPopulation
 import pickle
 from core.lfp.periodiclfp import PeriodicLFP
 from core.lfp.lfp_parameters import get_parameters
@@ -123,6 +123,7 @@ PS = get_parameters(path_lfp_data=path_lfp_data,
 # create file for simulation time(s) to file
 if RANK == 0:
     simstats = open(os.path.join(PS.savefolder, f'simstats_{sys.argv[1]}.dat'), 'w')
+    simstats.write('task time')
 
 # tic toc
 tic = time()
@@ -191,21 +192,21 @@ if PROPERRUN:
 
             tocc = time()
             if RANK == 0:
-                simstats.write('Population_{} {}\n'.format(y, tocc - ticc))
+                simstats.write('Population {}\n'.format(tocc - ticc))
 
             # run population simulation and collect the data
             ticc = time()
             pop.run()
             tocc = time()
             if RANK == 0:
-                simstats.write('run_{} {}\n'.format(y, tocc - ticc))
+                simstats.write('run {}\n'.format(tocc - ticc))
 
             ticc = time()
             pop.collect_data()
             tocc = time()
 
             if RANK == 0:
-                simstats.write('collect_{} {}\n'.format(y, tocc - ticc))
+                simstats.write('collect {}\n'.format(tocc - ticc))
 
             # object no longer needed
             del pop

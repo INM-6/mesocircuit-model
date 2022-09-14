@@ -16,6 +16,7 @@ from core.parameterization.base_plotting_params import plot_dict
 from core.lfp.lfp_parameters import get_parameters
 import core.lfp.plotting as lfpplt
 from core.lfp.compute_mua import write_mua_file
+import pandas as pd
 
 
 # Set some matplotlib defaults
@@ -47,6 +48,40 @@ path_fig_files = os.path.join('lfp', 'figures')
 PS = get_parameters(path_lfp_data=path_lfp_data,
                     sim_dict=sim_dict,
                     net_dict=net_dict)
+
+
+# plot signal simulation times for each cell type
+df = pd.DataFrame(columns=['y', 'CachedNetwork', 'Population', 'run', 'collect'])
+for i, y in enumerate(PS.y):
+    fname = os.path.join(path_lfp_data, f'simstats_{y}.dat')
+    df_y = pd.read_csv(fname, delimiter=' ')
+    df = pd.concat([
+        df,
+        pd.DataFrame(np.array([y] + df_y['time'].to_list(), dtype='object').reshape((1, -1)), 
+                     columns=['y', 'CachedNetwork', 'Population', 'run', 'collect'])
+    ], ignore_index=True)
+
+df.to_csv('simstats.csv', index=False)
+
+
+df = pd.read_csv('simstats.csv')
+# sum
+df['sum'] =  df[['CachedNetwork', 'Population', 'run', 'collect']].sum(axis=1)
+# per second of total simulation duration
+df['per_s'] = df['sum'] / (sim_dict['t_presim'] + sim_dict['t_sim']) * 1E3
+
+fig, ax = plt.subplots(1,1, sharex=True)
+df.plot(ax=ax)
+ax.set_xticks(np.arange(len(PS.y)))
+ax.set_xticklabels(PS.y, rotation='vertical')
+ax.set_xlabel('cell type ($y$)')
+ax.set_ylabel('time (s)')
+ax.set_title('simulation time')
+
+print(df[['y', 'per_s']])
+
+# plt.show()
+# raise Exception
 
 #########################################################################
 # Create an object representation containing the spiking activity of the

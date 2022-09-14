@@ -43,7 +43,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from time import time
 import neuron  # needs to be imported before MPI
-from hybridLFPy import PostProcess, CachedTopoNetwork, TopoPopulation
+from hybridLFPy import PostProcess
 import pickle
 from core.lfp.periodiclfp import PeriodicLFP
 from core.lfp.lfp_parameters import get_parameters
@@ -123,6 +123,7 @@ PS = get_parameters(path_lfp_data=path_lfp_data,
 # create file for simulation time(s) to file
 if RANK == 0:
     simstats = open(os.path.join(PS.savefolder, 'simstats_postprocess.dat'), 'w')
+    simstats.write('task time')
 
 # tic toc
 tic = time()
