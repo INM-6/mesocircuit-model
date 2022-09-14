@@ -522,8 +522,8 @@ unset DISPLAY
                     if machine == 'hpc':
                         # compute walltime specific to each cell type y:
                         _wt = int(round((sim_dict['t_presim'] + sim_dict['t_sim']) / 1E3 *
-                                         dic['wall_clock_time'][i] 
-                                         ))
+                                         dic['wall_clock_time'][i] * 1.5
+                                         ))  # 50% buffer
                         wt = strftime("%H:%M:%S", gmtime(_wt))
                         # fill in work string
                         js = js.format(
