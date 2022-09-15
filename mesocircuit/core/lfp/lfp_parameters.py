@@ -213,7 +213,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         # derived parameters for CachedTopoNetwork instance
         network_params=dict(
             simtime=sim_dict['t_presim'] + sim_dict['t_sim'],
-            dt=2**-2,  # sim_dict['sim_resolution'],
+            dt=2**-2,  # sim_dict['sim_resolution'],  # run at 4kHz; we're downsampling outputs anyway.
             spike_output_path=os.path.join(os.path.split(path_lfp_data)[0],
                                            'processed_data'),
             label=sim_dict['rec_dev'][0],
@@ -299,7 +299,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         PS.y))
 
     # define morphology file paths
-    testing = True  # if True, use ball-and-stick type morphologies
+    testing = False  # if True, use ball-and-stick type morphologies
     if testing:
         PS.PATH_m_y = os.path.join(file_prefix, 'morphologies')
         PS.m_y = [Y + '_' + y + '.hoc' for Y, y in PS.mapping_Yy]
@@ -382,7 +382,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         PS.populationParams.update({
             y: {
                 # 'number': 32768 if testing else N_y,
-                'number': N_y // 10, 
+                'number': int(np.round(N_y / 10.)), 
                 # 'number': N_y,
                 'z_min': depth - 25,
                 'z_max': depth + 25,

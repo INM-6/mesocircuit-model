@@ -520,11 +520,16 @@ unset DISPLAY
                     js = copy.copy(jobscript)
                     js += executable
                     if machine == 'hpc':
-                        # compute walltime specific to each cell type y:
-                        _wt = int(round((sim_dict['t_presim'] + sim_dict['t_sim']) / 1E3 *
-                                         dic['wall_clock_time'][i] * 1.5
-                                         ))  # 50% buffer
-                        wt = strftime("%H:%M:%S", gmtime(_wt))
+                        if type(dic['wall_clock_time']) in [str]:
+                            wt = dic['wall_clock_time']
+                        elif type(dic['wall_clock_time']) in [list, tuple]:
+                            # compute walltime specific to each cell type y:
+                            _wt = int(round((sim_dict['t_presim'] + sim_dict['t_sim']) / 1E3 *
+                                            dic['wall_clock_time'][i] * 1.5
+                                            ))  # add 50% buffer
+                            wt = strftime("%H:%M:%S", gmtime(_wt))
+                        else:
+                            raise Exception(f"wall_clock_time={dic['wall_clock_time']} must be str or list/tuple")
                         # fill in work string
                         js = js.format(
                             dic['partition'],
