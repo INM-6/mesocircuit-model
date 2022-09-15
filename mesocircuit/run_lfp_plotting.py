@@ -80,7 +80,7 @@ ax.set_title('simulation time')
 
 # print(df)
 print(df[['y', 'per_s']])
-# print(df[['per_s']].to_numpy().flatten().tolist())
+print(df[['per_s']].to_numpy().flatten().tolist())
 
 # plt.show()
 # raise Exception
@@ -227,7 +227,8 @@ titles = ['LFP', 'CSD', 'MUA']
 for ax, fname, unit, title in zip(axes, fnames, units, titles):
     ax.set_prop_cycle('color', [plt.cm.gray(i)
                                 for i in np.linspace(0, 200, 10).astype(int)])
-    lfpplt.plot_signal_sum(ax, PS, fname, unit, T=[500, 550])
+    lfpplt.plot_signal_sum(ax, PS, fname, unit, 
+                           T=[sim_dict['t_presim'], sim_dict['t_presim'] + 100])
     ax.set_title(title)
 
 fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_II.pdf'))
