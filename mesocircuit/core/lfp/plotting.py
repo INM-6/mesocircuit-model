@@ -640,10 +640,10 @@ def plot_signal_correlation_or_covariance(
     mask = np.triu(np.ones(c.shape), k=1).astype(bool)
 
     if method == np.cov:
-        paneltitle = 'pairwise covariance'
+        paneltitle = 'pairwise\ncovariance'
         ylabel = 'covariance'
     else:
-        paneltitle = 'pairwise correlation'
+        paneltitle = 'pairwise\ncorrelation'
         ylabel = 'corr. coeff.'
 
     # add entries with NaNs to mask
@@ -676,7 +676,7 @@ def plot_signal_correlation_or_covariance(
     axd.set_ylim(bins[0], bins[-1])
     axd.set_yticklabels([])
     axd.set_xticks([0, axd.axis()[1]])
-    axd.set_title('distribution')
+    axd.set_title('dist.')
 
     ax.set_ylabel(ylabel, labelpad=0.1)
     ax.set_xlabel(r'$r$ (mm)', labelpad=0.1)
