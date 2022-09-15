@@ -693,6 +693,10 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
     cwd = os.getcwd()
     os.chdir(full_data_path)
 
+    # clean exit in case of no jobs
+    if len(jobs) == 0:
+        return
+
     jobinfo = ' and '.join(jobs) if len(jobs) > 1 else jobs[0]
     info = f'{jobinfo} for {paramspace_key} - {ps_id}.'
 
