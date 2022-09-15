@@ -114,14 +114,15 @@ fig.savefig(os.path.join(path_fig_files, 'morphology_table.pdf'))
 
 
 # Figure 7A
-CONTACTPOS = (-200, 200)
+CONTACTPOS = ((600, 600), (600, 1000), (-1400, -1400))
 fig, ax = plt.subplots(1, 1, figsize=(plot_dict['fig_width_1col'],
                                       plot_dict['fig_width_1col']),
                        sharex=True)
 lfpplt.layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=CONTACTPOS)
 fig.savefig(os.path.join(path_fig_files, 'contacts.pdf'))
 
-# Figure 7B: plot LFP in one channel
+
+# Figure 7B: plot LFP in each channel
 fig, axes = plt.subplots(3, 1, figsize=(plot_dict['fig_width_1col'],
                                         plot_dict['fig_width_1col']))
 T = [sim_dict['t_presim'], sim_dict['t_presim'] + 500]
@@ -144,7 +145,6 @@ lfpplt.plot_single_channel_lfp_data(axes[2], PS, net_dict, ana_dict, fname,
 axes[2].set_xlabel('t (ms)')
 
 fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_I.pdf'))
-
 
 
 # Figure 8 LFP/CSD/MUA power spectra
