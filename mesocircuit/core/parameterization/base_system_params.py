@@ -48,11 +48,11 @@ sys_dict = {
             'local_num_threads': 1,  # not used
             # 'wall_clock_time': '01:00:00'
             # (s) per second of simulation time per cell type y, 
-            # 10% downscaled, 16 nodes, favorite version:
-            'wall_clock_time': [326, 82, 90, 174,
-                                156, 158, 111, 70, 
-                                129, 96, 64, 67, 
-                                120, 78, 64, 64] 
+            # 16 nodes, favorite version:
+            'wall_clock_time': [3260, 820, 900, 1740,
+                                1560, 1580, 1110, 700,
+                                1290, 960, 640, 670,
+                                1200, 780, 640, 640]
         },
         'lfp_postprocess': {
             'partition': partition,
