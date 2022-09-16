@@ -38,7 +38,6 @@ import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
-# import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from time import time

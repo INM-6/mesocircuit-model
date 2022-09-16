@@ -6,7 +6,6 @@ import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
-# import sys
 import pickle
 import matplotlib
 import matplotlib.pyplot as plt
