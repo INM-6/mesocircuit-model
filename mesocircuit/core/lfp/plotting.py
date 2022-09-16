@@ -1,30 +1,14 @@
 #!/usr/bin/env python
 '''prototype LFP simulation analysis'''
-# from hybridLFPy.helpers import decimate
-# import LFPy
-# import dataset_plotting as dsp
-# import dataset_analysis as dsa
-# import parameterspace_control as psc
-# from mesocircuit_LFP_parameters import get_LFP_parameters
-# from meso_analysis import helpers, NetworkAnalysis, helperfun
-# from matplotlib.gridspec import GridSpec
-# from matplotlib.colors import LightSource
-# from mpl_toolkits.mplot3d import Axes3D
-# from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
 from matplotlib.collections import PolyCollection  # , LineCollection
-# from matplotlib import mlab
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import h5py
-# from scipy.optimize import curve_fit
-# import scipy.signal as ss
-# from scipy.signal import decimate
 import numpy as np
-# import sys
 from ..parameterization.base_plotting_params import plot_dict
 from ..analysis import stats
 import LFPy
