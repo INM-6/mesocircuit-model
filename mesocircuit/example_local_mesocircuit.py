@@ -17,6 +17,7 @@ if 1:
             #'analysis',
             'analysis_and_plotting',
             #'lfp_simulation',
+            #'lfp_postprocess',
             #'lfp_plotting',
         ],
         machine='local',

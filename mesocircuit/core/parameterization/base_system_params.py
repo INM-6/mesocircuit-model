@@ -46,14 +46,27 @@ sys_dict = {
             'num_nodes': 16,
             'num_mpi_per_node': 128,
             'local_num_threads': 1,  # not used
-            'wall_clock_time': '01:30:00'
+            # 'wall_clock_time': '01:00:00'
+            # (s) per second of simulation time per cell type y, 
+            # 16 nodes, favorite version:
+            'wall_clock_time': [3260, 820, 900, 1740,
+                                1560, 1580, 1110, 700,
+                                1290, 960, 640, 670,
+                                1200, 780, 640, 640]
+        },
+        'lfp_postprocess': {
+            'partition': partition,
+            'num_nodes': 1,
+            'num_mpi_per_node': 8,
+            'local_num_threads': 1,  # not used
+            'wall_clock_time': '00:05:00'
         },
         'lfp_plotting': {
             'partition': partition,
             'num_nodes': 1,
             'num_mpi_per_node': 1,
             'local_num_threads': 1,  # not used
-            'wall_clock_time': '00:15:00'
+            'wall_clock_time': '00:10:00'
         }
     },
     # laptop
@@ -76,6 +89,10 @@ sys_dict = {
         'lfp_simulation': {
             'num_mpi': ('$(sysctl -n hw.physicalcpu)'
                         if sys.platform == 'darwin' else '$(($(nproc) / 2))'),
+        },
+        'lfp_postprocess': {
+            'num_mpi': ('$(sysctl -n hw.physicalcpu)'
+                        if sys.platform == 'darwin' else '$(($(nproc) / 2))')
         },
         'lfp_plotting': {
             'num_mpi': 1

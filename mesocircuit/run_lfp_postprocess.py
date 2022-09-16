@@ -38,12 +38,11 @@ import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from time import time
 import neuron  # needs to be imported before MPI
-from hybridLFPy import CachedTopoNetwork, TopoPopulation
+from hybridLFPy import PostProcess
 import pickle
 from core.lfp.periodiclfp import PeriodicLFP
 from core.lfp.lfp_parameters import get_parameters
@@ -72,11 +71,12 @@ RANK = COMM.Get_rank()
 
 
 # if True, execute full model. If False, do only the plotting.
-# Network simulation results must exist.
+# Simulation results must exist.
 PROPERRUN = True
 
 # check if mod file for synapse model specified in expsyni.mod is loaded.
 # if not, compile and load it.
+# nmodl_dir = os.path.join('code', 'core', 'lfp')
 nmodl_dir = os.path.join('code', 'core', 'lfp')
 try:
     assert neuron.load_mechanisms(nmodl_dir)
@@ -104,7 +104,6 @@ sim_dict, net_dict, sys_dict = dics
 ##########################################################################
 # set up the file destination
 ##########################################################################
-# path_lfp_data = os.path.join(os.path.split(path_parameters)[0], 'lfp')
 path_lfp_data = 'lfp'
 if RANK == 0:
     if not os.path.isdir(path_lfp_data):
@@ -122,27 +121,12 @@ PS = get_parameters(path_lfp_data=path_lfp_data,
 
 # create file for simulation time(s) to file
 if RANK == 0:
-    simstats = open(os.path.join(PS.savefolder, f'simstats_{sys.argv[1]}.dat'), 'w')
+    simstats = open(os.path.join(PS.savefolder, 'simstats_postprocess.dat'), 'w')
     simstats.write('task time\n')
 
 # tic toc
 tic = time()
 ticc = tic
-
-
-##########################################################################
-# Create an object representation containing the spiking activity of the
-# network simulation output that uses sqlite3.
-##########################################################################
-networkSim = CachedTopoNetwork(**PS.network_params)
-
-# tic toc
-tocc = time()
-if RANK == 0:
-    simstats.write('CachedNetwork {}\n'.format(tocc - ticc))
-
-toc = time() - tic
-print(('NEST simulation and gdf file processing done in  %.3f seconds' % toc))
 
 
 ##############################################################################
@@ -157,59 +141,43 @@ if PROPERRUN:
     probes.append(VolumetricCurrentSourceDensity(cell=None, **PS.CSDParams))
     probes.append(CurrentDipoleMoment(cell=None))
 
+
 ##############################################################################
-# Create multicompartment neuron populations for LFP predictions
+# Postprocess the simulation output (sum up contributions by each cell type)
 ##############################################################################
+# reset seed, but output should be deterministic from now on
+np.random.seed(SIMULATIONSEED)
+
 if PROPERRUN:
-    # iterate over each cell type, and create populationulation object
-    for i, y in enumerate(PS.y):
-        if y == sys.argv[1]:
-            # create population:
-            ticc = time()
-            pop = TopoPopulation(
-                cellParams=PS.cellParams[y],
-                rand_rot_axis=PS.rand_rot_axis[y],
-                simulationParams=PS.simulationParams,
-                populationParams=PS.populationParams[y],
-                y=y,
-                layerBoundaries=PS.layerBoundaries,
-                probes=probes,
-                savelist=PS.savelist,
-                savefolder=PS.savefolder,
-                dt_output=PS.dt_output,
-                POPULATIONSEED=SIMULATIONSEED + i,
-                X=PS.X,
-                networkSim=networkSim,
-                k_yXL=PS.k_yXL[y],
-                synParams=PS.synParams[y],
-                synDelayLoc=PS.synDelayLoc[y],
-                synDelayScale=PS.synDelayScale[y],
-                J_yX=PS.J_yX[y],
-                tau_yX=PS.tau_yX[y],
-                # TopoPopulation kwargs
-                topology_connections=PS.topology_connections,
-            )
+    ticc = time()
+    # do some postprocessing on the collected data, i.e., superposition
+    # of population LFPs, CSDs etc
+    postproc = PostProcess(y=PS.y,
+                           dt_output=PS.dt_output,
+                           savefolder=PS.savefolder,
+                           mapping_Yy=PS.mapping_Yy,
+                           savelist=PS.savelist,
+                           probes=probes,
+                           cells_subfolder=os.path.split(
+                               PS.cells_path)[-1],
+                           populations_subfolder=os.path.split(
+                               PS.populations_path)[-1],
+                           figures_subfolder=os.path.split(
+                               PS.figures_subfolder)[-1],
+                           )
 
-            tocc = time()
-            if RANK == 0:
-                simstats.write('Population {}\n'.format(tocc - ticc))
+    # run through the procedure
+    postproc.run()
 
-            # run population simulation and collect the data
-            ticc = time()
-            pop.run()
-            tocc = time()
-            if RANK == 0:
-                simstats.write('run {}\n'.format(tocc - ticc))
+    # create tar-archive with output for plotting, ssh-ing etc.
+    # postproc.create_tar_archive()
 
-            ticc = time()
-            pop.collect_data()
-            tocc = time()
+    tocc = time()
+    if RANK == 0:
+        simstats.write('postprocess {}\n'.format(tocc - ticc))
+        simstats.close()
 
-            if RANK == 0:
-                simstats.write('collect {}\n'.format(tocc - ticc))
-
-            # object no longer needed
-            del pop
+COMM.Barrier()
 
 # tic toc
 print(('Execution time: %.3f seconds' % (time() - tic)))

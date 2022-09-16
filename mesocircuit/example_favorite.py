@@ -18,7 +18,9 @@ if 1:
             'network',
             'analysis_and_plotting',
             # 'lfp_simulation',
+            # 'lfp_postprocess',
             # 'lfp_plotting',
         ],
         machine='hpc',
+        # machine='local'
     )

@@ -5,8 +5,6 @@ Parameterspace evaluation and job execution.
 
 """
 
-import numpy as np
-import parameters as ps
 import os
 import subprocess
 import shutil
@@ -14,9 +12,12 @@ import glob
 import operator
 import pickle
 import json
-import yaml
 import hashlib
 import copy
+from time import strftime, gmtime
+import yaml
+import numpy as np
+import parameters as ps
 
 from ..parameterization import helpers_network as helpnet
 
@@ -305,6 +306,7 @@ def evaluate_parameterset(ps_id, paramset, full_data_path):
                 'run_analysis.py',
                 'run_plotting.py',
                 'run_lfp_simulation.py',
+                'run_lfp_postprocess.py',
                 'run_lfp_plotting.py']
 
     for f in filelist:
@@ -397,6 +399,20 @@ def params_for_neuronal_network_meanfield_tools(net_dict):
     return dic
 
 
+def get_y(path):
+    '''get a list of cell type names'''
+    from ..lfp.lfp_parameters import get_parameters
+    path_lfp_data = 'lfp'
+    dics = []
+    for dic in ['sim_dict', 'net_dict']:
+        with open(f'{path}/parameters/{dic}.pkl', 'rb') as f:
+            dics.append(pickle.load(f))
+    PS = get_parameters(path_lfp_data=path_lfp_data,
+                        sim_dict=dics[0],
+                        net_dict=dics[1])
+    return PS.y
+
+
 def write_jobscripts(sys_dict, path):
     """
     Writes a jobscript for each machine (hpc, local) and each step
@@ -411,18 +427,20 @@ def write_jobscripts(sys_dict, path):
         Path to folder of ps_id.
     """
     for machine, dic in sys_dict.items():
-        for name, scripts in [['network', ['run_network.py']],
-                              ['analysis', ['run_analysis.py']],
-                              ['plotting', ['run_plotting.py']],
-                              ['analysis_and_plotting', ['run_analysis.py',
-                                                         'run_plotting.py']],
-                              ['lfp_simulation', ['run_lfp_simulation.py']],
-                              ['lfp_plotting', ['run_lfp_plotting.py']]
-                              ]:
+        for name, scripts, scriptargs in [['network', ['run_network.py'], ['']],
+                                    ['analysis', ['run_analysis.py'], ['']],
+                                    ['plotting', ['run_plotting.py'], ['']],
+                                    ['analysis_and_plotting', ['run_analysis.py',
+                                                                'run_plotting.py'], [''] * 2],
+                                    ['lfp_simulation', ['run_lfp_simulation.py'] * len(get_y(path)), get_y(path)],
+                                    ['lfp_postprocess', ['run_lfp_postprocess.py'], ['']],
+                                    ['lfp_plotting', ['run_lfp_plotting.py'], ['']]
+                                    ]:
 
             # key of sys_dict defining resources
             res = (name
-                   if name in ['network', 'lfp_simulation', 'lfp_plotting']
+                   if name in ['network', 'lfp_simulation', 
+                               'lfp_postprocess', 'lfp_plotting']
                    else 'analysis_and_plotting')
             dic = sys_dict[machine][res]
 
@@ -430,22 +448,22 @@ def write_jobscripts(sys_dict, path):
             stdout = os.path.join('stdout', name + '.txt')
 
             # start jobscript
-            jobscript = ('#!/bin/bash -x\n')
+            jobscript = '#!/bin/bash -x\n'
 
             # define machine specifics
             if machine == 'hpc':
                 # assume SLURM, append resource definitions
-                jobscript += (
-                    "#SBATCH --job-name=meso\n"
-                    f"#SBATCH --partition={dic['partition']}\n"
-                    f"#SBATCH --output={stdout}\n"
-                    f"#SBATCH --error={stdout}\n"
-                    f"#SBATCH --nodes={dic['num_nodes']}\n"
-                    f"#SBATCH --ntasks-per-node={dic['num_mpi_per_node']}\n"
-                    f"#SBATCH --cpus-per-task={dic['local_num_threads']}\n"
-                    f"#SBATCH --time={dic['wall_clock_time']}\n"
-                    "export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK\n"
-                    "unset DISPLAY\n")
+                jobscript += """#SBATCH --job-name=meso
+#SBATCH --partition={}
+#SBATCH --output={}
+#SBATCH --error={}
+#SBATCH --nodes={}
+#SBATCH --ntasks-per-node={}
+#SBATCH --cpus-per-task={}
+#SBATCH --time={}
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+unset DISPLAY
+"""
                 run_cmd = 'srun --mpi=pmi2'
 
             elif machine == 'local':
@@ -473,23 +491,76 @@ def write_jobscripts(sys_dict, path):
             if name == 'lfp_plotting':
                 # should be run serially!
                 executables = [
-                    f'python3 -u code/{py} {o_0 if i == 0 else o_1}'
-                    for i, py in enumerate(scripts)]
+                    f'python3 -u code/{py} {arg} {o_0 if i == 0 else o_1}'
+                    for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
             elif name == 'lfp_simulation':
+                executables = []
+                for i, (py, arg) in enumerate(zip(scripts, scriptargs)):
+                    y = arg.replace('(', '').replace(')', '')
+                    stdout = os.path.join('stdout', f'{name}_{y}.txt')
+                    o_0 = f'2>&1 | tee {stdout}' if machine == 'local' else ''
+                    o_1 = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
+                    executables += [
+                        f'{run_cmd} python3 -u code/{py} "{arg}" {o_0 if i == 0 else o_1}'
+                        ]
+            elif name == 'lfp_postprocess':
                 executables = [
-                    f'{run_cmd} python3 -u code/{py} {o_0 if i == 0 else o_1}'
-                    for i, py in enumerate(scripts)]
+                    f'{run_cmd} python3 -u code/{py} {arg} {o_0 if i == 0 else o_1}'
+                    for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
             else:
                 executables = [
-                    f'{run_cmd} python3 -u code/{py} {t} {o_0 if i == 0 else o_1}'
-                    for i, py in enumerate(scripts)]
+                    f'{run_cmd} python3 -u code/{py} {arg} {t} {o_0 if i == 0 else o_1}'
+                    for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
             sep = '\n\n' + 'wait' + '\n\n'
-            jobscript += sep.join(executables)
+            if name == 'lfp_simulation':
+                # write separate jobscripts for each postsynaptic cell type
+                for i, (executable, arg) in enumerate(zip(executables, scriptargs)):
+                    y = arg.replace('(', '').replace(')', '')
+                    stdout = os.path.join('stdout', f'{name}_{y}.txt')
+                    js = copy.copy(jobscript)
+                    js += executable
+                    if machine == 'hpc':
+                        if type(dic['wall_clock_time']) in [str]:
+                            wt = dic['wall_clock_time']
+                        elif type(dic['wall_clock_time']) in [list, tuple]:
+                            # compute walltime specific to each cell type y:
+                            _wt = int(round((sim_dict['t_presim'] + sim_dict['t_sim']) / 1E3 *
+                                            dic['wall_clock_time'][i] * 1.5
+                                            ))  # add 50% buffer
+                            wt = strftime("%H:%M:%S", gmtime(_wt))
+                        else:
+                            raise Exception(f"wall_clock_time={dic['wall_clock_time']} must be str or list/tuple")
+                        # fill in work string
+                        js = js.format(
+                            dic['partition'],
+                            stdout,
+                            stdout,
+                            dic['num_nodes'],
+                            dic['num_mpi_per_node'],
+                            dic['local_num_threads'],
+                            wt  # dic['wall_clock_time']
+                        )
+                    y = arg.replace('(', '').replace(')', '')
+                    fname = os.path.join(path, 'jobscripts', f"{machine}_{name}_{y}.sh")
+                    with open(fname, 'w') as f:
+                        f.write(js)
+            else:
+                jobscript += sep.join(executables)
+                if machine == 'hpc':
+                    jobscript = jobscript.format(
+                        dic['partition'],
+                        stdout,
+                        stdout,
+                        dic['num_nodes'],
+                        dic['num_mpi_per_node'],
+                        dic['local_num_threads'],
+                        dic['wall_clock_time']
+                    )
 
-            # write jobscript
-            fname = os.path.join(path, 'jobscripts', f"{machine}_{name}.sh")
-            with open(fname, 'w') as f:
-                f.write(jobscript)
+                # write jobscript
+                fname = os.path.join(path, 'jobscripts', f"{machine}_{name}.sh")
+                with open(fname, 'w') as f:
+                    f.write(jobscript)
     return
 
 
@@ -627,31 +698,82 @@ def run_single_jobs(paramspace_key, ps_id, data_dir=auto_data_directory(),
     cwd = os.getcwd()
     os.chdir(full_data_path)
 
+    # clean exit in case of no jobs
+    if len(jobs) == 0:
+        return
+
     jobinfo = ' and '.join(jobs) if len(jobs) > 1 else jobs[0]
     info = f'{jobinfo} for {paramspace_key} - {ps_id}.'
 
+    def submit_lfp_simulation_jobs(dependency=None):
+        # these jobs can run in parallel
+        lfp_job_scripts = []
+        for y in get_y(full_data_path):
+            y = y.replace('(', '').replace(')', '')
+            lfp_job_scripts.append(f'hpc_lfp_simulation_{y}.sh')
+        jobid = []  # job == lfp_postprocess require all lfp_simulation jobs to have finished
+        for js in lfp_job_scripts:
+            if dependency is None:
+                submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{js}'
+            else:
+                submit = (
+                    f'sbatch --account $BUDGET_ACCOUNTS ' + 
+                    f'--dependency=afterok:{dependency} jobscripts/{js}'
+                    )
+            output = subprocess.getoutput(submit)
+            print(output, submit)
+            jobid.append(output.split(' ')[-1])
+        return jobid
+
     if machine == 'hpc':
         print('Submitting ' + info)
-        submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{machine}_{jobs[0]}.sh'
-        output = subprocess.getoutput(submit)
-        print(output)
-        jobid = output.split(' ')[-1]
-        # submit potential following jobs with dependency
+        if jobs[0] == 'lfp_simulation':
+            jobid = submit_lfp_simulation_jobs(dependency=None)
+        else:
+            submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{machine}_{jobs[0]}.sh'
+            output = subprocess.getoutput(submit)
+            print(output, submit)
+            jobid = output.split(' ')[-1]
+        # submit any subsequent jobs with dependency
         if len(jobs) > 1:
             for i, job in enumerate(jobs[1:]):
-                submit = (
-                    f'sbatch --account $BUDGET_ACCOUNTS ' +
-                    f'--dependency=afterok:{jobid} jobscripts/{machine}_{job}.sh')
-                output = subprocess.getoutput(submit)
-                print(output)
-                jobid = output.split(' ')[-1]
+                if job == 'lfp_simulation':
+                    jobid = submit_lfp_simulation_jobs(dependency=jobid)
+                elif job == 'lfp_postprocess':
+                    # has multiple dependencies
+                    if isinstance(jobid, (list, tuple)):
+                        afterok = ':'.join(jobid)
+                    else:
+                        afterok = jobid
+                    submit = (
+                        f'sbatch --account $BUDGET_ACCOUNTS ' +
+                        f'--dependency=afterok:{afterok} jobscripts/{machine}_{job}.sh'
+                        )
+                    output = subprocess.getoutput(submit)
+                    print(output, submit)
+                    jobid = output.split(' ')[-1]
+                else:
+                    submit = (
+                        f'sbatch --account $BUDGET_ACCOUNTS ' +
+                        f'--dependency=afterok:{jobid} jobscripts/{machine}_{job}.sh'
+                        )
+                    output = subprocess.getoutput(submit)
+                    print(output, submit)
+                    jobid = output.split(' ')[-1]
 
     elif machine == 'local':
         print('Running ' + info)
         for job in jobs:
-            retval = os.system(f'bash jobscripts/{machine}_{job}.sh')
-            if retval != 0:
-                raise Exception(f"os.system failed: {retval}")
+            if job == 'lfp_simulation':
+                for y in get_y(full_data_path):
+                    y = y.replace('(', '').replace(')', '')
+                    retval = os.system(f'bash jobscripts/{machine}_{job}_{y}.sh')
+                    if retval != 0:
+                        raise Exception(f"os.system failed: {retval}")
+            else:
+                retval = os.system(f'bash jobscripts/{machine}_{job}.sh')
+                if retval != 0:
+                    raise Exception(f"os.system failed: {retval}")
 
     os.chdir(cwd)
     return

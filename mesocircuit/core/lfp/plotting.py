@@ -1,30 +1,14 @@
 #!/usr/bin/env python
 '''prototype LFP simulation analysis'''
-# from hybridLFPy.helpers import decimate
-# import LFPy
-# import dataset_plotting as dsp
-# import dataset_analysis as dsa
-# import parameterspace_control as psc
-# from mesocircuit_LFP_parameters import get_LFP_parameters
-# from meso_analysis import helpers, NetworkAnalysis, helperfun
-# from matplotlib.gridspec import GridSpec
-# from matplotlib.colors import LightSource
-# from mpl_toolkits.mplot3d import Axes3D
-# from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
 from matplotlib.collections import PolyCollection  # , LineCollection
-# from matplotlib import mlab
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import h5py
-# from scipy.optimize import curve_fit
-# import scipy.signal as ss
-# from scipy.signal import decimate
 import numpy as np
-# import sys
 from ..parameterization.base_plotting_params import plot_dict
 from ..analysis import stats
 import LFPy
@@ -336,7 +320,7 @@ def morphology_table(ax, PS):
     ax.axis(ax.axis('equal'))
 
 
-def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=(-200, 200)):
+def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=((-200, 200), (200, -200))):
     '''
     Arguments
     ---------
@@ -346,8 +330,8 @@ def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=(-200, 200)):
         network settings
     ana_dict: dict
         analysis settings
-    CONTACTPOS: tuple
-        x and y coordinate of electrode contact point in PS.electrodeParams
+    CONTACTPOS: tuple of tuples
+        x and y coordinates of electrode contact point in PS.electrodeParams
     '''
     pos_bins = np.linspace(0, net_dict['extent'],
                            int(net_dict['extent'] / ana_dict['binsize_space']
@@ -355,21 +339,15 @@ def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=(-200, 200)):
     pos_bins -= net_dict['extent'] / 2
     pos_bins *= 1E3  # mm -> µm
 
+    # all contacts
+    ax.plot(PS.electrodeParams['x'], PS.electrodeParams['y'],
+            'ko', markersize=5)
+
     # bin centers:
     xy = np.meshgrid(pos_bins[:-1], pos_bins[:-1])
     xy[0] += ana_dict['binsize_space'] / 2 * 1E3
     xy[1] += ana_dict['binsize_space'] / 2 * 1E3  # mm -> µm
-    # get bin indices for slicing.
-    CONTACT = (PS.electrodeParams['x'] == CONTACTPOS[0]
-               ) & (PS.electrodeParams['y'] == CONTACTPOS[1])
-    BINS = (xy[0] > CONTACTPOS[0] - 200) & (xy[0] < CONTACTPOS[0] + 200) & (
-        xy[1] > CONTACTPOS[1] - 200) & (xy[1] < CONTACTPOS[1] + 200)
-    BINS = BINS.flatten()
 
-    ax.plot(PS.electrodeParams['x'], PS.electrodeParams['y'],
-            'ko', markersize=5)
-    ax.plot(PS.electrodeParams['x'][CONTACT], PS.electrodeParams['y'][CONTACT],
-            'o', markersize=5, mfc='k', mec='k')
     for i, (x, y) in enumerate(zip(PS.electrodeParams['x'],
                                    PS.electrodeParams['y'])):
         ax.text(x, y - 250, '{}'.format(i + 1),
@@ -377,8 +355,21 @@ def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=(-200, 200)):
                 horizontalalignment='center',
                 verticalalignment='bottom',
                 zorder=10)
-    ax.plot(xy[0].flatten()[BINS], xy[1].flatten()[BINS], 's',
-            markersize=5, zorder=-1, mfc='C2', mec='C2')
+
+    # get bin indices for slicing.
+    for i, CPOS in enumerate(CONTACTPOS):
+        CONTACT = (PS.electrodeParams['x'] == CPOS[0]
+                ) & (PS.electrodeParams['y'] == CPOS[1])
+        BINS = (xy[0] > CPOS[0] - 200) & (xy[0] < CPOS[0] + 200) & (
+            xy[1] > CPOS[1] - 200) & (xy[1] < CPOS[1] + 200)
+        BINS = BINS.flatten()
+
+        ax.plot(PS.electrodeParams['x'][CONTACT], PS.electrodeParams['y'][CONTACT],
+                'o', markersize=5, mfc='k', mec='k')
+
+        ax.plot(xy[0].flatten()[BINS], xy[1].flatten()[BINS], 's',
+                markersize=5, zorder=-1, mfc=f'C{i}', mec=f'C{i}')
+
     ax.hlines(pos_bins, -2000, 2000, '0.8',
               clip_on=False, zorder=-2)
     ax.vlines(pos_bins, -2000, 2000, '0.8',
@@ -412,7 +403,7 @@ def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=(-200, 200)):
 
 def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
                                  title='LFP', ylabel=r'$\Phi$ (mV)',
-                                 T=[500, 550], CONTACTPOS=(-200, 200)):
+                                 T=[500, 550], CONTACTPOS=((-200, 200), (200, -200))):
     '''
     Arguments
     ---------
@@ -426,21 +417,20 @@ def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
         path to .h5 file
     title: str
     ylabel: str
-    CONTACTPOS: tuple
-        x and y coordinate of electrode contact point in PS.electrodeParams
+    CONTACTPOS: tuple of tuples
+        x and y coordinate of electrode contact points in PS.electrodeParams
     '''
-    CONTACT = (PS.electrodeParams['x'] == CONTACTPOS[0]
-               ) & (PS.electrodeParams['y'] == CONTACTPOS[1])
-    f = h5py.File(fname, 'r')
-    srate = f['srate'][()]
-    data = f['data'][()][CONTACT, ].flatten()
-    f.close()
-    tinds = np.arange(T[0] * srate / 1000, T[1] * srate / 1000 + 1).astype(int)
-    tvec = tinds.astype(float) / srate * 1000
-    ax.plot(tvec, data[tinds] - data[tinds].mean(), 'k')
+    with h5py.File(fname, 'r') as f:
+        srate = f['srate'][()]
+        tinds = np.arange(T[0] * srate / 1000, T[1] * srate / 1000 + 1).astype(int)
+        tvec = tinds.astype(float) / srate * 1000
+        for i, CPOS in enumerate(CONTACTPOS):
+            CONTACT = (PS.electrodeParams['x'] == CPOS[0]
+                    ) & (PS.electrodeParams['y'] == CPOS[1])
+            data = f['data'][()][CONTACT, ].flatten()
+            ax.plot(tvec, data[tinds] - data[tinds].mean(), f'C{i}')
     ax.set_title(title)
     ax.set_ylabel(ylabel)
-    ax.set_xticklabels([])
     remove_axis_junk(ax)
 
 
@@ -449,7 +439,7 @@ def plot_single_channel_csd_data(
         title='CSD',
         ylabel=r'C ($\frac{\mathrm{nA}}{\mathrm{µm}^3}$)',
         T=[500, 550],
-        CONTACTPOS=(-200, 200)):
+        CONTACTPOS=((-200, 200), (200, -200))):
     # CSD bin edges
     X, Y, Z = np.meshgrid(PS.CSDParams['x'],
                           PS.CSDParams['y'],
@@ -460,19 +450,17 @@ def plot_single_channel_csd_data(
     Xmid = X[:-1, :-1, 0] + h / 2
     Ymid = Y[:-1, :-1, 0] + h / 2
 
-    # find CSD bin matching contact location
-    CONTACT = (Xmid == CONTACTPOS[0]) & (Ymid == CONTACTPOS[1])
-
-    f = h5py.File(fname, 'r')
-    srate = f['srate'][()]
-    data = f['data'][()][CONTACT, ].flatten()
-    f.close()
-    tinds = np.arange(T[0] * srate / 1000, T[1] * srate / 1000 + 1).astype(int)
-    tvec = tinds.astype(float) / srate * 1000
-    ax.plot(tvec, data[tinds] - data[tinds].mean(), 'k')
+    with h5py.File(fname, 'r') as f:
+        srate = f['srate'][()]
+        tinds = np.arange(T[0] * srate / 1000, T[1] * srate / 1000 + 1).astype(int)
+        tvec = tinds.astype(float) / srate * 1000
+        for i, CPOS in enumerate(CONTACTPOS):
+            # find CSD bin matching contact location
+            CONTACT = (Xmid == CPOS[0]) & (Ymid == CPOS[1])
+            data = f['data'][()][CONTACT, ].flatten()
+            ax.plot(tvec, data[tinds] - data[tinds].mean(), f'C{i}')
     ax.set_title(title)
     ax.set_ylabel(ylabel)
-    ax.set_xticklabels([])
     remove_axis_junk(ax)
 
 
@@ -481,6 +469,7 @@ def plot_spectrum(ax, fname,
                   title=r'$PSD_\mathrm{LFP}$',
                   psd_max_freq=500,
                   TRANSIENT=500,
+                  plot_type='loglog',
                   **kwargs):
     """
     Plot average spectrum of multichannel data +- one standard deviation
@@ -498,9 +487,12 @@ def plot_spectrum(ax, fname,
         max frequency in plot
     TRANSIENT: float
         transient period removed from analysis (ms)
+    plot_type: str
+        str in ['loglog', 'semilogy', 'semilogx', 'plot']
     **kwargs
         parameters to plt.mlab.psd
     """
+    assert plot_type in ['loglog', 'semilogy', 'semilogx', 'plot'], 'unsupported axes_type'
     with h5py.File(fname, 'r') as f:
         Fs = f['srate'][()]
         T0 = int(Fs * TRANSIENT / 1000)  # t < T0 transient
@@ -520,7 +512,7 @@ def plot_spectrum(ax, fname,
     spectra = spectra[:, freqs <= psd_max_freq]
     freqs = freqs[freqs <= psd_max_freq]
 
-    ax.loglog(freqs, spectra.mean(axis=0), 'k-', zorder=0)
+    getattr(ax, plot_type)(freqs, spectra.mean(axis=0), 'k-', zorder=0)
     ax.fill_between(freqs,
                     spectra.mean(axis=0) - spectra.std(axis=0),
                     spectra.mean(axis=0) + spectra.std(axis=0),
@@ -632,10 +624,10 @@ def plot_signal_correlation_or_covariance(
     mask = np.triu(np.ones(c.shape), k=1).astype(bool)
 
     if method == np.cov:
-        paneltitle = 'pairwise covariance'
+        paneltitle = 'pairwise\ncovariance'
         ylabel = 'covariance'
     else:
-        paneltitle = 'pairwise correlation'
+        paneltitle = 'pairwise\ncorrelation'
         ylabel = 'corr. coeff.'
 
     # add entries with NaNs to mask
@@ -668,7 +660,7 @@ def plot_signal_correlation_or_covariance(
     axd.set_ylim(bins[0], bins[-1])
     axd.set_yticklabels([])
     axd.set_xticks([0, axd.axis()[1]])
-    axd.set_title('distribution')
+    axd.set_title('dist.')
 
     ax.set_ylabel(ylabel, labelpad=0.1)
     ax.set_xlabel(r'$r$ (mm)', labelpad=0.1)
