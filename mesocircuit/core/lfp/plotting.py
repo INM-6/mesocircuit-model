@@ -403,7 +403,8 @@ def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=((-200, 200), (20
 
 def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
                                  title='LFP', ylabel=r'$\Phi$ (mV)',
-                                 T=[500, 550], CONTACTPOS=((-200, 200), (200, -200))):
+                                 T=[500, 550], CONTACTPOS=((-200, 200), (200, -200)),
+                                 subtract_mean=True):
     '''
     Arguments
     ---------
@@ -419,6 +420,8 @@ def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
     ylabel: str
     CONTACTPOS: tuple of tuples
         x and y coordinate of electrode contact points in PS.electrodeParams
+    subtract_mean: bool
+        if True, subtract mean value trace
     '''
     with h5py.File(fname, 'r') as f:
         srate = f['srate'][()]
@@ -428,7 +431,10 @@ def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
             CONTACT = (PS.electrodeParams['x'] == CPOS[0]
                     ) & (PS.electrodeParams['y'] == CPOS[1])
             data = f['data'][()][CONTACT, ].flatten()
-            ax.plot(tvec, data[tinds] - data[tinds].mean(), f'C{i}')
+            if subtract_mean:
+                ax.plot(tvec, data[tinds] - data[tinds].mean(), f'C{i}')
+            else:
+                ax.plot(tvec, data[tinds], f'C{i}')
     ax.set_title(title)
     ax.set_ylabel(ylabel)
     remove_axis_junk(ax)
@@ -1212,3 +1218,30 @@ def plot_coherence_vs_distance_vs_frequency(
     cax = fig.add_axes(rect)
     cbar = plt.colorbar(im, cax=cax)
     cbar.set_label('coherence', labelpad=0)
+
+
+def add_label(ax, label, offset=[0, 0],
+                weight='bold', fontsize_scale=1.2):
+    """
+    Adds label to axis with given offset.
+
+    Parameters
+    ----------
+    ax
+        Axis to add label to.
+    label
+        Label should be a letter.
+    offset
+        x-,y-Offset.
+    weight
+        Weight of font.
+    fontsize_scale
+        Scaling factor for font size.
+    """
+    label_pos = [0. + offset[0], 1. + offset[1]]
+    ax.text(label_pos[0], label_pos[1], label,
+            ha='left', va='bottom',
+            transform=ax.transAxes,
+            weight=weight,
+            fontsize=matplotlib.rcParams['font.size'] * fontsize_scale)
+    return

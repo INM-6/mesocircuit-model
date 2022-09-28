@@ -9,6 +9,7 @@ if 'DISPLAY' not in os.environ:
 import pickle
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 import numpy as np
 from hybridLFPy import CachedTopoNetwork
 from core.parameterization.base_plotting_params import plot_dict
@@ -69,7 +70,10 @@ df['sum'] =  np.round(df[['CachedNetwork', 'Population', 'run', 'collect']].sum(
 # per second of total simulation duration
 df['per_s'] = np.round(df['sum'] / (sim_dict['t_presim'] + sim_dict['t_sim']) * 1E3).astype(int)
 
-fig, ax = plt.subplots(1,1, sharex=True)
+fig, ax = plt.subplots(1, 1, 
+                       figsize=(plot_dict['fig_width_1col'],
+                                plot_dict['fig_width_1col']), 
+                       sharex=True)
 df.plot(ax=ax)
 ax.set_xticks(np.arange(len(PS.y)))
 ax.set_xticklabels(PS.y, rotation='vertical')
@@ -144,6 +148,46 @@ lfpplt.plot_single_channel_lfp_data(axes[2], PS, net_dict, ana_dict, fname,
 axes[2].set_xlabel('t (ms)')
 
 fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_I.pdf'))
+
+
+## Figure 7
+fig = plt.figure(figsize=(plot_dict['fig_width_2col'], plot_dict['fig_width_1col']))
+axes = []
+gs = GridSpec(3, 2, wspace=0.4, hspace=0.3)
+
+# Figure 7A
+CONTACTPOS = ((600, 600), (600, 1000), (-1400, -1400))
+ax = fig.add_subplot(gs[:, 0])
+axes.append(ax)
+lfpplt.layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=CONTACTPOS)
+
+# Figure 7B: plot LFP in each channel
+for i in range(3):
+    axes.append(fig.add_subplot(gs[i, 1]))
+T = [sim_dict['t_presim'], sim_dict['t_presim'] + 100]
+fname = os.path.join(path_lfp_data, PS.electrodeFile)
+lfpplt.plot_single_channel_lfp_data(axes[1], PS, net_dict, ana_dict, fname,
+                                    T=T, CONTACTPOS=CONTACTPOS)
+plt.setp(axes[1].get_xticklabels(), visible=False)
+
+# Figure 7C: plot CSD in same channel
+fname = os.path.join(path_lfp_data, PS.CSDFile)
+lfpplt.plot_single_channel_csd_data(axes[2], PS, net_dict, ana_dict, fname,
+                                    T=T, CONTACTPOS=CONTACTPOS)
+plt.setp(axes[2].get_xticklabels(), visible=False)
+
+# Figure 7D: plot MUA in same channel
+fname = os.path.join(path_lfp_data, PS.MUAFile)
+lfpplt.plot_single_channel_lfp_data(axes[3], PS, net_dict, ana_dict, fname,
+                                    T=T, CONTACTPOS=CONTACTPOS,
+                                    title='MUA', ylabel=r'$\nu$ $(\mathrm{s}^{-1})$',
+                                    subtract_mean=False)
+axes[3].set_xlabel('time (ms)')
+
+for i, ax in enumerate(axes):
+    lfpplt.add_label(ax, 'ABCD'[i])
+
+fig.savefig(os.path.join(path_fig_files, 'figure_07.pdf'))
 
 
 # Figure 8 LFP/CSD/MUA power spectra
