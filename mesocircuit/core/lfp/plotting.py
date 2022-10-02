@@ -651,21 +651,22 @@ def plot_signal_correlation_or_covariance(
     std = np.array(std)
 
     ax.errorbar(unique / 1000., mean, yerr=std, xerr=None, fmt='ko-',
-                label=ylabel)
+                label=ylabel, markersize=2)
 
     # set up axes stealing space from main axes
     divider = make_axes_locatable(ax)
-    axd = divider.append_axes("right", 0.25, pad=0.02)
+    axd = divider.append_axes("right", 0.25, pad=0.02, sharey=ax)
 
     bins = np.linspace(np.nanmin(c), np.nanmax(c), nbins)
     axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
              color='k', clip_on=False)
 
     # beautify
-    ax.set_ylim(bins[0], bins[-1])
-    axd.set_ylim(bins[0], bins[-1])
-    axd.set_yticklabels([])
-    axd.set_xticks([0, axd.axis()[1]])
+    # ax.set_ylim(bins[0], bins[-1])
+    # axd.set_ylim(bins[0], bins[-1])
+    # axd.set_yticklabels([])
+    plt.setp(axd.get_yticklabels(), visible=False)
+    axd.set_xticks([axd.axis()[1]])
     axd.set_title('dist.')
 
     ax.set_ylabel(ylabel, labelpad=0.1)
@@ -687,8 +688,8 @@ def plot_signal_correlation_or_covariance(
         bounds = ([0, 0, 0], [1, 2000, 1])
 
         try:
-            popt, pcov = curve_fit(func, r[mask], c[mask],
-                                   p0=p0, bounds=bounds)
+            popt, _ = curve_fit(func, r[mask], c[mask],
+                                p0=p0, bounds=bounds)
 
             # coeff of determination:
             residuals = c[mask] - func(r[mask], popt[0], popt[1], popt[2])
@@ -708,6 +709,8 @@ def plot_signal_correlation_or_covariance(
 
     # ax.legend(loc=3, bbox_to_anchor=(0, -0.5), frameon=False, numpoints=1)
     ax.legend(loc='best', frameon=False, numpoints=1)
+
+    return axd
 
 
 def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,

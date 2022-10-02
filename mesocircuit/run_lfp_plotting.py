@@ -16,7 +16,9 @@ from core.parameterization.base_plotting_params import plot_dict
 from core.lfp.lfp_parameters import get_parameters
 import core.lfp.plotting as lfpplt
 from core.lfp.compute_mua import write_mua_file
+from core.plotting.plotting import Plotting
 import pandas as pd
+import h5py
 
 
 # Set some matplotlib defaults
@@ -153,7 +155,7 @@ fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_I.pdf'))
 ## Figure 7
 fig = plt.figure(figsize=(plot_dict['fig_width_2col'], plot_dict['fig_width_1col']))
 axes = []
-gs = GridSpec(3, 3, wspace=0.4, hspace=0.3)
+gs = GridSpec(3, 4, wspace=0.7, hspace=0.3)
 
 # Figure 7A
 CONTACTPOS = ((600, 600), (600, 1000), (-1400, -1400))
@@ -164,7 +166,7 @@ lfpplt.layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=CONTACTPOS)
 # Figure 7B: plot LFP in each channel
 for i in range(3):
     axes.append(fig.add_subplot(gs[i, 2]))
-T = [sim_dict['t_presim'], sim_dict['t_presim'] + 100]
+T = [sim_dict['t_presim'], sim_dict['t_presim'] + 50]
 fname = os.path.join(path_lfp_data, PS.electrodeFile)
 lfpplt.plot_single_channel_lfp_data(axes[1], PS, net_dict, ana_dict, fname,
                                     T=T, CONTACTPOS=CONTACTPOS)
@@ -184,8 +186,32 @@ lfpplt.plot_single_channel_lfp_data(axes[3], PS, net_dict, ana_dict, fname,
                                     subtract_mean=False)
 axes[3].set_xlabel('time (ms)')
 
+# Figure 7E-G: LFP/CSD/MUA power spectra
+for i in range(3):
+    axes.append(fig.add_subplot(gs[i, 3]))
+
+fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
+          os.path.join(path_lfp_data, PS.CSDFile),
+          os.path.join(path_lfp_data, PS.MUAFile)]
+ylabels = [r'$(\mathrm{mV}^2/\mathrm{Hz})$',
+           r'$((\frac{\mathrm{nA}}{\mathrm{µm}^3})^2/\mathrm{Hz}})$',
+           r'$(\mathrm{s}^{-2}/\mathrm{Hz})$']
+titles = [r'$PSD_\mathrm{LFP}$', r'$PSD_\mathrm{CSD}$', r'$PSD_\mathrm{MUA}$']
+for i, (ax, fname, ylabel, title) in enumerate(zip(axes[4:], fnames,
+                                                   ylabels, titles)):
+    lfpplt.plot_spectrum(
+        ax, fname, ylabel, title,
+        psd_max_freq=plot_dict['psd_max_freq'],
+        NFFT=ana_dict['psd_NFFT'],
+        noverlap=int(ana_dict['psd_NFFT'] * 3 // 4),
+        detrend='mean')
+    if i < 2:
+        plt.setp(ax.get_xticklabels(), visible=False)
+    else:
+        ax.set_xlabel('frequency (Hz)')
+
 for i, ax in enumerate(axes):
-    lfpplt.add_label(ax, 'ABCD'[i])
+    lfpplt.add_label(ax, 'ABCDEFG'[i])
 
 fig.savefig(os.path.join(path_fig_files, 'figure_07.pdf'))
 
@@ -278,87 +304,85 @@ fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_II.pdf'))
 
 
 
-## Figure 8
-fig = plt.figure(figsize=(plot_dict['fig_width_2col'], plot_dict['fig_width_2col']))
-gs = GridSpec(5, 4, wspace=0.3, hspace=0.3)
+## Figure 8: new
+fig, axes = plt.subplots(2, 2, 
+                         figsize=(plot_dict['fig_width_2col'], plot_dict['fig_width_1col']),
+                         sharex=True)
+fig.subplots_adjust(wspace=0.2, hspace=0.4)
+axes = axes.flatten()
 
-# create axes
-axes = []
-for i in range(4):
-    if i <= 1:
-        ax = fig.add_subplot(gs[:3, i])
-    else:
-        ax = fig.add_subplot(gs[:3, i], sharex=axes[1], sharey=axes[1])
-    axes.append(ax)
+# Fig 8 A spike train correlations
+# pairwise spike-train correlations with distance
+nbins=51
+ylabel = 'corr. coeff.'
+paneltitle = r'$CC_{\{t_i^s\}\{t_i^s\}}}$'
+ax = axes[0]
 
-for i in range(1, 4):
-    if i == 1:
-        ax = fig.add_subplot(gs[3, i])
-    else:
-        ax = fig.add_subplot(gs[3, i], sharex=axes[4])
-    axes.append(ax)
+# set up axes stealing space from main axes
+divider = lfpplt.make_axes_locatable(ax)
+axd = divider.append_axes("right", 0.25, pad=0.02, sharey=ax)
 
-for i in range(4):
-    if i == 0:
-        ax = fig.add_subplot(gs[4, i])
-    else:
-        ax = fig.add_subplot(gs[4, i], sharex=axes[7])
-    axes.append(ax)
+# file with precomputed pairwise correlations
+fname = os.path.join('processed_data', 'all_CCs_distances.h5')
+with h5py.File(fname, 'r') as f:
+    p = Plotting(sim_dict, net_dict, ana_dict, plot_dict)
+    for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [40, 10])):
+        p.plotfunc_CCs_distance(
+            ax=ax, X=X, i=i, data=f, 
+            max_num_pairs=n_pairs, 
+            markersize_scale=0.4, 
+            nblocks=3)
+    ax.legend(loc='best')
 
-# Fig 8 A (spike raster)
-# TODO
+    # add entries with NaNs to mask
+    c = f[X]['ccs'][()]
+    mask = c != np.nan
 
-# Fig 8 B-D (signal time series)
+    bins = np.linspace(np.nanmin(c[mask]), np.nanmax(c[mask]), nbins)
+    axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
+                color=plot_dict['pop_colors'][i], clip_on=False)
+
+# beautify
+# ax.set_ylim(bins[0], bins[-1])
+# axd.set_ylim(bins[0], bins[-1])
+# axd.set_yticklabels([])
+plt.setp(axd.get_xticklabels(), visible=False)
+axd.set_xticks([axd.axis()[1]])
+# axd.set_title('dist.')
+
+ax.set_ylabel(ylabel, labelpad=0.1)
+# ax.set_xlabel(r'$r$ (mm)', labelpad=0.1)
+# axd.set_xlabel('count (-)', labelpad=0.1)
+ax.set_title(paneltitle)
+
+lfpplt.remove_axis_junk(ax)
+lfpplt.remove_axis_junk(axd)
+
+
+# Fig 8 B-D signal correlations with distance
 fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
           os.path.join(path_lfp_data, PS.CSDFile),
           os.path.join(path_lfp_data, PS.MUAFile)]
-units = ['mV', 'nA/µm3', '1/s']
-titles = ['LFP', 'CSD', 'MUA']
-for i, (ax, fname, unit, title) in enumerate(zip(axes[1:4], fnames, units, titles)):
-    ax.set_prop_cycle('color', [plt.cm.gray(i)
-                                for i in np.linspace(0, 200, 10).astype(int)])
-    lfpplt.plot_signal_sum(ax, PS, fname, unit, 
-                           T=[sim_dict['t_presim'], sim_dict['t_presim'] + 100])
-    ax.set_title(title)
-    if i > 0:
-        plt.setp(ax.get_yticklabels(), visible=False)
-    ax.set_ylabel('')
-
-# Fig 8 E-G signal power spectra
-fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
-          os.path.join(path_lfp_data, PS.CSDFile),
-          os.path.join(path_lfp_data, PS.MUAFile)]
-ylabels = [r'$(\mathrm{mV}^2/\mathrm{Hz})$',
-           r'$((\frac{\mathrm{nA}}{\mathrm{µm}^3})^2/\mathrm{Hz}})$',
-           r'$(s^{-1})$']
-titles = [r'$PSD_\mathrm{LFP}$', r'$PSD_\mathrm{CSD}$', r'$PSD_\mathrm{MUA}$']
-for i, (ax, fname, ylabel, title) in enumerate(zip(axes[4:7], fnames,
-                                                   ylabels, titles)):
-    lfpplt.plot_spectrum(
-        ax, fname, ylabel, title,
-        psd_max_freq=plot_dict['psd_max_freq'],
-        NFFT=ana_dict['psd_NFFT'],
-        noverlap=int(ana_dict['psd_NFFT'] * 3 // 4),
-        detrend='mean')
-    if i < 2:
-        plt.setp(ax.get_xticklabels(), visible=False)
-
-# Fig 8 H spike train correlations
-# TODO
-
-# Fig 8 I-K signal correlations with distance
-fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
-          os.path.join(path_lfp_data, PS.CSDFile),
-          os.path.join(path_lfp_data, PS.MUAFile)]
-for ax, data, fit_exp in zip(axes[8:], fnames, [True, True, True]):
-    lfpplt.plot_signal_correlation_or_covariance(
+paneltitles = [r'$CC_\mathrm{LFP}$', r'$CC_\mathrm{CSD}$', r'$CC_\mathrm{MUA}$']
+for i, (ax, data, fit_exp, title) in enumerate(zip(axes[1:], fnames, [True, True, True], paneltitles)):
+    axd = lfpplt.plot_signal_correlation_or_covariance(
         ax=ax, PS=PS, data=data,
         extents=[net_dict['extent'] * 1E3] * 2,
         method=np.corrcoef,
         fit_exp=fit_exp)
+    ax.set_title(title)
+    if i == 0:
+        axd.set_xlabel('')
+    else:
+        axd.set_title('')
 
 for i, ax in enumerate(axes):
-    lfpplt.add_label(ax, 'ABCDEFGHIJKLMNOPQ'[i])
+    lfpplt.add_label(ax, 'ABCD'[i])
+    if i % 2 > 0:
+        ax.set_ylabel('')
+    if i < 2:
+        plt.setp(ax.get_xticklabels(), visible=False)
+    
 
 fig.savefig(os.path.join(path_fig_files, 'figure_08.pdf'))
 

@@ -1036,7 +1036,9 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 markeredgecolor='none',
                 linestyle='',
                 zorder=zorder,
-                rasterized=True)
+                rasterized=True, 
+                label=f'{X}-{X}' if b == 0 else '_nolegend_')
+            
         return
 
     def plotfunc_instantaneous_rates(
