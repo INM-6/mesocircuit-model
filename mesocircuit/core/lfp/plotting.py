@@ -656,6 +656,9 @@ def plot_signal_correlation_or_covariance(
     # set up axes stealing space from main axes
     divider = make_axes_locatable(ax)
     axd = divider.append_axes("right", 0.25, pad=0.02, sharey=ax)
+    remove_axis_junk(ax)
+    remove_axis_junk(axd)
+    plt.setp(axd.get_yticklabels(), visible=False)
 
     bins = np.linspace(np.nanmin(c), np.nanmax(c), nbins)
     axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
@@ -665,7 +668,6 @@ def plot_signal_correlation_or_covariance(
     # ax.set_ylim(bins[0], bins[-1])
     # axd.set_ylim(bins[0], bins[-1])
     # axd.set_yticklabels([])
-    plt.setp(axd.get_yticklabels(), visible=False)
     axd.set_xticks([axd.axis()[1]])
     axd.set_title('dist.')
 
@@ -673,9 +675,6 @@ def plot_signal_correlation_or_covariance(
     ax.set_xlabel(r'$r$ (mm)', labelpad=0.1)
     axd.set_xlabel('count (-)', labelpad=0.1)
     ax.set_title(paneltitle)
-
-    remove_axis_junk(ax)
-    remove_axis_junk(axd)
 
     # fit exponential to values with distance
     if fit_exp:

@@ -308,7 +308,7 @@ fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_II.pdf'))
 fig, axes = plt.subplots(2, 2, 
                          figsize=(plot_dict['fig_width_2col'], plot_dict['fig_width_1col']),
                          sharex=True)
-fig.subplots_adjust(wspace=0.2, hspace=0.4)
+fig.subplots_adjust(wspace=0.15, hspace=0.3)
 axes = axes.flatten()
 
 # Fig 8 A spike train correlations
@@ -321,6 +321,9 @@ ax = axes[0]
 # set up axes stealing space from main axes
 divider = lfpplt.make_axes_locatable(ax)
 axd = divider.append_axes("right", 0.25, pad=0.02, sharey=ax)
+lfpplt.remove_axis_junk(ax)
+lfpplt.remove_axis_junk(axd)
+plt.setp(axd.get_yticklabels(), visible=False)
 
 # file with precomputed pairwise correlations
 fname = os.path.join('processed_data', 'all_CCs_distances.h5')
@@ -332,7 +335,7 @@ with h5py.File(fname, 'r') as f:
             max_num_pairs=n_pairs, 
             markersize_scale=0.4, 
             nblocks=3)
-    ax.legend(loc='best')
+    ax.legend(loc='best', frameon=False, numpoints=3)
 
     # add entries with NaNs to mask
     c = f[X]['ccs'][()]
@@ -343,21 +346,10 @@ with h5py.File(fname, 'r') as f:
                 color=plot_dict['pop_colors'][i], clip_on=False)
 
 # beautify
-# ax.set_ylim(bins[0], bins[-1])
-# axd.set_ylim(bins[0], bins[-1])
-# axd.set_yticklabels([])
-plt.setp(axd.get_xticklabels(), visible=False)
 axd.set_xticks([axd.axis()[1]])
-# axd.set_title('dist.')
-
+axd.set_title('dist.')
 ax.set_ylabel(ylabel, labelpad=0.1)
-# ax.set_xlabel(r'$r$ (mm)', labelpad=0.1)
-# axd.set_xlabel('count (-)', labelpad=0.1)
 ax.set_title(paneltitle)
-
-lfpplt.remove_axis_junk(ax)
-lfpplt.remove_axis_junk(axd)
-
 
 # Fig 8 B-D signal correlations with distance
 fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
@@ -373,10 +365,12 @@ for i, (ax, data, fit_exp, title) in enumerate(zip(axes[1:], fnames, [True, True
     ax.set_title(title)
     if i == 0:
         axd.set_xlabel('')
+        ax.set_xlabel('')
     else:
         axd.set_title('')
 
 for i, ax in enumerate(axes):
+    ax.axis(ax.axis('tight'))
     lfpplt.add_label(ax, 'ABCD'[i])
     if i % 2 > 0:
         ax.set_ylabel('')
