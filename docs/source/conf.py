@@ -43,7 +43,6 @@ extensions = [
     'sphinx.ext.imgmath',
     'sphinx.ext.viewcode',
     'sphinx.ext.mathjax',
-    'sphinx_gallery.gen_gallery',
     'sphinxcontrib.bibtex',
     'numpydoc',
     'sphinx_tabs.tabs',
@@ -51,8 +50,6 @@ extensions = [
 
 sphinx_gallery_conf = {
     'examples_dirs': '../../examples',  # path to your example scripts
-    'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
-    'plot_gallery': 'False'
 }
 
 # Add any paths that contain templates here, relative to this directory.
@@ -96,11 +93,11 @@ bibtex_reference_style = 'author_year'
 html_theme = 'sphinx_rtd_theme'
 #
 html_theme_options = {
-    'font_family': 'Arial',
-    'page_width': '1120px',  # default is 940
-    'description': 'Mesocircuit Model',
+    # 'font_family': 'Arial',
+    # 'page_width': '940px',  # default is 940
+    # 'description': 'Mesocircuit Model',
     'body_max_width': '900px',
-    'sidebar_width': '220px',  # default is 220
+    # 'sidebar_width': '220px',  # default is 220
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
