@@ -1,33 +1,18 @@
-#!/usr/bin/env python
-'''meso_analysis setup.py file'''
+from setuptools import setup, find_packages
 
-from setuptools import setup, Extension
-import numpy
-from Cython.Distutils import build_ext
-cmdclass = {'build_ext': build_ext}
-ext_modules = [
-    Extension('meso_analysis.helperfun',
-              ['meso_analysis/helperfun.pyx'],
-              include_dirs=[numpy.get_include()]),
-]
+# TODO reading version from version file does not work
+# VERSION = {}  # type: ignore
+# with open("version.py", "r") as version_file:
+#    exec(version_file.read(), VERSION)
 
-
-with open('README.md') as file:
-    long_description = file.read()
-
-
-setup(
-    name='meso_analysis',
-    version='0.1',
-    maintainer=['Espen Hagen', 'Johanna Senk'],
-    maintainer_email=['2492641+espenhgn@users.noreply.github.com',
-                      'j.senk@fz-juelich.de'],
-    url='github.com/INM6',
-    packages=['meso_analysis'],
-    provides=['meso_analysis'],
-    cmdclass=cmdclass,
-    ext_modules=ext_modules,
-    description='methods to analyze cortical mesocircuit network model',
-    long_description=long_description,
-    license='LICENSE',
-)
+setup(name='mesocircuit',
+      version='0.1.0',
+      description='Mesocircuit Model',
+      long_description=open('README.md').read(),
+      long_description_content_type='text/markdown',
+      url='https://github.com/INM-6/mesocircuit-model',
+      author='see docs/source/authors.rst',
+      license='GNU GPLv3',
+      packages=find_packages(include=['mesocircuit', 'mesocircuit.*']),
+      install_requires=[],
+      python_requires='>=3')

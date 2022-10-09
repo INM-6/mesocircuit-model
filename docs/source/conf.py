@@ -26,7 +26,12 @@ copyright = '2022, Johanna Senk, Espen Hagen'
 author = 'Johanna Senk, Espen Hagen'
 
 # The full version, including alpha/beta/rc tags
-release = 'dev'
+
+# TODO automatically reading version does not work
+# VERSION = {}  # type: ignore
+#release = exec(open('../../version.py').read(), VERSION)
+
+release = '0.1.0'
 
 
 # -- General configuration ---------------------------------------------------
