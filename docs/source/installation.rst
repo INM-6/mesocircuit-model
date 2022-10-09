@@ -10,7 +10,7 @@ Create a `conda <https://conda.io>`_ environment:
 
 
 Setup on JURECA
-===============
+---------------
 
 Load modules and general exports
 --------------------------------
@@ -67,7 +67,7 @@ Custom Python packages
    pip install --install-option="--prefix=$PY_DIR" parameters
 
 OLD README
-==========
+----------
 
 Installing
 ----------

@@ -4,8 +4,8 @@
 Authors
 =======
 
-- Johanna Senk, [Email](mailto:j.senk@fz-juelich.de) [1]
-- Espen Hagen, [Email](mailto:espen.hagen@nmbu.no) [1,2,3]
+- Johanna Senk, j.senk@fz-juelich.de [1]
+- Espen Hagen, espen.hagen@nmbu.no [1,2,3]
 
 1. Institute of Neuroscience and Medicine (INM-6), Computational and Systems
    Neuroscience & Institute for Advanced Simulation (IAS-6), Theoretical
