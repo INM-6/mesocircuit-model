@@ -35,17 +35,17 @@ release = 'dev'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.todo',
-    'sphinx.ext.imgmath',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.mathjax',
+    # 'sphinx.ext.autodoc',
+    # 'sphinx.ext.autosummary',
+    # 'sphinx.ext.doctest',
+    # 'sphinx.ext.intersphinx',
+    # 'sphinx.ext.todo',
+    # 'sphinx.ext.imgmath',
+    # 'sphinx.ext.viewcode',
+    # 'sphinx.ext.mathjax',
     'sphinxcontrib.bibtex',
-    'numpydoc',
-    'sphinx_tabs.tabs',
+    # 'numpydoc',
+    # 'sphinx_tabs.tabs',
 ]
 
 sphinx_gallery_conf = {
@@ -53,7 +53,7 @@ sphinx_gallery_conf = {
 }
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+# templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -131,7 +131,8 @@ numpydoc_show_class_members = False
 # A fix for Alabaster theme for no space between a citation reference
 # and citation text
 # https://github.com/sphinx-doc/sphinx/issues/6705#issuecomment-536197438
-html4_writer = True
+# Set to True if Alabaster theme is used
+html4_writer = False
 
 #
 # def setup(app):

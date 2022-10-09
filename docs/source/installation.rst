@@ -5,7 +5,7 @@ Create a `conda <https://conda.io>`_ environment:
 
 .. code:: bash
 
-    conda env create -f environment.yaml
+    conda env create -f environment.yml
     conda activate mesocircuit
 
 
