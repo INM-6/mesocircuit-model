@@ -13,7 +13,7 @@ from ..parameterization.base_plotting_params import plot_dict
 from ..analysis import stats
 import LFPy
 import matplotlib
-from meso_analysis import helperfun
+from hybridLFPy import helperfun
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.optimize import curve_fit
 import scipy.signal as ss
