@@ -13,14 +13,11 @@ from ..parameterization.base_plotting_params import plot_dict
 from ..analysis import stats
 import LFPy
 import matplotlib
-from meso_analysis import helperfun
+from hybridLFPy import helperfun
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.optimize import curve_fit
 import scipy.signal as ss
 
-
-# import matplotlib.style
-# matplotlib.style.use('classic')
 
 # Set some matplotlib defaults
 matplotlib.rcParams.update(plot_dict['rcParams'])
@@ -320,7 +317,9 @@ def morphology_table(ax, PS):
     ax.axis(ax.axis('equal'))
 
 
-def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=((-200, 200), (200, -200))):
+def layout_illustration(
+    ax, PS, net_dict, ana_dict, CONTACTPOS=(
+        (-200, 200), (200, -200))):
     '''
     Arguments
     ---------
@@ -359,13 +358,18 @@ def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=((-200, 200), (20
     # get bin indices for slicing.
     for i, CPOS in enumerate(CONTACTPOS):
         CONTACT = (PS.electrodeParams['x'] == CPOS[0]
-                ) & (PS.electrodeParams['y'] == CPOS[1])
+                   ) & (PS.electrodeParams['y'] == CPOS[1])
         BINS = (xy[0] > CPOS[0] - 200) & (xy[0] < CPOS[0] + 200) & (
             xy[1] > CPOS[1] - 200) & (xy[1] < CPOS[1] + 200)
         BINS = BINS.flatten()
 
-        ax.plot(PS.electrodeParams['x'][CONTACT], PS.electrodeParams['y'][CONTACT],
-                'o', markersize=5, mfc='k', mec='k')
+        ax.plot(
+            PS.electrodeParams['x'][CONTACT],
+            PS.electrodeParams['y'][CONTACT],
+            'o',
+            markersize=5,
+            mfc='k',
+            mec='k')
 
         ax.plot(xy[0].flatten()[BINS], xy[1].flatten()[BINS], 's',
                 markersize=5, zorder=-1, mfc=f'C{i}', mec=f'C{i}')
@@ -401,9 +405,10 @@ def layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=((-200, 200), (20
     ax.text(-2200, -1700, 'y', ha='center', va='center')
 
 
-def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
-                                 title='LFP', ylabel=r'$\Phi$ (mV)',
-                                 T=[500, 550], CONTACTPOS=((-200, 200), (200, -200))):
+def plot_single_channel_lfp_data(
+    ax, PS, net_dict, ana_dict, fname, title='LFP', ylabel=r'$\Phi$ (mV)', T=[
+        500, 550], CONTACTPOS=(
+            (-200, 200), (200, -200)), subtract_mean=True):
     '''
     Arguments
     ---------
@@ -419,16 +424,23 @@ def plot_single_channel_lfp_data(ax, PS, net_dict, ana_dict, fname,
     ylabel: str
     CONTACTPOS: tuple of tuples
         x and y coordinate of electrode contact points in PS.electrodeParams
+    subtract_mean: bool
+        if True, subtract mean value trace
     '''
     with h5py.File(fname, 'r') as f:
         srate = f['srate'][()]
-        tinds = np.arange(T[0] * srate / 1000, T[1] * srate / 1000 + 1).astype(int)
+        tinds = np.arange(
+            T[0] * srate / 1000,
+            T[1] * srate / 1000 + 1).astype(int)
         tvec = tinds.astype(float) / srate * 1000
         for i, CPOS in enumerate(CONTACTPOS):
             CONTACT = (PS.electrodeParams['x'] == CPOS[0]
-                    ) & (PS.electrodeParams['y'] == CPOS[1])
+                       ) & (PS.electrodeParams['y'] == CPOS[1])
             data = f['data'][()][CONTACT, ].flatten()
-            ax.plot(tvec, data[tinds] - data[tinds].mean(), f'C{i}')
+            if subtract_mean:
+                ax.plot(tvec, data[tinds] - data[tinds].mean(), f'C{i}')
+            else:
+                ax.plot(tvec, data[tinds], f'C{i}')
     ax.set_title(title)
     ax.set_ylabel(ylabel)
     remove_axis_junk(ax)
@@ -452,7 +464,9 @@ def plot_single_channel_csd_data(
 
     with h5py.File(fname, 'r') as f:
         srate = f['srate'][()]
-        tinds = np.arange(T[0] * srate / 1000, T[1] * srate / 1000 + 1).astype(int)
+        tinds = np.arange(
+            T[0] * srate / 1000,
+            T[1] * srate / 1000 + 1).astype(int)
         tvec = tinds.astype(float) / srate * 1000
         for i, CPOS in enumerate(CONTACTPOS):
             # find CSD bin matching contact location
@@ -492,7 +506,8 @@ def plot_spectrum(ax, fname,
     **kwargs
         parameters to plt.mlab.psd
     """
-    assert plot_type in ['loglog', 'semilogy', 'semilogx', 'plot'], 'unsupported axes_type'
+    assert plot_type in ['loglog', 'semilogy',
+                         'semilogx', 'plot'], 'unsupported axes_type'
     with h5py.File(fname, 'r') as f:
         Fs = f['srate'][()]
         T0 = int(Fs * TRANSIENT / 1000)  # t < T0 transient
@@ -585,7 +600,7 @@ def plot_signal_correlation_or_covariance(
     elif isinstance(data, np.ndarray):
         DATA = data
         try:
-            assert(srate > 0.)
+            assert (srate > 0.)
         except AssertionError:
             raise AssertionError('srate must be a float > 0.')
     else:
@@ -594,7 +609,7 @@ def plot_signal_correlation_or_covariance(
     # downsample data by decimation
     q = srate / srate_d
     try:
-        assert(q % int(q) == 0)
+        assert (q % int(q) == 0)
         q = int(q)
     except AssertionError as ae:
         raise ae('(tbin*1000) / srate must be even dividable')
@@ -645,30 +660,27 @@ def plot_signal_correlation_or_covariance(
     std = np.array(std)
 
     ax.errorbar(unique / 1000., mean, yerr=std, xerr=None, fmt='ko-',
-                label=ylabel)
+                label=ylabel, markersize=2)
 
     # set up axes stealing space from main axes
     divider = make_axes_locatable(ax)
-    axd = divider.append_axes("right", 0.25, pad=0.02)
+    axd = divider.append_axes("right", 0.25, pad=0.02, sharey=ax)
+    remove_axis_junk(ax)
+    remove_axis_junk(axd)
+    plt.setp(axd.get_yticklabels(), visible=False)
 
     bins = np.linspace(np.nanmin(c), np.nanmax(c), nbins)
     axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
              color='k', clip_on=False)
 
     # beautify
-    ax.set_ylim(bins[0], bins[-1])
-    axd.set_ylim(bins[0], bins[-1])
-    axd.set_yticklabels([])
-    axd.set_xticks([0, axd.axis()[1]])
+    axd.set_xticks([axd.axis()[1]])
     axd.set_title('dist.')
 
     ax.set_ylabel(ylabel, labelpad=0.1)
     ax.set_xlabel(r'$r$ (mm)', labelpad=0.1)
     axd.set_xlabel('count (-)', labelpad=0.1)
     ax.set_title(paneltitle)
-
-    remove_axis_junk(ax)
-    remove_axis_junk(axd)
 
     # fit exponential to values with distance
     if fit_exp:
@@ -681,8 +693,8 @@ def plot_signal_correlation_or_covariance(
         bounds = ([0, 0, 0], [1, 2000, 1])
 
         try:
-            popt, pcov = curve_fit(func, r[mask], c[mask],
-                                   p0=p0, bounds=bounds)
+            popt, _ = curve_fit(func, r[mask], c[mask],
+                                p0=p0, bounds=bounds)
 
             # coeff of determination:
             residuals = c[mask] - func(r[mask], popt[0], popt[1], popt[2])
@@ -700,8 +712,9 @@ def plot_signal_correlation_or_covariance(
         except ValueError:
             print('Could not fit exponential function')
 
-    # ax.legend(loc=3, bbox_to_anchor=(0, -0.5), frameon=False, numpoints=1)
     ax.legend(loc='best', frameon=False, numpoints=1)
+
+    return axd
 
 
 def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,
@@ -867,7 +880,7 @@ def get_data_coherence(data_x, data_y,
     # downsample data by decimation
     q = srate / srate_d
     try:
-        assert(q % int(q) == 0)
+        assert (q % int(q) == 0)
         q = int(q)
     except AssertionError as ae:
         raise ae('(tbin*1000) / srate must be even dividable')
@@ -970,7 +983,7 @@ def plot_coherence_vs_frequency(
             data = f['data'][()][:, T0:]
 
     ax.set_title(
-        r'$\langle\gamma_\mathrm{%s}\rangle (f)$' %
+        r'$\langle \gamma_\mathrm{%s} \rangle (f)$' %
         (title + r'{\:}' + title))
 
     data_x = data
@@ -1156,13 +1169,10 @@ def plot_coherence_vs_distance_vs_frequency(
         TRANSIENT=500,
         NFFT=256,
         noverlap=192,
-        cmap='viridis',
-        max_inds=np.array([]),
-        nfreqs=5,
         method='mlab',
         phase_coherence=False,
-        marker='o',
-        fit_exp=True):
+        title='LFP'
+):
 
     with h5py.File(fname, 'r') as f:
         Fs = f['srate'][()]
@@ -1205,6 +1215,10 @@ def plot_coherence_vs_distance_vs_frequency(
     ax.set_xlabel(r'$r$ (mm)', labelpad=0)
     ax.axis(ax.axis('tight'))
     ax.set_ylim(0, 500)
+    ax.set_title(
+        r'$\langle \gamma_\mathrm{%s}\rangle (f,r)$' %
+        (title + r'{\:}' + title)
+    )
 
     rect = np.array(ax.get_position().bounds)
     rect[0] += rect[2] + 0.01  # left
@@ -1212,3 +1226,30 @@ def plot_coherence_vs_distance_vs_frequency(
     cax = fig.add_axes(rect)
     cbar = plt.colorbar(im, cax=cax)
     cbar.set_label('coherence', labelpad=0)
+
+
+def add_label(ax, label, offset=[0, 0],
+              weight='bold', fontsize_scale=1.2):
+    """
+    Adds label to axis with given offset.
+
+    Parameters
+    ----------
+    ax
+        Axis to add label to.
+    label
+        Label should be a letter.
+    offset
+        x-,y-Offset.
+    weight
+        Weight of font.
+    fontsize_scale
+        Scaling factor for font size.
+    """
+    label_pos = [0. + offset[0], 1. + offset[1]]
+    ax.text(label_pos[0], label_pos[1], label,
+            ha='left', va='bottom',
+            transform=ax.transAxes,
+            weight=weight,
+            fontsize=matplotlib.rcParams['font.size'] * fontsize_scale)
+    return
