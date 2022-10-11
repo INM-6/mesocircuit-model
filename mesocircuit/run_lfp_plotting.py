@@ -438,7 +438,8 @@ for ax, fname, title in zip(axes, fnames, titles):
         noverlap=196,
         method='mlab',
         tbin=0.5,
-        TRANSIENT=sim_dict['t_presim']
+        TRANSIENT=sim_dict['t_presim'],
+        title=title
     )
 fig.savefig(os.path.join(path_fig_files, 'signal_coherence_w_frequency_w_distance.pdf'))
 
