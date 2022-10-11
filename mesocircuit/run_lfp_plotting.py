@@ -443,13 +443,59 @@ for ax, fname, title in zip(axes, fnames, titles):
 fig.savefig(os.path.join(path_fig_files, 'signal_coherence_w_frequency_w_distance.pdf'))
 
 
+# Fig 9:
+fig, axes = plt.subplots(2, 3, figsize=(plot_dict['fig_width_2col'],
+                                        plot_dict['fig_width_1col'] * 1.5),
+                         sharex='row', sharey='row')
+fig.subplots_adjust(hspace=0.4, wspace=0.4)
 
-'''fig = lfpplt.network_lfp_activity_animation(
+fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
+          os.path.join(path_lfp_data, PS.CSDFile),
+          os.path.join(path_lfp_data, PS.MUAFile)]
+
+# panels A-C
+titles = ['LFP', 'CSD', 'MUA']
+for i, (ax, fname, title) in enumerate(zip(axes[0, ], fnames, titles)):
+    lfpplt.plot_coherence_vs_frequency(
+        ax, PS, fname, title,
+        colors=plt.get_cmap('viridis', 5),
+        NFFT=256,
+        noverlap=196,
+        method='mlab',
+        tbin=0.5,
+        TRANSIENT=sim_dict['t_presim'])
+    if i > 0:
+        plt.setp(ax.get_yticklabels(), visible=False)
+        ax.set_ylabel('')
+
+# panels D-F
+for i, (ax, fname, title) in enumerate(zip(axes[1, :], fnames, titles)):
+    lfpplt.plot_coherence_vs_distance_vs_frequency(
+        fig, ax, PS, fname,
+        NFFT=256,
+        noverlap=196,
+        method='mlab',
+        tbin=0.5,
+        TRANSIENT=sim_dict['t_presim'],
+        title=title
+    )
+    if i > 0:
+        plt.setp(ax.get_yticklabels(), visible=False)
+        ax.set_ylabel('')
+
+for i, ax in enumerate(axes.flatten()):
+    lfpplt.add_label(ax, 'ABCDEF'[i])
+
+fig.savefig(os.path.join(path_fig_files, 'figure_09.pdf'))
+
+
+'''
+fig = lfpplt.network_lfp_activity_animation(
     PS, net_dict,
     networkSim, T=(100, 300),
     N_X=PS.N_X,
     save_anim=True)
-# plt.close(fig)'''
-
+# plt.close(fig)
+'''
 
 plt.show()

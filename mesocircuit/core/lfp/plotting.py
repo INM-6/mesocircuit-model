@@ -978,7 +978,7 @@ def plot_coherence_vs_frequency(
             data = f['data'][()][:, T0:]
 
     ax.set_title(
-        r'$\langle\gamma_\mathrm{%s}\rangle (f)$' %
+        r'$\langle \gamma_\mathrm{%s} \rangle (f)$' %
         (title + r'{\:}' + title))
 
     data_x = data
@@ -1164,13 +1164,10 @@ def plot_coherence_vs_distance_vs_frequency(
         TRANSIENT=500,
         NFFT=256,
         noverlap=192,
-        cmap='viridis',
-        max_inds=np.array([]),
-        nfreqs=5,
         method='mlab',
         phase_coherence=False,
-        marker='o',
-        fit_exp=True):
+        title='LFP'
+        ):
 
     with h5py.File(fname, 'r') as f:
         Fs = f['srate'][()]
@@ -1213,6 +1210,11 @@ def plot_coherence_vs_distance_vs_frequency(
     ax.set_xlabel(r'$r$ (mm)', labelpad=0)
     ax.axis(ax.axis('tight'))
     ax.set_ylim(0, 500)
+    ax.set_title(
+        r'$\langle \gamma_\mathrm{%s}\rangle (f,r)$' %
+        (title + r'{\:}' + title)
+        )
+
 
     rect = np.array(ax.get_position().bounds)
     rect[0] += rect[2] + 0.01  # left
