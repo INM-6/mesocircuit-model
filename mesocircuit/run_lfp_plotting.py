@@ -53,13 +53,19 @@ PS = get_parameters(path_lfp_data=path_lfp_data,
 
 
 # plot signal simulation times for each cell type
-df = pd.DataFrame(columns=['y', 'CachedNetwork', 'Population', 'run', 'collect'])
+df = pd.DataFrame(
+    columns=[
+        'y',
+        'CachedNetwork',
+        'Population',
+        'run',
+        'collect'])
 for i, y in enumerate(PS.y):
     fname = os.path.join(path_lfp_data, f'simstats_{y}.dat')
     df_y = pd.read_csv(fname, delimiter=' ')
     df = pd.concat([
         df,
-        pd.DataFrame(np.array([y] + df_y['time'].to_list(), dtype='object').reshape((1, -1)), 
+        pd.DataFrame(np.array([y] + df_y['time'].to_list(), dtype='object').reshape((1, -1)),
                      columns=['y', 'CachedNetwork', 'Population', 'run', 'collect'])
     ], ignore_index=True)
 
@@ -68,13 +74,17 @@ df.to_csv('simstats.csv', index=False)
 
 df = pd.read_csv('simstats.csv')
 # sum
-df['sum'] =  np.round(df[['CachedNetwork', 'Population', 'run', 'collect']].sum(axis=1)).astype(int)
+df['sum'] = np.round(
+    df[['CachedNetwork', 'Population', 'run', 'collect']].sum(axis=1)).astype(int)
 # per second of total simulation duration
-df['per_s'] = np.round(df['sum'] / (sim_dict['t_presim'] + sim_dict['t_sim']) * 1E3).astype(int)
+df['per_s'] = np.round(df['sum'] /
+                       (sim_dict['t_presim'] +
+                        sim_dict['t_sim']) *
+                       1E3).astype(int)
 
-fig, ax = plt.subplots(1, 1, 
+fig, ax = plt.subplots(1, 1,
                        figsize=(plot_dict['fig_width_1col'],
-                                plot_dict['fig_width_1col']), 
+                                plot_dict['fig_width_1col']),
                        sharex=True)
 df.plot(ax=ax)
 ax.set_xticks(np.arange(len(PS.y)))
@@ -152,8 +162,11 @@ axes[2].set_xlabel('t (ms)')
 fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_I.pdf'))
 
 
-## Figure 7
-fig = plt.figure(figsize=(plot_dict['fig_width_2col'], plot_dict['fig_width_1col']))
+# Figure 7
+fig = plt.figure(
+    figsize=(
+        plot_dict['fig_width_2col'],
+        plot_dict['fig_width_1col']))
 axes = []
 gs = GridSpec(3, 4, wspace=0.7, hspace=0.3)
 
@@ -180,10 +193,17 @@ plt.setp(axes[2].get_xticklabels(), visible=False)
 
 # Figure 7D: plot MUA in same channel
 fname = os.path.join(path_lfp_data, PS.MUAFile)
-lfpplt.plot_single_channel_lfp_data(axes[3], PS, net_dict, ana_dict, fname,
-                                    T=T, CONTACTPOS=CONTACTPOS,
-                                    title='MUA', ylabel=r'$\nu$ $(\mathrm{s}^{-1})$',
-                                    subtract_mean=False)
+lfpplt.plot_single_channel_lfp_data(
+    axes[3],
+    PS,
+    net_dict,
+    ana_dict,
+    fname,
+    T=T,
+    CONTACTPOS=CONTACTPOS,
+    title='MUA',
+    ylabel=r'$\nu$ $(\mathrm{s}^{-1})$',
+    subtract_mean=False)
 axes[3].set_xlabel('time (ms)')
 
 # Figure 7E-G: LFP/CSD/MUA power spectra
@@ -265,7 +285,6 @@ for i, (ax, fname, ylabel, title) in enumerate(zip(axes, fnames,
 fig.savefig(os.path.join(path_fig_files, 'signal_PSD_semilogy.pdf'))
 
 
-
 # Figure 8 spike/LFP/CSD/MUA correlation vs. distance
 fig, axes = plt.subplots(1, 3,
                          figsize=(plot_dict['fig_width_2col'],
@@ -296,24 +315,24 @@ titles = ['LFP', 'CSD', 'MUA']
 for ax, fname, unit, title in zip(axes, fnames, units, titles):
     ax.set_prop_cycle('color', [plt.cm.gray(i)
                                 for i in np.linspace(0, 200, 10).astype(int)])
-    lfpplt.plot_signal_sum(ax, PS, fname, unit, 
-                           T=[sim_dict['t_presim'], sim_dict['t_presim'] + 100])
+    lfpplt.plot_signal_sum(
+        ax, PS, fname, unit, T=[
+            sim_dict['t_presim'], sim_dict['t_presim'] + 100])
     ax.set_title(title)
 
 fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_II.pdf'))
 
 
-
-## Figure 8: new
-fig, axes = plt.subplots(2, 2, 
-                         figsize=(plot_dict['fig_width_2col'], plot_dict['fig_width_1col']),
-                         sharex=True)
+# Figure 8: new
+fig, axes = plt.subplots(
+    2, 2, figsize=(
+        plot_dict['fig_width_2col'], plot_dict['fig_width_1col']), sharex=True)
 fig.subplots_adjust(wspace=0.15, hspace=0.3)
 axes = axes.flatten()
 
 # Fig 8 A spike train correlations
 # pairwise spike-train correlations with distance
-nbins=51
+nbins = 51
 ylabel = 'corr. coeff.'
 paneltitle = r'$CC_{\{t_i^s\}\{t_i^s\}}}$'
 ax = axes[0]
@@ -331,9 +350,9 @@ with h5py.File(fname, 'r') as f:
     p = Plotting(sim_dict, net_dict, ana_dict, plot_dict)
     for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [40, 10])):
         p.plotfunc_CCs_distance(
-            ax=ax, X=X, i=i, data=f, 
-            max_num_pairs=n_pairs, 
-            markersize_scale=0.4, 
+            ax=ax, X=X, i=i, data=f,
+            max_num_pairs=n_pairs,
+            markersize_scale=0.4,
             nblocks=3)
     ax.legend(loc='best', frameon=False, numpoints=3)
 
@@ -343,7 +362,7 @@ with h5py.File(fname, 'r') as f:
 
     bins = np.linspace(np.nanmin(c[mask]), np.nanmax(c[mask]), nbins)
     axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
-                color=plot_dict['pop_colors'][i], clip_on=False)
+             color=plot_dict['pop_colors'][i], clip_on=False)
 
 # beautify
 axd.set_xticks([axd.axis()[1]])
@@ -355,8 +374,12 @@ ax.set_title(paneltitle)
 fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
           os.path.join(path_lfp_data, PS.CSDFile),
           os.path.join(path_lfp_data, PS.MUAFile)]
-paneltitles = [r'$CC_\mathrm{LFP}$', r'$CC_\mathrm{CSD}$', r'$CC_\mathrm{MUA}$']
-for i, (ax, data, fit_exp, title) in enumerate(zip(axes[1:], fnames, [True, True, True], paneltitles)):
+paneltitles = [
+    r'$CC_\mathrm{LFP}$',
+    r'$CC_\mathrm{CSD}$',
+    r'$CC_\mathrm{MUA}$']
+for i, (ax, data, fit_exp, title) in enumerate(
+        zip(axes[1:], fnames, [True, True, True], paneltitles)):
     axd = lfpplt.plot_signal_correlation_or_covariance(
         ax=ax, PS=PS, data=data,
         extents=[net_dict['extent'] * 1E3] * 2,
@@ -376,7 +399,7 @@ for i, ax in enumerate(axes):
         ax.set_ylabel('')
     if i < 2:
         plt.setp(ax.get_xticklabels(), visible=False)
-    
+
 
 fig.savefig(os.path.join(path_fig_files, 'figure_08.pdf'))
 
@@ -441,7 +464,10 @@ for ax, fname, title in zip(axes, fnames, titles):
         TRANSIENT=sim_dict['t_presim'],
         title=title
     )
-fig.savefig(os.path.join(path_fig_files, 'signal_coherence_w_frequency_w_distance.pdf'))
+fig.savefig(
+    os.path.join(
+        path_fig_files,
+        'signal_coherence_w_frequency_w_distance.pdf'))
 
 
 # Fig 9:
