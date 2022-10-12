@@ -6,6 +6,7 @@ Parameterspace evaluation and job execution.
 """
 
 from this import d
+import mesocircuit
 from mesocircuit.parameterization import helpers_network as helpnet
 import os
 import subprocess
@@ -46,20 +47,20 @@ class MesocircuitExperiment():
         If True, parameters are not newly evaluated and the earlier saved parameterview is loaded.
     """
 
-    def __init__(self, name='base', custom_params=None, data_dir=None,
+    def __init__(self, name_exp='base', custom_params=None, data_dir=None,
                  load=False):
         """
         Instantiating.
         """
-        self.name = name
-        print(f'Instantiating MesocircuitExperiment: {name}')
+        self.name_exp = name_exp
+        print(f'Instantiating MesocircuitExperiment: {self.name_exp}')
 
         # data directory
         if not data_dir:
             self.data_dir = self._auto_data_directory()
         else:
             self.data_dir = data_dir
-        self.data_dir_exp = os.path.join(self.data_dir, self.name)
+        self.data_dir_exp = os.path.join(self.data_dir, self.name_exp)
         print(f'Data directory: {self.data_dir_exp}')
 
         if not load:
@@ -154,7 +155,7 @@ class MesocircuitExperiment():
                         'paramsets'][ps_id][dic][param] = paramset[dic][param]
 
             # instantiate a Mesocircuit object
-            circuit = Mesocircuit(self.data_dir_exp, ps_id)
+            circuit = Mesocircuit(self.data_dir, self.name_exp, ps_id)
 
             # evaluate the parameter set
             circuit._evaluate_parameterset(paramset)
@@ -188,7 +189,7 @@ class MesocircuitExperiment():
         dim = len(ranges)  # dimension of parameter space
         if dim not in [1, 2]:
             print(
-                f'Parameterspace {self.name} has dimension {dim}. ' +
+                f'Parameterspace {self.name_exp} has dimension {dim}. ' +
                 'Hashes are not printed.')
         else:
             # set up a hash map
@@ -283,11 +284,13 @@ class Mesocircuit():
         If True, load parameters from file.
     """
 
-    def __init__(self, data_dir_exp, ps_id, load=False):
+    def __init__(self, data_dir, name_exp, ps_id, load=False):
         """
         """
+        self.data_dir = data_dir
+        self.name_exp = name_exp
         self.ps_id = ps_id
-        self.data_dir_circuit = os.path.join(data_dir_exp, ps_id)
+        self.data_dir_circuit = os.path.join(data_dir, name_exp, ps_id)
 
     def _evaluate_parameterset(self, paramset):
         """
@@ -452,22 +455,24 @@ class Mesocircuit():
         path
             Path to folder of ps_id.
         """
+
+        # path to run_scripts
+        run_path = os.path.join(os.path.dirname(mesocircuit.__file__), 'run')
+
         sys_dict = paramset['sys_dict']
         sim_dict = paramset['sim_dict']
 
         for machine, dic in sys_dict.items():
-            for name, scripts, scriptargs in [['network', ['run_network.py'], ['']],
-                                              ['analysis', ['run_analysis.py'], ['']],
-                                              ['plotting', ['run_plotting.py'], ['']],
-                                              ['analysis_and_plotting', ['run_analysis.py',
-                                                                         'run_plotting.py'], [''] * 2],
-                                              ['lfp_simulation', ['run_lfp_simulation.py']
-                                               * len(self._get_LFP_cell_type_names(path)), self._get_LFP_cell_type_names(path)],
-                                              ['lfp_postprocess', [
-                    'run_lfp_postprocess.py'], ['']],
-                ['lfp_plotting', [
-                    'run_lfp_plotting.py'], ['']]
-            ]:
+            for name, scripts, scriptargs in [
+                ['network', ['run_network.py'], ['']],
+                ['analysis', ['run_analysis.py'], ['']],
+                ['plotting', ['run_plotting.py'], ['']],
+                ['analysis_and_plotting', ['run_analysis.py',
+                                           'run_plotting.py'], [''] * 2],
+                ['lfp_simulation', ['run_lfp_simulation.py']
+                 * len(self._get_LFP_cell_type_names(path)), self._get_LFP_cell_type_names(path)],
+                ['lfp_postprocess', ['run_lfp_postprocess.py'], ['']],
+                    ['lfp_plotting', ['run_lfp_plotting.py'], ['']]]:
 
                 # key of sys_dict defining resources
                 res = (name
@@ -477,7 +482,8 @@ class Mesocircuit():
                 dic = sys_dict[machine][res]
 
                 # file for output and errors
-                stdout = os.path.join('stdout', name + '.txt')
+                stdout = os.path.join(
+                    self.data_dir_circuit, 'stdout', name + '.txt')
 
                 # start jobscript
                 jobscript = '#!/bin/bash -x\n'
@@ -524,7 +530,7 @@ class Mesocircuit():
                 if name == 'lfp_plotting':
                     # should be run serially!
                     executables = [
-                        f'python3 -u code/{py} {arg} {o_0 if i == 0 else o_1}'
+                        f'python3 -u {run_path}/{py} {arg} {o_0 if i == 0 else o_1}'
                         for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
                 elif name == 'lfp_simulation':
                     executables = []
@@ -534,15 +540,15 @@ class Mesocircuit():
                         o_0 = f'2>&1 | tee {stdout}' if machine == 'local' else ''
                         o_1 = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
                         executables += [
-                            f'{run_cmd} python3 -u code/{py} "{arg}" {o_0 if i == 0 else o_1}'
+                            f'{run_cmd} python3 -u {run_path}/{py} "{arg}" {o_0 if i == 0 else o_1}'
                         ]
                 elif name == 'lfp_postprocess':
                     executables = [
-                        f'{run_cmd} python3 -u code/{py} {arg} {o_0 if i == 0 else o_1}'
+                        f'{run_cmd} python3 -u {run_path}/{py} {arg} {o_0 if i == 0 else o_1}'
                         for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
                 else:
                     executables = [
-                        f'{run_cmd} python3 -u code/{py} {arg} {t} {o_0 if i == 0 else o_1}'
+                        f'{run_cmd} python3 -u {run_path}/{py} {arg} {t} {o_0 if i == 0 else o_1}'
                         for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
                 sep = '\n\n' + 'wait' + '\n\n'
                 if name == 'lfp_simulation':
@@ -599,43 +605,29 @@ class Mesocircuit():
                         f.write(jobscript)
         return
 
-    def run_single_jobs(paramspace_key, ps_id, data_dir=None,
-                        jobs=['network', 'analysis_and_plotting'], machine='hpc'):
+    def run_jobs(self, jobs=['network', 'analysis_and_plotting'], machine='hpc'):
         """
         Runs jobs of a single parameterset.
 
         Parameters
         ----------
-        paramspace_key
-            A key identifying a parameter space.
-        ps_id
-            A parameter space id.
-        data_diri
-            Absolute path to write data to.
         jobs
             List of one or multiple of 'network, 'analysis, 'plotting', and
             'anlysis_and_plotting'.
-        job
-            'network', 'analysis', 'plotting', or 'analysis_and_plotting'.
         machine
             'local' or 'hpc'.
         """
-        # change to directory with copied files
-        full_data_path = os.path.join(data_dir, paramspace_key, ps_id)
-        cwd = os.getcwd()
-        os.chdir(full_data_path)
-
         # clean exit in case of no jobs
         if len(jobs) == 0:
             return
 
         jobinfo = ' and '.join(jobs) if len(jobs) > 1 else jobs[0]
-        info = f'{jobinfo} for {paramspace_key} - {ps_id}.'
+        info = f'{jobinfo} for {self.name_exp} - {self.ps_id}.'
 
         def submit_lfp_simulation_jobs(dependency=None):
             # these jobs can run in parallel
             lfp_job_scripts = []
-            for y in self._get_LFP_cell_type_names(full_data_path):
+            for y in self._get_LFP_cell_type_names(self.data_dir_circuit):
                 y = y.replace('(', '').replace(')', '')
                 lfp_job_scripts.append(f'hpc_lfp_simulation_{y}.sh')
             jobid = []  # job == lfp_postprocess require all lfp_simulation jobs to have finished
@@ -692,7 +684,7 @@ class Mesocircuit():
             print('Running ' + info)
             for job in jobs:
                 if job == 'lfp_simulation':
-                    for y in self.get_LFP_cell_type_names(full_data_path):
+                    for y in self.get_LFP_cell_type_names(self.data_dir_circuit):
                         y = y.replace('(', '').replace(')', '')
                         retval = os.system(
                             f'bash jobscripts/{machine}_{job}_{y}.sh')
@@ -703,5 +695,4 @@ class Mesocircuit():
                     if retval != 0:
                         raise Exception(f"os.system failed: {retval}")
 
-        os.chdir(cwd)
         return

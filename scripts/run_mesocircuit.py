@@ -16,16 +16,13 @@ custom_params = parametersets.ps_dicts[name]
 
 meso_exp = mesoframe.MesocircuitExperiment(name, custom_params)
 print(meso_exp.parameterview)
-
-# meso_exp.circuits.
-
-# meso.run
+print(meso_exp.circuits)
 
 
-if 0:
-    mesoframe.run_parametersets(
-        func=mesoframe.run_single_jobs,
-        parameterview=parameterview,
+# TODO run_jobs could be general, need to find a good way for initializing a Mesocircuit from run_ functions
+
+for circuit in meso_exp.circuits:
+    circuit.run_jobs(
         jobs=[
             'network',
             'analysis_and_plotting',
@@ -33,6 +30,6 @@ if 0:
             # 'lfp_postprocess',
             # 'lfp_plotting',
         ],
-        machine='hpc',
-        # machine='local'
+        # machine='hpc',
+        machine='local'
     )
