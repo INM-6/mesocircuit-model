@@ -497,34 +497,6 @@ class MesocircuitExperiment():
         return PS.y
 
 
-def extend_existing_parameterspaces(
-        custom_key, custom_params, base_key, base_ps_dicts):
-    """
-    Adds a new parameter space to existing dictionary.
-
-    Parameters
-    ----------
-    custom_key
-        New parameter space key.
-    custom_params
-        New parameters (may include ranges).
-    base_key
-        New dictionary with custom_key will be based on this dictionary.
-    base_ps_dicts
-        Base parameter space dictionaries containing a parameter space (or set)
-        corresponding to base_key.
-    """
-    custom_ps_dicts = dict(base_ps_dicts)
-    custom_ps_dicts[custom_key] = dict(custom_ps_dicts[base_key])
-    for dic in custom_params.keys():
-        if dic in custom_ps_dicts[custom_key].keys():
-            custom_ps_dicts[custom_key][dic].update(custom_params[dic])
-        else:
-            custom_ps_dicts[custom_key][dic] = custom_params[dic]
-
-    return custom_ps_dicts
-
-
 def params_for_neuronal_network_meanfield_tools(net_dict):
     """
     Creates a dictionary with parameters for mean-field theoretical analysis
