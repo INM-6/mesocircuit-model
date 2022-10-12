@@ -14,8 +14,12 @@ custom_params = parametersets.ps_dicts[name]
 #        'bg_rate': ps.ParameterRange([8., 10.])
 #    }}
 
-meso = mesoframe.MesocircuitExperiment(name, custom_params)
-print(meso.parameterview)
+meso_exp = mesoframe.MesocircuitExperiment(name, custom_params)
+print(meso_exp.parameterview)
+
+# meso_exp.circuits.
+
+# meso.run
 
 
 if 0:
