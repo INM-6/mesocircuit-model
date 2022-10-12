@@ -131,7 +131,7 @@ class MesocircuitExperiment():
             {k: parameterspaces[k] for k in dicts_unique})
 
         parameterview['paramsets'] = {}
-        circuits = {}
+        circuits = []
         for sub_paramset in sub_paramspace.iter_inner():
             ps_id = helpers.get_unique_id(sub_paramset)
             print(f'Evaluating circuit with ID: {ps_id}')
@@ -159,7 +159,7 @@ class MesocircuitExperiment():
             # evaluate the parameter set
             circuit._evaluate_parameterset(paramset)
 
-            circuits[ps_id] = circuit
+            circuits.append(circuit)
 
         # setup for parameterspace analysis
         for dname in ['parameters', 'plots']:
@@ -268,72 +268,6 @@ class MesocircuitExperiment():
         set_custom_range_or_value([param], value, custom_params)
         return custom_params
 
-    def run(
-        self,
-            func,
-            parameterview=None,
-            paramspace_keys=None,
-            with_base_params=False,
-            ps_ids=[],
-            data_dir=None,
-            **kwargs):
-        """
-        Runs the given function for parameter sets specified.
-        Provide either a parameterview or a list of paramspace_keys.
-
-        Parameters
-        ----------
-        func
-            Function to be executed for parameter sets.
-        parameterview
-            Dictionary of evaluated parameter spaces.
-        paramspace_keys
-            List of keys of parameter spaces evaluated with
-            evaluate_parameterspaces() into data_dir.
-        with_base_params
-            If paramspace_keys are given:
-            Whether to include a parameter space with only base parameters
-            (default=False).
-        ps_ids
-            List of parameterset identifiers (hashes) as computed in
-            evaluate_parameterspaces().
-            Providing an empty list means that jobs of all ps_ids existing in
-            data_dir of the given paramspace_keys are executed (default=[]).
-        data_dir
-            Absolute path to write data to.
-        """
-        # note that this comparison is not exhaustive
-        boolean = ((parameterview is None and paramspace_keys is None) or
-                   (parameterview is not None and paramspace_keys is not None))
-        if boolean:
-            raise Exception('Specify either parameterview or paramspace_keys')
-
-        print(f'Data directory: {data_dir}')
-
-        if parameterview:
-            for ps_key in parameterview.keys():
-                for ps_id in parameterview[ps_key]['paramsets'].keys():
-                    if ps_id in ps_ids or ps_ids == []:
-                        func(ps_key, ps_id, data_dir, **kwargs)
-
-        elif paramspace_keys:
-            ps_keys = paramspace_keys
-            if with_base_params:
-                ps_keys.append('base')
-
-            for ps_key in ps_keys:
-                full_data_paths = glob.glob(
-                    os.path.join(data_dir, ps_key, '*'))
-                # parameter sets identified by ps_id
-                for full_data_path in full_data_paths:
-                    ps_id = os.path.basename(full_data_path)
-                    # pass if not a real ps_id (hash)
-                    if ps_id == 'parameter_space':
-                        pass
-                    if ps_id in ps_ids or ps_ids == []:
-                        func(ps_key, ps_id, data_dir, **kwargs)
-        return
-
 
 class Mesocircuit():
     """
@@ -397,9 +331,16 @@ class Mesocircuit():
         with open(fname + '.yaml', 'w') as f:
             yaml.dump(nnmt_dic, f, default_flow_style=False)
 
+        # store parameters as class attributes
+        self.sys_dict = paramset['sys_dict']
+        self.sim_dict = paramset['sim_dict']
+        self.net_dict = paramset['net_dict']
+        self.ana_dict = paramset['ana_dict']
+        self.plot_dict = paramset['plot_dict']
+
         # write jobscripts
         self._write_jobscripts(paramset, self.data_dir_circuit)
-        return
+        return paramset
 
     def _params_for_neuronal_network_meanfield_tools(self, net_dict):
         """
