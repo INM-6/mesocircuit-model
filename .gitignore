@@ -155,3 +155,4 @@ arm64
 *.zip
 *.swp
 .vscode
+ms_figures
