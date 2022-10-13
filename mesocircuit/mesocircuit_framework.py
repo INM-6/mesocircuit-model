@@ -5,12 +5,10 @@ Parameterspace evaluation and job execution.
 
 """
 
-from this import d
 import mesocircuit
 from mesocircuit.parameterization import helpers_network as helpnet
 import os
 import subprocess
-import glob
 import pickle
 import json
 import copy
@@ -44,7 +42,8 @@ class MesocircuitExperiment():
     data_dir : str, optional
         Absolute path to write data to.
     load : bool , optional
-        If True, parameters are not newly evaluated and the earlier saved parameterview is loaded.
+        If True, parameters are not newly evaluated and the earlier saved
+        parameterview and Mesocircuit(s) are loaded.
     """
 
     def __init__(self, name_exp='base', custom_params=None, data_dir=None,
@@ -63,13 +62,23 @@ class MesocircuitExperiment():
         self.data_dir_exp = os.path.join(self.data_dir, self.name_exp)
         print(f'Data directory: {self.data_dir_exp}')
 
+        # TODO add check if data exists
         if not load:
             self.parameterview, self.circuits = \
                 self._evaluate_parameters(custom_params)
         else:
-            raise NotImplementedError('Loading is not implemented yet.')
-            # with open(os.path.join(dir, 'psview_dict.pkl'), 'wb') as f:
-            #    self.parameterview = pickle.load(f)
+            fn = os.path.join(self.data_dir_exp, 'parameter_space',
+                              'parameters', 'psview_dict.pkl')
+            print(fn)
+            with open(fn, 'rb') as f:
+                ps_view = pickle.load(f)
+                self.parameterview = ps_view
+            ps_ids = self.parameterview['paramsets'].keys()
+            self.circuits = [
+                Mesocircuit(self.data_dir,
+                            self.name_exp,
+                            ps_id,
+                            load_parameters=True) for ps_id in ps_ids]
 
     def _auto_data_directory(self, dirname='mesocircuit_data'):
         """
@@ -293,8 +302,6 @@ class Mesocircuit():
         self.ps_id = ps_id
         self.data_dir_circuit = os.path.join(data_dir, name_exp, ps_id)
 
-        print(f'Instantiating Mesocircuit: {self.name_exp}/{ps_id}')
-
         if load_parameters:
             path = os.path.join(self.data_dir_circuit, 'parameters')
             dics = []
@@ -309,11 +316,10 @@ class Mesocircuit():
 
         Parameters
         ----------
-        ps_id
-            Unique parameter set id.
         paramset
             Parameter set corresponding to ps_id.
         """
+        print(f'Evaluating parameters for ps_id: {self.ps_id}')
         # set paths and create directories for parameters, jobscripts and
         # raw and processed output data
         for dname in \
