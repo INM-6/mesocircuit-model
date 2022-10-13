@@ -4,8 +4,9 @@ import parameters as ps
 
 ################################################################################
 
-#name = 'favorite'
+#name = 'mesocircuit_MAMV1'
 name = 'local_mesocircuit_PD'
+#name = 'local_microcircuit_PD'
 custom_params = parametersets.ps_dicts[name]
 
 meso_exp = mesoframe.MesocircuitExperiment(name, custom_params)

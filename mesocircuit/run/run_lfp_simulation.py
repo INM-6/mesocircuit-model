@@ -99,7 +99,6 @@ path_parameters = os.path.join(circuit.data_dir_circuit, 'parameters')
 
 # check if mod file for synapse model specified in expsyni.mod is loaded.
 # if not, compile and load it.
-
 nmodl_dir = os.path.join(os.path.dirname(mesocircuit.__file__), 'lfp')
 try:
     assert neuron.load_mechanisms(nmodl_dir)

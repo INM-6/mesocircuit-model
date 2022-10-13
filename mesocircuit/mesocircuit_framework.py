@@ -492,7 +492,6 @@ class Mesocircuit():
             lfp_arg = [c + ' ' + a for c in LFP_cells]
 
             for name, scripts, scriptargs in [
-                # TODO add threads in here
                 ['network', ['run_network.py'], [t + ' ' + a]],
                 ['analysis', ['run_analysis.py'], [a]],
                 ['plotting', ['run_plotting.py'], [a]],
