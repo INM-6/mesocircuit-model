@@ -67,8 +67,9 @@ class MesocircuitExperiment():
             self.parameterview, self.circuits = \
                 self._evaluate_parameters(custom_params)
         else:
-            with open(os.path.join(dir, 'psview_dict.pkl'), 'wb') as f:
-                self.parameterview = pickle.load(f)
+            raise NotImplementedError('Loading is not implemented yet.')
+            # with open(os.path.join(dir, 'psview_dict.pkl'), 'wb') as f:
+            #    self.parameterview = pickle.load(f)
 
     def _auto_data_directory(self, dirname='mesocircuit_data'):
         """
@@ -462,17 +463,21 @@ class Mesocircuit():
         sys_dict = paramset['sys_dict']
         sim_dict = paramset['sim_dict']
 
+        # generic arguments for all run_scripts pointing to right circuit
+        a = '$DATA_DIR $NAME_EXP $PS_ID'
+
         for machine, dic in sys_dict.items():
             for name, scripts, scriptargs in [
-                ['network', ['run_network.py'], ['']],
-                ['analysis', ['run_analysis.py'], ['']],
-                ['plotting', ['run_plotting.py'], ['']],
+                # TODO add threads in here
+                ['network', ['run_network.py'], [a]],
+                ['analysis', ['run_analysis.py'], [a]],
+                ['plotting', ['run_plotting.py'], [a]],
                 ['analysis_and_plotting', ['run_analysis.py',
-                                           'run_plotting.py'], [''] * 2],
+                                           'run_plotting.py'], [a] * 2],
                 ['lfp_simulation', ['run_lfp_simulation.py']
-                 * len(self._get_LFP_cell_type_names(path)), self._get_LFP_cell_type_names(path)],
-                ['lfp_postprocess', ['run_lfp_postprocess.py'], ['']],
-                    ['lfp_plotting', ['run_lfp_plotting.py'], ['']]]:
+                 * len(self._get_LFP_cell_type_names(path)), self._get_LFP_cell_type_names(path)],  # TODO a is missing here
+                ['lfp_postprocess', ['run_lfp_postprocess.py'], [a]],
+                    ['lfp_plotting', ['run_lfp_plotting.py'], [a]]]:
 
                 # key of sys_dict defining resources
                 res = (name
@@ -480,10 +485,6 @@ class Mesocircuit():
                                    'lfp_postprocess', 'lfp_plotting']
                        else 'analysis_and_plotting')
                 dic = sys_dict[machine][res]
-
-                # file for output and errors
-                stdout = os.path.join(
-                    self.data_dir_circuit, 'stdout', name + '.txt')
 
                 # start jobscript
                 jobscript = '#!/bin/bash -x\n'
@@ -520,6 +521,16 @@ class Mesocircuit():
                         f'machine {machine} not recognized')
 
                 jobscript += "set -o pipefail\n"
+                jobscript += f"RUN_PATH={run_path}\n"
+                jobscript += f"DATA_DIR={self.data_dir}\n"
+                jobscript += f"NAME_EXP={self.name_exp}\n"
+                jobscript += f"PS_ID={self.ps_id}\n"
+
+                # file for output and errors (for batch scripts of hpc the
+                # evalutated path is needed)
+                stdout = f"$DATA_DIR/$NAME_EXP/$PS_ID/stdout/{name}.txt"
+                stdout_hpc = os.path.join(
+                    self.data_dir_circuit, 'stdout', name + '.txt')
 
                 # append executable(s),
                 # number of local threads needed for network simulation,
@@ -530,7 +541,7 @@ class Mesocircuit():
                 if name == 'lfp_plotting':
                     # should be run serially!
                     executables = [
-                        f'python3 -u {run_path}/{py} {arg} {o_0 if i == 0 else o_1}'
+                        f'python3 -u $RUN_PATH/{py} {arg} {o_0 if i == 0 else o_1}'
                         for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
                 elif name == 'lfp_simulation':
                     executables = []
@@ -540,15 +551,15 @@ class Mesocircuit():
                         o_0 = f'2>&1 | tee {stdout}' if machine == 'local' else ''
                         o_1 = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
                         executables += [
-                            f'{run_cmd} python3 -u {run_path}/{py} "{arg}" {o_0 if i == 0 else o_1}'
+                            f'{run_cmd} python3 -u $RUN_PATH/{py} "{arg}" {o_0 if i == 0 else o_1}'
                         ]
                 elif name == 'lfp_postprocess':
                     executables = [
-                        f'{run_cmd} python3 -u {run_path}/{py} {arg} {o_0 if i == 0 else o_1}'
+                        f'{run_cmd} python3 -u $RUN_PATH/{py} {arg} {o_0 if i == 0 else o_1}'
                         for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
                 else:
                     executables = [
-                        f'{run_cmd} python3 -u {run_path}/{py} {arg} {t} {o_0 if i == 0 else o_1}'
+                        f'{run_cmd} python3 -u $RUN_PATH/{py} {arg} {t} {o_0 if i == 0 else o_1}'
                         for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
                 sep = '\n\n' + 'wait' + '\n\n'
                 if name == 'lfp_simulation':
@@ -573,8 +584,8 @@ class Mesocircuit():
                             # fill in work string
                             js = js.format(
                                 dic['partition'],
-                                stdout,
-                                stdout,
+                                stdout_hpc,
+                                stdout_hpc,
                                 dic['num_nodes'],
                                 dic['num_mpi_per_node'],
                                 dic['local_num_threads'],
@@ -590,8 +601,8 @@ class Mesocircuit():
                     if machine == 'hpc':
                         jobscript = jobscript.format(
                             dic['partition'],
-                            stdout,
-                            stdout,
+                            stdout_hpc,
+                            stdout_hpc,
                             dic['num_nodes'],
                             dic['num_mpi_per_node'],
                             dic['local_num_threads'],
@@ -624,6 +635,8 @@ class Mesocircuit():
         jobinfo = ' and '.join(jobs) if len(jobs) > 1 else jobs[0]
         info = f'{jobinfo} for {self.name_exp} - {self.ps_id}.'
 
+        dir_jobscripts = os.path.join(self.data_dir_circuit, 'jobscripts')
+
         def submit_lfp_simulation_jobs(dependency=None):
             # these jobs can run in parallel
             lfp_job_scripts = []
@@ -633,11 +646,11 @@ class Mesocircuit():
             jobid = []  # job == lfp_postprocess require all lfp_simulation jobs to have finished
             for js in lfp_job_scripts:
                 if dependency is None:
-                    submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{js}'
+                    submit = f'sbatch --account $BUDGET_ACCOUNTS {dir_jobscripts}/{js}'
                 else:
                     submit = (
                         f'sbatch --account $BUDGET_ACCOUNTS ' +
-                        f'--dependency=afterok:{dependency} jobscripts/{js}'
+                        f'--dependency=afterok:{dependency} {dir_jobscripts}/{js}'
                     )
                 output = subprocess.getoutput(submit)
                 print(output, submit)
@@ -649,7 +662,7 @@ class Mesocircuit():
             if jobs[0] == 'lfp_simulation':
                 jobid = submit_lfp_simulation_jobs(dependency=None)
             else:
-                submit = f'sbatch --account $BUDGET_ACCOUNTS jobscripts/{machine}_{jobs[0]}.sh'
+                submit = f'sbatch --account $BUDGET_ACCOUNTS {dir_jobscripts}/{machine}_{jobs[0]}.sh'
                 output = subprocess.getoutput(submit)
                 print(output, submit)
                 jobid = output.split(' ')[-1]
@@ -666,7 +679,7 @@ class Mesocircuit():
                             afterok = jobid
                         submit = (
                             f'sbatch --account $BUDGET_ACCOUNTS ' +
-                            f'--dependency=afterok:{afterok} jobscripts/{machine}_{job}.sh'
+                            f'--dependency=afterok:{afterok} {dir_jobscripts}/{machine}_{job}.sh'
                         )
                         output = subprocess.getoutput(submit)
                         print(output, submit)
@@ -674,7 +687,7 @@ class Mesocircuit():
                     else:
                         submit = (
                             f'sbatch --account $BUDGET_ACCOUNTS ' +
-                            f'--dependency=afterok:{jobid} jobscripts/{machine}_{job}.sh'
+                            f'--dependency=afterok:{jobid} {dir_jobscripts}/{machine}_{job}.sh'
                         )
                         output = subprocess.getoutput(submit)
                         print(output, submit)
@@ -687,11 +700,12 @@ class Mesocircuit():
                     for y in self.get_LFP_cell_type_names(self.data_dir_circuit):
                         y = y.replace('(', '').replace(')', '')
                         retval = os.system(
-                            f'bash jobscripts/{machine}_{job}_{y}.sh')
+                            f'bash {dir_jobscripts}/{machine}_{job}_{y}.sh')
                         if retval != 0:
                             raise Exception(f"os.system failed: {retval}")
                 else:
-                    retval = os.system(f'bash jobscripts/{machine}_{job}.sh')
+                    retval = os.system(
+                        f'bash {dir_jobscripts}/{machine}_{job}.sh')
                     if retval != 0:
                         raise Exception(f"os.system failed: {retval}")
 

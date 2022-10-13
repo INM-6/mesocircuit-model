@@ -4,7 +4,8 @@ import parameters as ps
 
 ################################################################################
 
-name = 'favorite'
+#name = 'favorite'
+name = 'local_mesocircuit'
 custom_params = parametersets.ps_dicts[name]
 
 # custom_params = {
@@ -15,21 +16,22 @@ custom_params = parametersets.ps_dicts[name]
 #    }}
 
 meso_exp = mesoframe.MesocircuitExperiment(name, custom_params)
-print(meso_exp.parameterview)
-print(meso_exp.circuits)
+# print(meso_exp.parameterview)
+# print(meso_exp.circuits)
 
 
 # TODO run_jobs could be general, need to find a good way for initializing a Mesocircuit from run_ functions
 
-for circuit in meso_exp.circuits:
-    circuit.run_jobs(
-        jobs=[
-            'network',
-            'analysis_and_plotting',
-            # 'lfp_simulation',
-            # 'lfp_postprocess',
-            # 'lfp_plotting',
-        ],
-        # machine='hpc',
-        machine='local'
-    )
+if 1:
+    for circuit in meso_exp.circuits:
+        circuit.run_jobs(
+            jobs=[
+                'network',
+                # 'analysis_and_plotting',
+                # 'lfp_simulation',
+                # 'lfp_postprocess',
+                # 'lfp_plotting',
+            ],
+            # machine='hpc',
+            machine='local'
+        )
