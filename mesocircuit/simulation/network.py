@@ -25,18 +25,18 @@ class Network:
     initializes the NEST kernel.
 
     Parameters
-    ---------
-    sim_dict
-        Dictionary containing all parameters specific to the simulation
-        (derived from: ``base_sim_params.py``).
-    net_dict
-         Dictionary containing all parameters specific to the neuron and
-         network models (derived from: ``base_network_params.py``).
+    ----------
+    mesocircuit
+        A mesocircuit.Mesocircuit object with loaded parameters.
+    local_num_threads
+        Local number of threads per MPI process.
     """
 
-    def __init__(self, sim_dict, net_dict, local_num_threads):
-        self.sim_dict = sim_dict
-        self.net_dict = net_dict
+    # def __init__(self, sim_dict, net_dict, local_num_threads):
+    def __init__(self, mesocircuit, local_num_threads):
+        self.data_dir_circuit = mesocircuit.data_dir_circuit
+        self.sim_dict = mesocircuit.sim_dict
+        self.net_dict = mesocircuit.net_dict
 
         # wipe files from raw output directory it they exist
         self.__wipe()
@@ -156,7 +156,7 @@ class Network:
         mode: String
             tarfile.open file mode. Default: 'w'
         '''
-        output_path = 'raw_data'
+        output_path = os.path.join(self.data_dir_circuit, 'raw_data')
 
         if nest.Rank() == 0:
             # create tarfile
@@ -190,7 +190,7 @@ class Network:
             Output file name. Path to raw data folder will be prepended
 
         """
-        fn = os.path.join('raw_data', fname)
+        fn = os.path.join(self.data_dir_circuit, 'raw_data', fname)
         if nest.Rank() == 0:
             f = h5py.File(fn, 'w')
         for i, (label, sr) in enumerate(zip(self.net_dict['populations'],
@@ -345,14 +345,15 @@ class Network:
 
         # write node ids to file
         if nest.Rank() == 0:
-            fn = os.path.join('raw_data', self.sim_dict['fname_nodeids'])
+            fn = os.path.join(self.data_dir_circuit, 'raw_data',
+                              self.sim_dict['fname_nodeids'])
             with open(fn, 'w+') as f:
                 for pop in self.pops:
                     f.write('{} {}\n'.format(pop[0].global_id,
                                              pop[-1].global_id))
 
         # Gather and write all positions to HDF5 file
-        fn = os.path.join('raw_data', 'positions.h5')
+        fn = os.path.join(self.data_dir_circuit, 'raw_data', 'positions.h5')
         if nest.Rank() == 0:
             f = h5py.File(fn, 'w')
         for i, (label, pop) in enumerate(zip(self.net_dict['populations'],

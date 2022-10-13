@@ -136,7 +136,6 @@ class MesocircuitExperiment():
         circuits = []
         for sub_paramset in sub_paramspace.iter_inner():
             ps_id = helpers.get_unique_id(sub_paramset)
-            print(f'Evaluating circuit with ID: {ps_id}')
 
             # readd ana_dict and plot_dict to get full paramset
             # (deep copy of sub_paramset is needed)
@@ -281,17 +280,28 @@ class Mesocircuit():
         Absolute path to directory of corresponding MesocircuitExperiment.
     ps_id
         Unique parameter set id.
-    load : bool
-        If True, load parameters from file.
+    load_parameters : bool
+        If True, load parameters from file. Sets class attributes for each
+        dictionary.
     """
 
-    def __init__(self, data_dir, name_exp, ps_id, load=False):
+    def __init__(self, data_dir, name_exp, ps_id, load_parameters=False):
         """
         """
         self.data_dir = data_dir
         self.name_exp = name_exp
         self.ps_id = ps_id
         self.data_dir_circuit = os.path.join(data_dir, name_exp, ps_id)
+
+        print(f'Instantiating Mesocircuit: {self.name_exp}/{ps_id}')
+
+        if load_parameters:
+            path = os.path.join(self.data_dir_circuit, 'parameters')
+            dics = []
+            for dic in ['sys_dict', 'sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
+                with open(os.path.join(path, f'{dic}.pkl'), 'rb') as f:
+                    dics.append(pickle.load(f))
+            self.sys_dict, self.sim_dict, self.net_dict, self.ana_dict, self.plot_dict = dics
 
     def _evaluate_parameterset(self, paramset):
         """
@@ -463,13 +473,18 @@ class Mesocircuit():
         sys_dict = paramset['sys_dict']
         sim_dict = paramset['sim_dict']
 
-        # generic arguments for all run_scripts pointing to right circuit
+        # generic arguments for all run_scripts pointing to right circuit,
+        # should be last argument
         a = '$DATA_DIR $NAME_EXP $PS_ID'
 
         for machine, dic in sys_dict.items():
+
+            # local_num_threads for network simulation
+            t = str(sys_dict[machine]['network']['local_num_threads'])
+
             for name, scripts, scriptargs in [
                 # TODO add threads in here
-                ['network', ['run_network.py'], [a]],
+                ['network', ['run_network.py'], [t + ' ' + a]],
                 ['analysis', ['run_analysis.py'], [a]],
                 ['plotting', ['run_plotting.py'], [a]],
                 ['analysis_and_plotting', ['run_analysis.py',
@@ -533,9 +548,7 @@ class Mesocircuit():
                     self.data_dir_circuit, 'stdout', name + '.txt')
 
                 # append executable(s),
-                # number of local threads needed for network simulation,
                 # tee output to file for local execution (append for multiple jobs)
-                t = dic['local_num_threads'] if name == 'network' else ''
                 o_0 = f'2>&1 | tee {stdout}' if machine == 'local' else ''
                 o_1 = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
                 if name == 'lfp_plotting':
@@ -559,7 +572,7 @@ class Mesocircuit():
                         for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
                 else:
                     executables = [
-                        f'{run_cmd} python3 -u $RUN_PATH/{py} {arg} {t} {o_0 if i == 0 else o_1}'
+                        f'{run_cmd} python3 -u $RUN_PATH/{py} {arg} {o_0 if i == 0 else o_1}'
                         for i, (py, arg) in enumerate(zip(scripts, scriptargs))]
                 sep = '\n\n' + 'wait' + '\n\n'
                 if name == 'lfp_simulation':
