@@ -5,36 +5,40 @@ Create plots of the network activity of the mesocircuit.
 """
 
 ###############################################################################
-# Import the necessary modules and setup the time measurements.
+# Import the necessary modules.
+
 import os
 import sys
-import pickle
-import h5py
 import numpy as np
-import core.plotting.plotting as plotting
-import core.plotting.figures as figures
-import core.helpers.parallelism_time as pt
+import h5py
+import mesocircuit.mesocircuit_framework as mesoframe
+import mesocircuit.plotting.plotting as plotting
+import mesocircuit.plotting.figures as figures
+import mesocircuit.helpers.parallelism_time as pt
 
-##########################################################################
-# Load simulation, network, stimulation, analysis and plotting parameters.
+###############################################################################
+# Instantiate a Mesocircuit object with parameters from the command line:
+# the general data directory data_dir, the name of the experiment name_exp, and
+# the ID of this parameterset ps_id.
+# Previously evaluated parameters are loaded.
 
-dics = []
-for dic in ['sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
-    with open(os.path.join('parameters', f'{dic}.pkl'), 'rb') as f:
-        dics.append(pickle.load(f))
-sim_dict, net_dict, ana_dict, plot_dict = dics
+circuit = mesoframe.Mesocircuit(
+    data_dir=sys.argv[-3], name_exp=sys.argv[-2], ps_id=sys.argv[-1],
+    load_parameters=True)
+
 
 ##########################################################################
 # Instantiate a Plotting object.
 # Load preprocessed data and pre-computed statistics.
 
-pl = plotting.Plotting(sim_dict, net_dict, ana_dict, plot_dict)
+pl = plotting.Plotting(circuit)
 
 d = {}
-for datatype in np.append(ana_dict['datatypes_preprocess'],
-                          ana_dict['datatypes_statistics']):
+for datatype in np.append(circuit.ana_dict['datatypes_preprocess'],
+                          circuit.ana_dict['datatypes_statistics']):
     all_datatype = 'all_' + datatype
-    fn = os.path.join('processed_data', all_datatype + '.h5')
+    fn = os.path.join(circuit.data_dir_circuit,
+                      'processed_data', all_datatype + '.h5')
     data = h5py.File(fn, 'r')
     d.update({all_datatype: data})
 

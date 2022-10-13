@@ -8,7 +8,7 @@ Functions starting with 'plot_' plot to a gridspec cell and are used in figures.
 from re import I
 import matplotlib.patheffects as PathEffects
 from matplotlib.patches import Rectangle, Circle
-from ..helpers import base_class
+from mesocircuit.helpers import base_class
 from matplotlib.colors import SymLogNorm
 from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -38,22 +38,12 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
     Parameters
     ---------
-    sim_dict
-        Dictionary containing all parameters specific to the simulation
-        (derived from: ``base_sim_params.py``).
-    net_dict
-         Dictionary containing all parameters specific to the neuron and
-         network models (derived from: ``base_network_params.py``).
-    ana_dict
-        Dictionary containing all parameters specific to the network analysis
-        (derived from: ``base_analysis_params.py``
-    plot_dict
-        Dictionary containing all parameters specific to the plotting
-        (derived from: ``base_plotting_params.py``
+    mesocircuit
+        A mesocircuit.Mesocircuit object with loaded parameters.
 
     """
 
-    def __init__(self, sim_dict, net_dict, ana_dict, plot_dict):
+    def __init__(self, mesocircuit):
         """
         Initializes some class attributes.
         """
@@ -61,10 +51,10 @@ class Plotting(base_class.BaseAnalysisPlotting):
             print('Instantiating a Plotting object.')
 
         # inherit from parent class
-        super().__init__(sim_dict, net_dict, ana_dict)
+        super().__init__(mesocircuit)
 
         # plot_dict is not in parent class
-        self.plot_dict = plot_dict
+        self.plot_dict = mesocircuit.plot_dict
 
         # update the matplotlib.rcParams
         matplotlib.rcParams.update(self.plot_dict['rcParams'])
@@ -1152,7 +1142,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
             pdftops).
         """
 
-        path_fn = os.path.join('plots', filename)
+        path_fn = os.path.join(self.data_dir_circuit, 'plots', filename)
 
         if self.plot_dict['extension'] == '.eps' and eps_conv:
 
