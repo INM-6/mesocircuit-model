@@ -2,8 +2,8 @@
 import os
 import h5py
 import numpy as np
-from core.analysis.spike_analysis import SpikeAnalysis
-from core.helpers.io import load_h5_to_sparse_X
+from mesocircuit.analysis.spike_analysis import SpikeAnalysis
+from mesocircuit.helpers.io import load_h5_to_sparse_X
 
 
 def write_mua_file(sim_dict, net_dict, ana_dict,
@@ -36,7 +36,8 @@ def write_mua_file(sim_dict, net_dict, ana_dict,
         with h5py.File(os.path.join(os.path.split(path_lfp_data)[0],
                                     'processed_data',
                                     'all_sptrains_bintime.h5'), 'r') as f:
-            sptrains_bintime = load_h5_to_sparse_X(X=X, h5data=f, sparsetype='coo')
+            sptrains_bintime = load_h5_to_sparse_X(
+                X=X, h5data=f, sparsetype='coo')
         tmp = sana._time_and_space_binned_sptrains_X(
             positions=positions, sptrains_bintime=sptrains_bintime,
             dtype=np.uint16)

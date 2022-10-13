@@ -34,21 +34,21 @@ Given the size of the network and demands for the multi-compartment LFP-
 predictions using the present scheme, running the model on nothing but a large-
 scale compute facility is strongly discouraged.
 '''
+from mpi4py import MPI
+from lfpykit import CurrentDipoleMoment, VolumetricCurrentSourceDensity
+from mesocircuit.lfp.lfp_parameters import get_parameters
+from mesocircuit.lfp.periodiclfp import PeriodicLFP
+import pickle
+from hybridLFPy import CachedTopoNetwork, TopoPopulation
+import neuron  # needs to be imported before MPI
+from time import time
+import matplotlib.pyplot as plt
+import numpy as np
+import sys
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
-import sys
-import numpy as np
-import matplotlib.pyplot as plt
-from time import time
-import neuron  # needs to be imported before MPI
-from hybridLFPy import CachedTopoNetwork, TopoPopulation
-import pickle
-from core.lfp.periodiclfp import PeriodicLFP
-from core.lfp.lfp_parameters import get_parameters
-from lfpykit import CurrentDipoleMoment, VolumetricCurrentSourceDensity
-from mpi4py import MPI
 
 #################################################
 # matplotlib settings                           #
@@ -122,7 +122,8 @@ PS = get_parameters(path_lfp_data=path_lfp_data,
 
 # create file for simulation time(s) to file
 if RANK == 0:
-    simstats = open(os.path.join(PS.savefolder, f'simstats_{sys.argv[1]}.dat'), 'w')
+    simstats = open(os.path.join(
+        PS.savefolder, f'simstats_{sys.argv[1]}.dat'), 'w')
     simstats.write('task time\n')
 
 # tic toc

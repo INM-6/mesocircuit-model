@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 '''prototype LFP simulation analysis'''
+import scipy.signal as ss
+from scipy.optimize import curve_fit
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from hybridLFPy import helperfun
+import matplotlib
+import LFPy
+from mesocircuit.analysis import stats
+from mesocircuit.parameterization.base_plotting_params import plot_dict
+import numpy as np
+import h5py
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from matplotlib.collections import PolyCollection  # , LineCollection
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
-from matplotlib.collections import PolyCollection  # , LineCollection
-from matplotlib.animation import FuncAnimation
-import matplotlib.pyplot as plt
-import h5py
-import numpy as np
-from ..parameterization.base_plotting_params import plot_dict
-from ..analysis import stats
-import LFPy
-import matplotlib
-from hybridLFPy import helperfun
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy.optimize import curve_fit
-import scipy.signal as ss
 
 
 # Set some matplotlib defaults

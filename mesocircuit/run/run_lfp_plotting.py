@@ -2,23 +2,23 @@
 '''Plotting script for LFPs
 
 '''
+import h5py
+import pandas as pd
+from mesocircuit.plotting.plotting import Plotting
+from mesocircuit.lfp.compute_mua import write_mua_file
+import mesocircuit.lfp.plotting as lfpplt
+from mesocircuit.lfp.lfp_parameters import get_parameters
+from mesocircuit.parameterization.base_plotting_params import plot_dict
+from hybridLFPy import CachedTopoNetwork
+import numpy as np
+from matplotlib.gridspec import GridSpec
+import matplotlib.pyplot as plt
+import matplotlib
+import pickle
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
-import pickle
-import matplotlib
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
-import numpy as np
-from hybridLFPy import CachedTopoNetwork
-from core.parameterization.base_plotting_params import plot_dict
-from core.lfp.lfp_parameters import get_parameters
-import core.lfp.plotting as lfpplt
-from core.lfp.compute_mua import write_mua_file
-from core.plotting.plotting import Plotting
-import pandas as pd
-import h5py
 
 
 # Set some matplotlib defaults
