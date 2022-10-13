@@ -38,10 +38,10 @@ import sys
 from tkinter import W
 from mpi4py import MPI
 from lfpykit import CurrentDipoleMoment, VolumetricCurrentSourceDensity
+import mesocircuit
 import mesocircuit.mesocircuit_framework as mesoframe
 from mesocircuit.lfp.lfp_parameters import get_parameters
 from mesocircuit.lfp.periodiclfp import PeriodicLFP
-import pickle
 from hybridLFPy import PostProcess
 import neuron  # needs to be imported before MPI
 from time import time
@@ -77,21 +77,6 @@ RANK = COMM.Get_rank()
 # Simulation results must exist.
 PROPERRUN = True
 
-# check if mod file for synapse model specified in expsyni.mod is loaded.
-# if not, compile and load it.
-# nmodl_dir = os.path.join('code', 'core', 'lfp')
-nmodl_dir = os.path.join('code', 'core', 'lfp')  # TODO
-try:
-    assert neuron.load_mechanisms(nmodl_dir)
-except AssertionError:
-    if RANK == 0:
-        cwd = os.getcwd()
-        os.chdir(nmodl_dir)
-        os.system('nrnivmodl')
-        os.chdir(cwd)
-    COMM.Barrier()
-neuron.load_mechanisms(nmodl_dir)
-
 ##########################################################################
 # Network parameters
 ##########################################################################
@@ -111,10 +96,25 @@ net_dict = circuit.net_dict
 
 path_parameters = os.path.join(circuit.data_dir_circuit, 'parameters')
 
+
+# check if mod file for synapse model specified in expsyni.mod is loaded.
+# if not, compile and load it.
+nmodl_dir = os.path.join(os.path.dirname(mesocircuit.__file__), 'lfp')
+try:
+    assert neuron.load_mechanisms(nmodl_dir)
+except AssertionError:
+    if RANK == 0:
+        cwd = os.getcwd()
+        os.chdir(nmodl_dir)
+        os.system('nrnivmodl')
+        os.chdir(cwd)
+    COMM.Barrier()
+neuron.load_mechanisms(nmodl_dir)
+
 ##########################################################################
 # set up the file destination
 ##########################################################################
-path_lfp_data = 'lfp'
+path_lfp_data = os.path.join(circuit.data_dir_circuit, 'lfp')
 if RANK == 0:
     if not os.path.isdir(path_lfp_data):
         os.mkdir(path_lfp_data)

@@ -488,6 +488,9 @@ class Mesocircuit():
             # local_num_threads for network simulation
             t = str(sys_dict[machine]['network']['local_num_threads'])
 
+            LFP_cells = self._get_LFP_cell_type_names(path)
+            lfp_arg = [c + ' ' + a for c in LFP_cells]
+
             for name, scripts, scriptargs in [
                 # TODO add threads in here
                 ['network', ['run_network.py'], [t + ' ' + a]],
@@ -496,7 +499,7 @@ class Mesocircuit():
                 ['analysis_and_plotting', ['run_analysis.py',
                                            'run_plotting.py'], [a] * 2],
                 ['lfp_simulation', ['run_lfp_simulation.py']
-                 * len(self._get_LFP_cell_type_names(path)), self._get_LFP_cell_type_names(path)],  # TODO a is missing here
+                 * len(LFP_cells), lfp_arg],
                 ['lfp_postprocess', ['run_lfp_postprocess.py'], [a]],
                     ['lfp_plotting', ['run_lfp_plotting.py'], [a]]]:
 
@@ -565,12 +568,17 @@ class Mesocircuit():
                 elif name == 'lfp_simulation':
                     executables = []
                     for i, (py, arg) in enumerate(zip(scripts, scriptargs)):
-                        y = arg.replace('(', '').replace(')', '')
+                        # split cell types (y) from other argumets
+                        # cell types shall be printed in ""
+                        y = arg.split(' ')[0]
+                        y = y.replace('(', '').replace(')', '')
+                        vars = arg.split(' ')[1:]
+                        vars = ' '.join(vars)
                         stdout = os.path.join('stdout', f'{name}_{y}.txt')
                         o_0 = f'2>&1 | tee {stdout}' if machine == 'local' else ''
                         o_1 = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
                         executables += [
-                            f'{run_cmd} python3 -u $RUN_PATH/{py} "{arg}" {o_0 if i == 0 else o_1}'
+                            f'{run_cmd} python3 -u $RUN_PATH/{py} "{y}" {vars} {o_0 if i == 0 else o_1}'
                         ]
                 elif name == 'lfp_postprocess':
                     executables = [
@@ -584,7 +592,8 @@ class Mesocircuit():
                 if name == 'lfp_simulation':
                     # write separate jobscripts for each postsynaptic cell type
                     for i, (executable, arg) in enumerate(zip(executables, scriptargs)):
-                        y = arg.replace('(', '').replace(')', '')
+                        y = arg.split(' ')[0]
+                        y = y.replace('(', '').replace(')', '')
                         stdout = os.path.join('stdout', f'{name}_{y}.txt')
                         js = copy.copy(jobscript)
                         js += executable
@@ -610,7 +619,8 @@ class Mesocircuit():
                                 dic['local_num_threads'],
                                 wt  # dic['wall_clock_time']
                             )
-                        y = arg.replace('(', '').replace(')', '')
+                        y = arg.split(' ')[0]
+                        y = y.replace('(', '').replace(')', '')
                         fname = os.path.join(
                             path, 'jobscripts', f"{machine}_{name}_{y}.sh")
                         with open(fname, 'w') as f:
@@ -716,7 +726,7 @@ class Mesocircuit():
             print('Running ' + info)
             for job in jobs:
                 if job == 'lfp_simulation':
-                    for y in self.get_LFP_cell_type_names(self.data_dir_circuit):
+                    for y in self._get_LFP_cell_type_names(self.data_dir_circuit):
                         y = y.replace('(', '').replace(')', '')
                         retval = os.system(
                             f'bash {dir_jobscripts}/{machine}_{job}_{y}.sh')
