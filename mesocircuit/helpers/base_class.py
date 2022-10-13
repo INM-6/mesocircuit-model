@@ -3,14 +3,17 @@ import numpy as np
 import h5py
 import scipy.sparse as sp
 
+import mesocircuit
+
 
 class BaseAnalysisPlotting:
 
-    def __init__(self, sim_dict, net_dict, ana_dict):
+    def __init__(self, mesocircuit):
 
-        self.sim_dict = sim_dict
-        self.net_dict = net_dict
-        self.ana_dict = ana_dict
+        self.data_dir_circuit = mesocircuit.data_dir_circuit
+        self.sim_dict = mesocircuit.sim_dict
+        self.net_dict = mesocircuit.net_dict
+        self.ana_dict = mesocircuit.ana_dict
 
         # presynaptic populations
         self.X = self.net_dict['populations']
@@ -72,7 +75,8 @@ class BaseAnalysisPlotting:
         dataset_dtype
             dtype only needed for non-sparse datasets.
         """
-        fn = os.path.join('processed_data', f'{datatype}_{X}.h5')
+        fn = os.path.join(self.data_dir_circuit, 'processed_data',
+                          f'{datatype}_{X}.h5')
         f = h5py.File(fn, 'w')
 
         if is_sparse:
