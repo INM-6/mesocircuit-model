@@ -34,8 +34,11 @@ Given the size of the network and demands for the multi-compartment LFP-
 predictions using the present scheme, running the model on nothing but a large-
 scale compute facility is strongly discouraged.
 '''
+import sys
+from tkinter import W
 from mpi4py import MPI
 from lfpykit import CurrentDipoleMoment, VolumetricCurrentSourceDensity
+import mesocircuit.mesocircuit_framework as mesoframe
 from mesocircuit.lfp.lfp_parameters import get_parameters
 from mesocircuit.lfp.periodiclfp import PeriodicLFP
 import pickle
@@ -77,7 +80,7 @@ PROPERRUN = True
 # check if mod file for synapse model specified in expsyni.mod is loaded.
 # if not, compile and load it.
 # nmodl_dir = os.path.join('code', 'core', 'lfp')
-nmodl_dir = os.path.join('code', 'core', 'lfp')
+nmodl_dir = os.path.join('code', 'core', 'lfp')  # TODO
 try:
     assert neuron.load_mechanisms(nmodl_dir)
 except AssertionError:
@@ -92,14 +95,21 @@ neuron.load_mechanisms(nmodl_dir)
 ##########################################################################
 # Network parameters
 ##########################################################################
-# path_parameters = sys.argv[1]
-path_parameters = 'parameters'
 
-dics = []
-for dic in ['sim_dict', 'net_dict', 'sys_dict']:
-    with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
-        dics.append(pickle.load(f))
-sim_dict, net_dict, sys_dict = dics
+###############################################################################
+# Instantiate a Mesocircuit object with parameters from the command line:
+# the general data directory data_dir, the name of the experiment name_exp, and
+# the ID of this parameterset ps_id.
+# Previously evaluated parameters are loaded.
+
+circuit = mesoframe.Mesocircuit(
+    data_dir=sys.argv[-3], name_exp=sys.argv[-2], ps_id=sys.argv[-1],
+    load_parameters=True)
+
+sim_dict = circuit.sim_dict
+net_dict = circuit.net_dict
+
+path_parameters = os.path.join(circuit.data_dir_circuit, 'parameters')
 
 ##########################################################################
 # set up the file destination

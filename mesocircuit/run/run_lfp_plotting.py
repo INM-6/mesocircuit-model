@@ -2,13 +2,14 @@
 '''Plotting script for LFPs
 
 '''
+import sys
 import h5py
 import pandas as pd
+import mesocircuit.mesocircuit_framework as mesoframe
 from mesocircuit.plotting.plotting import Plotting
 from mesocircuit.lfp.compute_mua import write_mua_file
 import mesocircuit.lfp.plotting as lfpplt
 from mesocircuit.lfp.lfp_parameters import get_parameters
-from mesocircuit.parameterization.base_plotting_params import plot_dict
 from hybridLFPy import CachedTopoNetwork
 import numpy as np
 from matplotlib.gridspec import GridSpec
@@ -21,27 +22,34 @@ if 'DISPLAY' not in os.environ:
     matplotlib.use('Agg')
 
 
-# Set some matplotlib defaults
-matplotlib.rcParams.update(plot_dict['rcParams'])
-
 ##########################################################################
 # Network parameters
 ##########################################################################
-# path_parameters = sys.argv[1]
-path_parameters = 'parameters'
 
-dics = []
-for dic in ['sim_dict', 'net_dict', 'ana_dict']:
-    with open(os.path.join(path_parameters, dic + '.pkl'), 'rb') as f:
-        dics.append(pickle.load(f))
-sim_dict, net_dict, ana_dict = dics
+###############################################################################
+# Instantiate a Mesocircuit object with parameters from the command line:
+# the general data directory data_dir, the name of the experiment name_exp, and
+# the ID of this parameterset ps_id.
+# Previously evaluated parameters are loaded.
+
+circuit = mesoframe.Mesocircuit(
+    data_dir=sys.argv[-3], name_exp=sys.argv[-2], ps_id=sys.argv[-1],
+    load_parameters=True)
+
+sim_dict = circuit.sim_dict
+net_dict = circuit.net_dict
+ana_dict = circuit.ana_dict
+plot_dict = circuit.plot_dict
+
+# Set some matplotlib defaults
+matplotlib.rcParams.update(plot_dict['rcParams'])
 
 ##########################################################################
 # LFP output directory
 ##########################################################################
 # path_lfp_data = os.path.join(os.path.split(path_parameters)[0], 'lfp')
-path_lfp_data = 'lfp'
-path_fig_files = os.path.join('lfp', 'figures')
+path_lfp_data = os.path.join(circuit.data_dir_circuit, 'lfp')
+path_fig_files = os.path.join(path_lfp_data, 'figures')
 
 ##########################################################################
 # get ParameterSet object instance with all required parameters for LFPs
