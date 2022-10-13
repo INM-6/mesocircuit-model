@@ -272,7 +272,7 @@ class Network:
         nest.rng_seed = self.sim_dict['rng_seed']
         nest.overwrite_files = self.sim_dict['overwrite_files']
         nest.print_time = self.sim_dict['print_time']
-        nest.data_path = 'raw_data'
+        nest.data_path = os.path.join(self.data_dir_circuit, 'raw_data')
         nest.data_prefix = 'presim_'
 
         n_vp = nest.total_num_virtual_procs
