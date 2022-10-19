@@ -514,6 +514,12 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
                         # ms/mm -> ms/mum conversion):
                         a=net_dict['prop_speed_matrix'][j, i] * 1E-3
                     )
+                ) if net_dict['delay_type'] == 'linear' else
+                dict(
+                    normal=dict(
+                        mean=net_dict['delay_matrix_mean'][j, i],
+                        std=net_dict['delay_rel_std']
+                    )
                 )
             )
 
@@ -547,9 +553,12 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
                 PS.topology_connections[X][y].update({
                     'kernel': 'random'
                 })
+            elif net_dict['connect_method'] == 'fixedtotalnumber':
+                PS.topology_connections[X][y].update({
+                    'kernel': 'fixedtotalnumber'
+                })
             else:
-                mssg = 'connect_method {} not implemented'.format(
-                    net_dict['connect_method'])
+                mssg = f"connect_method {net_dict['connect_method']} not implemented"
                 raise NotImplementedError(mssg)
 
     return PS
