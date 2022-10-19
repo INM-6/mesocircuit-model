@@ -157,7 +157,7 @@ fname = os.path.join(path_lfp_data, PS.MUAFile)
 lfpplt.plot_single_channel_lfp_data(axes[2], PS, net_dict, ana_dict, fname,
                                     T=T, CONTACTPOS=CONTACTPOS,
                                     title='MUA', ylabel=r'$s^{-1}$')
-axes[2].set_xlabel('t (ms)')
+axes[2].set_xlabel('time (ms)')
 
 fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_I.pdf'))
 
