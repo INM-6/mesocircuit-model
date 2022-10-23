@@ -294,7 +294,7 @@ class Mesocircuit():
         dictionary.
     """
 
-    def __init__(self, data_dir, name_exp, ps_id, load_parameters=False):
+    def __init__(self, data_dir='', name_exp='', ps_id='', load_parameters=False):
         """
         """
         self.data_dir = data_dir

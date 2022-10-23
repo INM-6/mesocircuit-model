@@ -4,13 +4,10 @@
 
 """
 
-import os
-import sys
 import numpy as np
 import unittest
-
-# hack until we have a proper python package
-sys.path.append(os.path.split(os.getcwd())[0])
+import mesocircuit.analysis.spike_analysis as spike_analysis
+import mesocircuit.mesocircuit_framework as mesoframe
 
 
 class TestSuite(unittest.TestCase):
@@ -25,7 +22,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis__time_binned_sptrains_X_00(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 1000
@@ -33,15 +29,16 @@ class TestSuite(unittest.TestCase):
                           dtype=[('nodeid', int), ('time_ms', float)])
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0, 't_sim': 1000, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array([X]),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
-
-        time_bins = np.arange(sim_dict['t_sim'])
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0,
+                            't_sim': 1000, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array([X]),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
+        time_bins = np.arange(circuit.sim_dict['t_sim'])
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -53,7 +50,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis__time_binned_sptrains_X_01(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 50
@@ -61,15 +57,15 @@ class TestSuite(unittest.TestCase):
                           dtype=[('nodeid', int), ('time_ms', float)])
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array([X]),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
-
-        time_bins = np.arange(sim_dict['t_sim'])
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array([X]),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
+        time_bins = np.arange(circuit.sim_dict['t_sim'])
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -87,7 +83,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis__time_binned_sptrains_X_02(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 50
@@ -95,15 +90,15 @@ class TestSuite(unittest.TestCase):
                           dtype=[('nodeid', int), ('time_ms', float)])
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array([X]),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
-
-        time_bins = np.arange(sim_dict['t_sim'])
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array([X]),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
+        time_bins = np.arange(circuit.sim_dict['t_sim'])
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -121,7 +116,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis__time_binned_sptrains_X_03(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 50
@@ -129,15 +123,16 @@ class TestSuite(unittest.TestCase):
                           dtype=[('nodeid', int), ('time_ms', float)])
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array([X]),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array([X]),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
 
-        time_bins = np.arange(sim_dict['t_sim'])
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        time_bins = np.arange(circuit.sim_dict['t_sim'])
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -155,7 +150,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_00(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 100
@@ -168,15 +162,15 @@ class TestSuite(unittest.TestCase):
                      'y-position_mm': y.ravel()}
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array(['E']),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
-
-        time_bins = np.arange(sim_dict['t_sim'])
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array(['E']),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
+        time_bins = np.arange(circuit.sim_dict['t_sim'])
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -194,7 +188,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_01(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 100
@@ -208,15 +201,15 @@ class TestSuite(unittest.TestCase):
                      'y-position_mm': y.ravel()}
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array(['E']),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
-
-        time_bins = np.arange(sim_dict['t_sim'])
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array(['E']),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
+        time_bins = np.arange(circuit.sim_dict['t_sim'])
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -234,7 +227,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_02(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 100
@@ -249,15 +241,15 @@ class TestSuite(unittest.TestCase):
                      'y-position_mm': y.ravel()}
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array(['E']),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
-
-        time_bins = np.arange(sim_dict['t_sim'])
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array(['E']),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
+        time_bins = np.arange(circuit.sim_dict['t_sim'])
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -275,7 +267,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_03(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 100
@@ -289,15 +280,15 @@ class TestSuite(unittest.TestCase):
                      'y-position_mm': y.ravel()}
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array(['E']),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
-
-        time_bins = np.arange(sim_dict['t_sim'])
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array(['E']),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
+        time_bins = np.arange(circuit.sim_dict['t_sim'])
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -314,7 +305,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_04(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 100
@@ -329,15 +319,15 @@ class TestSuite(unittest.TestCase):
                      'y-position_mm': y.ravel()}
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array(['E']),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
-
-        time_bins = np.arange(sim_dict['t_sim'])
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array(['E']),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
+        time_bins = np.arange(circuit.sim_dict['t_sim'])
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -354,7 +344,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_05(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 100
@@ -371,15 +360,16 @@ class TestSuite(unittest.TestCase):
         time_bins = np.arange(N_X * 3)
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0,
-                    't_sim': time_bins.size,
-                    'sim_resolution': 0.1}
-        net_dict = {'populations': np.array(['E']),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0,
+                            't_sim': time_bins.size,
+                            'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array(['E']),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -399,7 +389,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_06(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 100
@@ -412,15 +401,15 @@ class TestSuite(unittest.TestCase):
                      'y-position_mm': y.ravel()}
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array(['E']),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
-
-        time_bins = np.arange(sim_dict['t_sim'])
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array(['E']),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
+        time_bins = np.arange(circuit.sim_dict['t_sim'])
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -442,7 +431,6 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis_time_and_space_binned_sptrains_X_06(self):
         '''test SpikeAnalysis.__time_binned_sptrains_X()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
         X = 'E'
         N_X = 100
@@ -455,15 +443,15 @@ class TestSuite(unittest.TestCase):
                      'y-position_mm': y.ravel()}
 
         # dummy simulation dicts allowing creating SpikeAnalysis instance
-        sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array(['E']),
-                    'num_neurons': np.array([N_X]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
-
-        time_bins = np.arange(sim_dict['t_sim'])
-
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0, 't_sim': 300, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array(['E']),
+                            'num_neurons': np.array([N_X]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
+        sana = spike_analysis.SpikeAnalysis(circuit)
+        time_bins = np.arange(circuit.sim_dict['t_sim'])
 
         sptrains_bin_time = sana._SpikeAnalysis__time_binned_sptrains_X(
             N_X=N_X,
@@ -485,11 +473,10 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis_extract_center_disc_1mm2_00(self):
         ''' test SpikeAnalysis.__extract_center_disc_1mm2()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
-        sim_dict, net_dict, ana_dict, spikes, positions = \
+        circuit, spikes, positions = \
             self.dummy_definitions_for__extract_center_disc1mm2()
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        sana = spike_analysis.SpikeAnalysis(circuit)
 
         spikes_1mm2, positions_1mm2 = \
             sana._extract_center_disc_1mm2(spikes, positions)
@@ -506,11 +493,10 @@ class TestSuite(unittest.TestCase):
     def test_SpikeAnalysis_extract_center_disc_1mm2_01(self):
         ''' test SpikeAnalysis.__extract_center_disc_1mm2()
         '''
-        from core.analysis.spike_analysis import SpikeAnalysis
 
-        sim_dict, net_dict, ana_dict, spikes, positions = \
+        circuit, spikes, positions = \
             self.dummy_definitions_for__extract_center_disc1mm2()
-        sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+        sana = spike_analysis.SpikeAnalysis(circuit)
 
         spikes_1mm2, positions_1mm2 = \
             sana._extract_center_disc_1mm2(spikes, positions)
@@ -532,11 +518,13 @@ class TestSuite(unittest.TestCase):
         '''
         '''
         # dummy sim_dict, net_dict, and ana_dict
-        sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
-        net_dict = {'populations': np.array(['E']),
-                    'num_neurons': np.array([5]),
-                    'extent': 10}
-        ana_dict = {'binsize_time': 1, 't_transient': 0, 'binsize_space': 1}
+        circuit = mesoframe.Mesocircuit()
+        circuit.sim_dict = {'t_presim': 0, 't_sim': 100, 'sim_resolution': 0.1}
+        circuit.net_dict = {'populations': np.array(['E']),
+                            'num_neurons': np.array([5]),
+                            'extent': 10}
+        circuit.ana_dict = {'binsize_time': 1,
+                            't_transient': 0, 'binsize_space': 1}
 
         # dtypes for spikes and positions
         dtype_spikes = {'names': ('nodeid', 'time_ms'),
@@ -570,4 +558,4 @@ class TestSuite(unittest.TestCase):
                               (5, 0.5, 0.7),  # outside
                               (6, 0.3, 0.1),
                               ], dtype=dtype_positions)
-        return sim_dict, net_dict, ana_dict, spikes, positions
+        return circuit, spikes, positions
