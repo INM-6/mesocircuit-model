@@ -17,9 +17,7 @@ Load modules and general exports
 
 ::
 
-   module use $OTHERSTAGES
-   module load Stages/2020
-   module load GCC CMake ParaStationMPI GSL jemalloc h5py mpi4py
+   module load Stages/2022 StdEnv/2022 CMake GCC GSL jemalloc Boost ParaStationMPI Python SciPy-Stack mpi4py h5py libtool/.2.4.6
 
    jutil env activate -p <XXX>
    export USERNAME=<XXX>
@@ -28,7 +26,7 @@ Load modules and general exports
 
    export REPO_DIR=$PROJ/repositories
    export SOFT_DIR=$PROJ/software
-   export PY_DIR=$SOFT_DIR/custom_python
+   export PY_DIR=$SOFT_DIR/pip_install
 
 Install NEST
 ------------
@@ -38,17 +36,11 @@ Install NEST
    mkdir -p $REPO_DIR
    cd $REPO_DIR
    git clone https://github.com/nest/nest-simulator.git
-   git checkout b628ccf
+   git checkout tags/v3.3
+
    export NEST_SRC_DIR=$REPO_DIR/nest-simulator
-
-   cd NEST_SRC_DIR
-   export COMMIT=$(git rev-parse --short=7 HEAD)
-   export BRANCH=$(git rev-parse --abbrev-ref HEAD)
-   export NAME=$BRANCH-$COMMIT
-   echo $NAME
-
-   export NEST_BUILD_DIR=$SOFT_DIR/nest/$NAME/build
-   export NEST_INSTALL_DIR=$SOFT_DIR/nest/$NAME/install
+   export NEST_BUILD_DIR=$SOFT_DIR/nest/nest_3_3/build
+   export NEST_INSTALL_DIR=$SOFT_DIR/nest/nest_3_3/install
 
    mkdir -p $NEST_BUILD_DIR
    cd $NEST_BUILD_DIR
@@ -59,12 +51,18 @@ Install NEST
 
    source $NEST_INSTALL_DIR/bin/nest_vars.sh
 
-Custom Python packages
-----------------------
+Python packages
+---------------
+
+To install the mesocircuit package, navigate to the repository `mesocircuit-model` and run:
 
 ::
 
-   pip install --install-option="--prefix=$PY_DIR" parameters
+   pip install -e .
+
+::
+
+   pip install --prefix=$PY_DIR parameters
 
 OLD README
 ----------
