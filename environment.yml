@@ -1,0 +1,46 @@
+name: mesocircuit
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.7
+  - autopep8
+  - c-compiler
+  - cxx-compiler
+  - cmake
+  - openmpi
+  - openmpi-mpicc
+  - openmpi-mpicxx
+  - ipython
+  - boost
+  - libtool
+  - readline
+  - mpi4py
+  - nest-simulator
+  - gsl
+  - cython
+  - doxygen
+  - graphviz  # for dot
+  - pkg-config
+  - nose
+  - h5py
+  - pandas
+  - pytest
+  - meautility
+  - matplotlib
+  - ipython
+  - jupyter
+  - scipy
+  - junitparser
+  - future
+  - jupyterlab
+  - numba
+  - pip
+  - sphinx
+  - sphinxcontrib-bibtex
+  - pip:
+      - sphinx_rtd_theme
+      - git+https://github.com/LFPy/LFPy@v2.2.6
+      - git+https://github.com/NeuralEnsemble/parameters
+      - git+https://github.com/INM-6/hybridLFPy@master
+      - -e . # mesocircuit

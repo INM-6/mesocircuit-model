@@ -153,4 +153,6 @@ x86_64
 arm64
 *.tsv
 *.zip
+*.swp
+.vscode
 ms_figures

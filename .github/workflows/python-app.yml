@@ -37,8 +37,8 @@ jobs:
         fi
         python -m pip install --upgrade pip
         pip install flake8 pytest wheel numpy Cython
-        if [ -f mesocircuit/requirements.txt ]; then pip install -r mesocircuit/requirements.txt; fi
-        pip install -e mesocircuit/.
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install -e .
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -47,5 +47,4 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        cd mesocircuit
         py.test -v .
