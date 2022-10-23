@@ -449,7 +449,7 @@ def plot_single_channel_lfp_data(
 def plot_single_channel_csd_data(
         ax, PS, net_dict, ana_dict, fname,
         title='CSD',
-        ylabel=r'C ($\frac{\mathrm{nA}}{\mathrm{µm}^3}$)',
+        ylabel=r'CSD ($\frac{\mathrm{nA}}{\mathrm{µm}^3}$)',
         T=[500, 550],
         CONTACTPOS=((-200, 200), (200, -200))):
     # CSD bin edges
@@ -678,7 +678,7 @@ def plot_signal_correlation_or_covariance(
     axd.set_title('dist.')
 
     ax.set_ylabel(ylabel, labelpad=0.1)
-    ax.set_xlabel(r'$r$ (mm)', labelpad=0.1)
+    ax.set_xlabel('radius (mm)', labelpad=0.1)
     axd.set_xlabel('count (-)', labelpad=0.1)
     ax.set_title(paneltitle)
 
@@ -831,7 +831,7 @@ def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,
     remove_axis_junk(ax)
 
     ax.set_xticks(T)
-    ax.set_xlabel(r'$t$ (ms)', labelpad=0.0)
+    ax.set_xlabel('time (ms)', labelpad=0.0)
     ax.set_ylim(ylim)
 
     return vlimround
@@ -1020,7 +1020,7 @@ def plot_coherence_vs_frequency(
     ax.legend(loc='best', frameon=False, )
     # ax.set_xlim(0, 500)
     remove_axis_junk(ax)
-    ax.set_xlabel('$f$ (Hz)')
+    ax.set_xlabel('frequency (Hz)')
 
 
 def plot_coherence_vs_distance(
@@ -1122,7 +1122,7 @@ def plot_coherence_vs_distance(
 
         # beautify
         ax.set_ylabel(ylabel, labelpad=0.0)
-        ax.set_xlabel('$r$ (mm)', labelpad=0.0)
+        ax.set_xlabel('radius (mm)', labelpad=0.0)
 
         # fit exponential to values with distance
         # cost function
@@ -1211,8 +1211,8 @@ def plot_coherence_vs_distance_vs_frequency(
         cmap='viridis',
         shading='auto')
 
-    ax.set_ylabel('f (Hz)', labelpad=0)
-    ax.set_xlabel(r'$r$ (mm)', labelpad=0)
+    ax.set_ylabel('frequency (Hz)', labelpad=0)
+    ax.set_xlabel('radius (mm)', labelpad=0)
     ax.axis(ax.axis('tight'))
     ax.set_ylim(0, 500)
     ax.set_title(
