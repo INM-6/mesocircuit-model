@@ -502,6 +502,10 @@ class Mesocircuit():
                 ['lfp_postprocess', ['run_lfp_postprocess.py'], [a]],
                     ['lfp_plotting', ['run_lfp_plotting.py'], [a]]]:
 
+                # LFP simulation not implemented for microcircuit
+                if (self.name_exp.rfind('microcircuit') >= 0) & (name.rfind('lfp') >= 0):
+                    continue
+
                 # key of sys_dict defining resources
                 res = (name
                        if name in ['network', 'lfp_simulation',
@@ -659,6 +663,10 @@ unset DISPLAY
         # clean exit in case of no jobs
         if len(jobs) == 0:
             return
+
+        # prune LFP jobs if running the microcircuit model
+        if self.name_exp.rfind('microcircuit') >= 0:
+            jobs = [x for x in jobs if x.rfind('lfp') < 0]
 
         jobinfo = ' and '.join(jobs) if len(jobs) > 1 else jobs[0]
         info = f'{jobinfo} for {self.name_exp} - {self.ps_id}.'
