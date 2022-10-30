@@ -76,7 +76,8 @@ def derive_dependent_parameters(base_net_dict):
         # mean delays derived from linear parameters
         net_dict['delay_lin_eff_mean'], net_dict['delay_lin_eff_std'] = \
             get_delay_lin_effective(
-                net_dict['extent'],
+                # extent of 1 mm2 for comparison with reference model
+                1./np.sqrt(np.pi),
                 net_dict['beta'],
                 net_dict['delay_offset_matrix'],
                 net_dict['prop_speed_matrix'])
@@ -565,19 +566,17 @@ def get_exc_inh_matrix(val_exc, val_inh, num_pops):
 
 
 def get_delay_lin_effective(
-        extent,
+        radius,
         beta,
         delay_offset_matrix,
         prop_speed_matrix):
     """
     Computes the effective mean and standard deviation of the linear delay.
 
-    Noise is not accounted for.
-
     Parameters
     ----------
-    extent
-        Side length (in mm) of square sheets where neurons are distributed.
+    radius
+        Radius (in mm) of disc for computing the effective delay.
     beta
         Matrix of decay parameters of exponential spatial profile (in mm).
     delay_offset_matrix
@@ -614,8 +613,7 @@ def get_delay_lin_effective(
     def integrand_conn_norm(r, R, b):
         return integrand(r, R, b, 1)
 
-    R = extent / 2.  # radius of circle
-    limits = [0., R]  # integral bounds
+    limits = [0., radius]  # integral bounds
     num_pops = len(delay_offset_matrix)
 
     delay_lin_eff_mean_matrix = np.zeros((num_pops, num_pops))
@@ -629,20 +627,20 @@ def get_delay_lin_effective(
             I_delay_mean = scipy.integrate.quad(integrand_delay_mean,
                                                 limits[0],
                                                 limits[1],
-                                                args=(R, b, d0, v))[0]
+                                                args=(radius, b, d0, v))[0]
 
             # normalization
             I_conn_norm = scipy.integrate.quad(integrand_conn_norm,
                                                limits[0],
                                                limits[1],
-                                               args=(R, b))[0]
+                                               args=(radius, b))[0]
 
             dmean = I_delay_mean / I_conn_norm
 
             I_delay_var = scipy.integrate.quad(integrand_delay_var,
                                                limits[0],
                                                limits[1],
-                                               args=(R, b, d0, v, dmean))[0]
+                                               args=(radius, b, d0, v, dmean))[0]
 
             dvar = I_delay_var / I_conn_norm
             dstd = np.sqrt(dvar)
