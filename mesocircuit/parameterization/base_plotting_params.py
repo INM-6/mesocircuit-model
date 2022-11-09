@@ -17,8 +17,10 @@ plot_dict = {
         'figure.dpi': 300,
         # line width
         'lines.linewidth': 1.,
-        # labels close to ticklabels
+        # label pads
         'axes.labelpad': 0.1,
+        'xtick.major.pad': 0.2,
+        'ytick.major.pad': 0.2,
         # handling of .svg fonts:
         # 'path' (embed characters as paths) or 'none'
         'svg.fonttype': 'none',

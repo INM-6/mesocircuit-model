@@ -1,4 +1,4 @@
-from .plotting import Plotting
+from mesocircuit.plotting import Plotting
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
@@ -46,33 +46,51 @@ def live_paper(data_dir, model, parameterview):
     print('Plotting live paper figure.')
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'],
                               plot.plot_dict['fig_width_1col']))
-    gs = gridspec.GridSpec(10, 5)
-    gs.update(left=0.12, right=1, bottom=0.12, top=0.98, wspace=0.2)
+    gs = gridspec.GridSpec(5, 10)
+    gs.update(left=0.12, right=0.96, bottom=0.08,
+              top=1.02, hspace=0)
 
     # network sketch
-    plot.plot_mesocircuit_icon(gs[:3, :2])
+    plot.plot_mesocircuit_icon(gs[0, -3:-1])
+
+    gs_bottom = gridspec.GridSpecFromSubplotSpec(
+        5, 1, subplot_spec=gs[1:, :], hspace=0.35)
+
+    fs = 8
+    pad = 0.2
+    plt.rc('axes', labelsize=fs)
+    plt.rc('xtick', labelsize=fs)
+    plt.rc('ytick', labelsize=fs)
 
     # raster
     plot.plot_raster(
-        gs[3:, :2],
-        populations=plot.Y,  # TODO consider adding TC back in
+        gs_bottom[:3, 0],
+        populations=plot.Y,
         all_sptrains=d['all_sptrains'],
         all_pos_sorting_arrays=d['all_pos_sorting_arrays'],
         time_step=plot.sim_dict['sim_resolution'],
         time_interval=plot.plot_dict['raster_time_interval_short'],
-        sample_step=1)
+        sample_step=100,
+        xlabel=False)
+    plt.gca().tick_params(axis='both', which='major', pad=pad)
+    plt.axvline(x=net_dict['th_start'], color='k')
+    plt.title('TC', pad=pad, fontsize=fs)
 
     # spatial snapshots
     plot.plot_spatial_snapshots(
-        gs[:, 2:],
+        gs_bottom[3:, 0],
         populations=plot.X,
         all_inst_rates_bintime_binspace=d['all_inst_rates_bintime_binspace'],
         binsize_time=plot.ana_dict['binsize_time'],
-        orientation='vertical',
-        cbar=True,
+        orientation='horizontal',
+        tickstep=4,
+        cbar=False,
         cbar_left=0.28,
-        cbar_width=0.01,
-    )
+        cbar_width=0.01)
+    plt.gca().tick_params(axis='both', which='major', pad=0.2)
 
     # TODO modify and use savefig
     plt.savefig(os.path.join(data_dir, 'live_paper.pdf'), dpi=600)
+
+
+Footer
