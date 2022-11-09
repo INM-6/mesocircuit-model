@@ -10,9 +10,10 @@ import os
 
 
 if 'HOSTNAME' in os.environ:
-    partition = ('dc-cpu'
-                 if os.environ['HOSTNAME'].rfind('jureca') > 0
-                 else 'batch')
+    partition = 'batch'
+elif 'SYSTEMNAME' in os.environ:
+    if os.environ['SYSTEMNAME'] == 'jurecadc':
+        partition = 'dc-cpu'
 else:
     partition = None
 
@@ -22,7 +23,7 @@ sys_dict = {
     'hpc': {
         # network simulation
         'network': {
-            # partition, on JURECA DC the default is 'dc-cpu'
+            # partition
             'partition': partition,
             # number of compute nodes
             'num_nodes': 4,
@@ -47,8 +48,8 @@ sys_dict = {
             'num_mpi_per_node': 128,
             'local_num_threads': 1,  # not used
             # 'wall_clock_time': '01:00:00'
-            # (s) per second of simulation time per cell type y, 
-            # 16 nodes, favorite version:
+            # (s) per second of simulation time per cell type y,
+            # 16 nodes, mesocircuit_MAMV1 version:
             'wall_clock_time': [3260, 820, 900, 1740,
                                 1560, 1580, 1110, 700,
                                 1290, 960, 640, 670,
