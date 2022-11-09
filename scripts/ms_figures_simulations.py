@@ -16,7 +16,7 @@ import parametersets
 name_reference = 'reference'
 custom_params_reference = parametersets.ps_dicts['microcircuit_MAMV1']
 
-name_upscaled = 'upscaled'
+name_upscaled = 'upscaled_1mm2'
 custom_params_upscaled = parametersets.ps_dicts['mesocircuit_MAMV1']
 custom_params_upscaled.update({'ana_dict': {'extract_1mm2': True}})
 
