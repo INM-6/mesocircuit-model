@@ -520,13 +520,13 @@ class Mesocircuit():
                 if machine == 'hpc':
                     # assume SLURM, append resource definitions
                     jobscript += """#SBATCH --job-name=meso
-# SBATCH --partition={}
-# SBATCH --output={}
-# SBATCH --error={}
-# SBATCH --nodes={}
-# SBATCH --ntasks-per-node={}
-# SBATCH --cpus-per-task={}
-# SBATCH --time={}
+#SBATCH --partition={}
+#SBATCH --output={}
+#SBATCH --error={}
+#SBATCH --nodes={}
+#SBATCH --ntasks-per-node={}
+#SBATCH --cpus-per-task={}
+#SBATCH --time={}
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 unset DISPLAY
 """
