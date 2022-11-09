@@ -13,7 +13,7 @@ import tarfile
 import h5py
 import nest
 from mpi4py import MPI
-from ..helpers.mpiops import GathervRecordArray
+from mesocircuit.helpers.mpiops import GathervRecordArray
 import multiprocessing as mp
 
 
@@ -32,7 +32,6 @@ class Network:
         Local number of threads per MPI process.
     """
 
-    # def __init__(self, sim_dict, net_dict, local_num_threads):
     def __init__(self, mesocircuit, local_num_threads):
         self.data_dir_circuit = mesocircuit.data_dir_circuit
         self.sim_dict = mesocircuit.sim_dict

@@ -21,7 +21,7 @@ import warnings
 import h5py
 import numpy as np
 import matplotlib
-from ..helpers.io import load_h5_to_sparse_X
+from mesocircuit.helpers.io import load_h5_to_sparse_X
 matplotlib.use('Agg')
 
 # initialize MPI
