@@ -91,6 +91,3 @@ def live_paper(data_dir, model, parameterview):
 
     # TODO modify and use savefig
     plt.savefig(os.path.join(data_dir, 'live_paper.pdf'), dpi=600)
-
-
-Footer
