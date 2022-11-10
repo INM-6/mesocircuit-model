@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 
 
-def overview_and_parameters(data_dir, ref_circuit, ups_circuit):
+def overview_and_parameters(output_dir, ref_circuit, ups_circuit):
     """
     """
     # instantiate plotting object with referene circuit
@@ -76,12 +76,12 @@ def overview_and_parameters(data_dir, ref_circuit, ups_circuit):
         ax.set_title('external in-degree', pad=10)
 
     # TODO modify and use savefig
-    plt.savefig(os.path.join(data_dir, 'overview_and_parameters.pdf'))
+    plt.savefig(os.path.join(output_dir, 'overview_and_parameters.pdf'))
 
     return
 
 
-def reference_vs_upscaled(data_dir, ref_circuit, ups_circuit):
+def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit):
     """
     """
     d = {}
@@ -123,7 +123,8 @@ def reference_vs_upscaled(data_dir, ref_circuit, ups_circuit):
             all_sptrains=d[prefix + '_all_sptrains'],
             all_pos_sorting_arrays=d[prefix + '_all_pos_sorting_arrays'],
             time_step=plot.sim_dict['sim_resolution'],
-            time_interval=plot.plot_dict['raster_time_interval_short'],
+            # plot.plot_dict['raster_time_interval_short'],
+            time_interval=[1000, 1050],
             sample_step=1)
         plot.add_label(ax, labels[i])
         ax.set_title(titles[i])
@@ -132,7 +133,7 @@ def reference_vs_upscaled(data_dir, ref_circuit, ups_circuit):
             ax.set_yticklabels([])
 
     # TODO modify and use savefig
-    plt.savefig(os.path.join(data_dir, 'ref_vs_ups_rasters.pdf'))
+    plt.savefig(os.path.join(output_dir, 'ref_vs_ups_rasters.pdf'))
 
     #####
 
@@ -167,11 +168,11 @@ def reference_vs_upscaled(data_dir, ref_circuit, ups_circuit):
         axes[4].set_title(titles[i], pad=15)
 
     # TODO modify and use savefig
-    plt.savefig(os.path.join(data_dir, 'rev_vs_ups_statistics.pdf'))
+    plt.savefig(os.path.join(output_dir, 'rev_vs_ups_statistics.pdf'))
     return
 
 
-def evoked_activity(data_dir, circuit):
+def evoked_activity(output_dir, circuit):
     """
     """
     print('Plotting evoked activity')
@@ -220,7 +221,8 @@ def evoked_activity(data_dir, circuit):
         ylabel=r'$\nu (s^{-1})$',
         sptrains=d['all_sptrains_bintime'],
         time_step=plot.ana_dict['binsize_time'],
-        time_interval=plot.plot_dict['raster_time_interval_short'])
+        # time_interval=plot.plot_dict['raster_time_interval_short']
+        time_interval=[1000, 1200])
     plot.add_label(ax, labels[1])
 
     # spatial snapshots
@@ -231,8 +233,9 @@ def evoked_activity(data_dir, circuit):
         plot.ana_dict['binsize_time'],
         orientation='horizontal',
         cbar_orientation='vertical',
-        cbar_left=0.855,
-        cbar_width=0.01)
+        cbar_size='2%',
+        cbar_pad=0.1,
+    )
     plot.add_label(ax, labels[2])
 
     # cross-correlation functions for thalamic pulses
@@ -246,5 +249,5 @@ def evoked_activity(data_dir, circuit):
     )
     plot.add_label(ax, labels[3])
 
-    plt.savefig(os.path.join(data_dir, 'evoked_activity.pdf'))
+    plt.savefig(os.path.join(output_dir, 'evoked_activity.pdf'))
     return

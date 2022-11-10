@@ -50,8 +50,12 @@ print(meso_exp_evoked.parameterview)
 ################################################################################
 # Submit jobs.
 
-for meso_exp in [meso_exp_reference, meso_exp_upscaled,
-                 meso_exp_upscaled_1mm2, meso_exp_evoked]:
+for meso_exp in [
+    # meso_exp_reference,
+    meso_exp_upscaled,
+    # meso_exp_upscaled_1mm2,
+    meso_exp_evoked
+]:
     circuit = meso_exp.circuits[0]
     circuit.run_jobs(
         jobs=[
