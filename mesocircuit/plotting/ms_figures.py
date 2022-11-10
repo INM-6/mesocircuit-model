@@ -1,4 +1,4 @@
-from mesocricuit.plotting import Plotting
+import mesocircuit.plotting.plotting as plotting
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,38 +9,11 @@ import matplotlib
 matplotlib.use('Agg')
 
 
-def overview_and_parameters(data_dir, ref_model, ups_model):
+def overview_and_parameters(data_dir, ref_circuit, ups_circuit):
     """
     """
-    d = {}
-    for m, model in enumerate([ref_model, ups_model]):
-
-        # model path
-        prefix = 'ref' if m == 0 else 'ups'
-        d[prefix] = {}
-        with open(os.path.join(data_dir, model,
-                               'parameter_space/parameters/psview_dict.pkl'), 'rb') as f:
-            psview = pickle.load(f)
-        keys = list(psview[model]['paramsets'].keys())
-
-        if len(keys) != 1:
-            raise Exception
-        else:
-            hash = keys[0]
-        model_path = os.path.join(data_dir, model, hash)
-
-        # instantiate plotting with first model
-        dics = []
-        for dic in ['sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
-            with open(os.path.join(model_path, 'parameters', f'{dic}.pkl'),
-                      'rb') as f:
-                dics.append(pickle.load(f))
-        sim_dict, net_dict, ana_dict, plot_dict = dics
-        d[prefix]['net_dict'] = net_dict
-
-        # instantiate plotting with first model
-        if m == 0:
-            plot = Plotting(sim_dict, net_dict, ana_dict, plot_dict)
+    # instantiate plotting object with referene circuit
+    plot = plotting.Plotting(ref_circuit)
 
     print('Plotting overview and parameters.')
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 5))
@@ -53,7 +26,7 @@ def overview_and_parameters(data_dir, ref_model, ups_model):
     pad = 10  # for panel titels
 
     # model icons
-    mc = plt.imread('material/microcircuit.png')
+    mc = plt.imread('microcircuit.png')
     ax = plt.subplot(gs[0, :2])
     ax.imshow(mc)
     plt.axis('off')
@@ -67,17 +40,17 @@ def overview_and_parameters(data_dir, ref_model, ups_model):
     for q in quantities:
         lims[q] = {}
         lims[q]['vmin'] = np.min(
-            [np.min(d['ref']['net_dict'][q]), np.min(d['ups']['net_dict'][q])])
+            [np.min(ref_circuit.net_dict[q]), np.min(ups_circuit.net_dict[q])])
         lims[q]['vmax'] = np.max(
-            [np.max(d['ref']['net_dict'][q]), np.max(d['ups']['net_dict'][q])])
+            [np.max(ref_circuit.net_dict[q]), np.max(ups_circuit.net_dict[q])])
 
-    for i, prefix in enumerate(['ref', 'ups']):
+    for i, circuit in enumerate([ref_circuit, ups_circuit]):
         ax = plt.subplot(gs[i, 3])
         q = 'full_num_neurons'
         # two separate color bars are used because of large difference
         plot.plot_parameters_vector(
             ax,
-            data=d[prefix]['net_dict'][q],
+            data=circuit.net_dict[q],
             show_num='all')
         ax.set_title('number of neurons', pad=pad)
 
@@ -85,7 +58,7 @@ def overview_and_parameters(data_dir, ref_model, ups_model):
         q = 'full_indegrees'
         plot.plot_parameters_matrix(
             ax,
-            data=d[prefix]['net_dict'][q],
+            data=circuit.net_dict[q],
             show_num='all',
             set_bad=[0],
             vmin=lims[q]['vmin'],
@@ -96,7 +69,7 @@ def overview_and_parameters(data_dir, ref_model, ups_model):
         q = 'full_ext_indegrees'
         plot.plot_parameters_vector(
             ax,
-            data=d[prefix]['net_dict'][q],
+            data=circuit.net_dict[q],
             show_num='all',
             vmin=lims[q]['vmin'],
             vmax=lims[q]['vmax'])
@@ -108,45 +81,29 @@ def overview_and_parameters(data_dir, ref_model, ups_model):
     return
 
 
-def reference_vs_upscaled(data_dir, ref_model, ups_model):
+def reference_vs_upscaled(data_dir, ref_circuit, ups_circuit):
     """
     """
     d = {}
-    for m, model in enumerate([ref_model, ups_model]):
-
-        # model path
-        prefix = 'ref' if m == 0 else 'ups'
-        with open(os.path.join(data_dir, model,
-                               'parameter_space/parameters/psview_dict.pkl'), 'rb') as f:
-            psview = pickle.load(f)
-        keys = list(psview[model]['paramsets'].keys())
-
-        if len(keys) != 1:
-            raise Exception
-        else:
-            hash = keys[0]
-        model_path = os.path.join(data_dir, model, hash)
+    for i, circuit in enumerate([ref_circuit, ups_circuit]):
+        if i == 0:
+            prefix = 'ref'
+        elif i == 1:
+            prefix = 'ups'
 
         # load data
         for all_datatype in ['all_sptrains', 'all_pos_sorting_arrays',
                              'all_FRs', 'all_LVs', 'all_CCs_distances',
                              'all_PSDs']:
             fn = os.path.join(
-                model_path,
+                circuit.data_dir_circuit,
                 'processed_data',
                 all_datatype + '.h5')
             data = h5py.File(fn, 'r')
             d.update({prefix + '_' + all_datatype: data})
 
-        # instantiate plotting with first model
-        if m == 0:
-            dics = []
-            for dic in ['sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
-                with open(os.path.join(model_path, 'parameters', f'{dic}.pkl'),
-                          'rb') as f:
-                    dics.append(pickle.load(f))
-            sim_dict, net_dict, ana_dict, plot_dict = dics
-            plot = Plotting(sim_dict, net_dict, ana_dict, plot_dict)
+    # instantiate plotting object with referene circuit
+    plot = plotting.Plotting(ref_circuit)
 
     #####
 
@@ -214,22 +171,10 @@ def reference_vs_upscaled(data_dir, ref_model, ups_model):
     return
 
 
-def evoked_activity(data_dir, model):
+def evoked_activity(data_dir, circuit):
     """
     """
     print('Plotting evoked activity')
-
-    # model path
-    with open(os.path.join(data_dir, model,
-                           'parameter_space/parameters/psview_dict.pkl'), 'rb') as f:
-        psview = pickle.load(f)
-    keys = list(psview[model]['paramsets'].keys())
-
-    if len(keys) != 1:
-        raise Exception
-    else:
-        hash = keys[0]
-    model_path = os.path.join(data_dir, model, hash)
 
     # load data
     d = {}
@@ -238,18 +183,13 @@ def evoked_activity(data_dir, model):
                          'all_inst_rates_bintime_binspace',
                          'all_CCfuncs_thalamic_pulses'
                          ]:
-        fn = os.path.join(model_path, 'processed_data', all_datatype + '.h5')
+        fn = os.path.join(
+            circuit.data_dir_circuit, 'processed_data', all_datatype + '.h5')
         data = h5py.File(fn, 'r')
         d.update({all_datatype: data})
 
     # instantiate plotting
-    dics = []
-    for dic in ['sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
-        with open(os.path.join(model_path, 'parameters', f'{dic}.pkl'),
-                  'rb') as f:
-            dics.append(pickle.load(f))
-    sim_dict, net_dict, ana_dict, plot_dict = dics
-    plot = Plotting(sim_dict, net_dict, ana_dict, plot_dict)
+    plot = plotting.Plotting(circuit)
 
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 7.))
     gs = gridspec.GridSpec(3, 3)
