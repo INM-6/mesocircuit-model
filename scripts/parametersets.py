@@ -71,6 +71,7 @@ ps_dicts = {
         'net_dict': {
             **net_dict_microcircuit_MAMV1,
         },
+        'sys_dict': {'hpc': {'network': {'num_nodes': 1}}}
     },
 
     # local Potjans & Diesmann (2014) microcircuit

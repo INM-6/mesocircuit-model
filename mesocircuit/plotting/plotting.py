@@ -119,9 +119,12 @@ class Plotting(base_class.BaseAnalysisPlotting):
                     time_step,
                     time_interval,
                     sample_step,
-                    xlabels=True,
-                    ylabels=True,
-                    markersize_scale=0.25):
+                    xticklabels=True,
+                    xlabel=True,
+                    yticks=True,
+                    yticklabels=True,
+                    markersize_scale=0.25,
+                    axvline=None):
         """
         Plots spike raster to gridspec cell.
 
@@ -145,13 +148,16 @@ class Plotting(base_class.BaseAnalysisPlotting):
         sample_step
             Every sample_step'th neuron is shown (default being 1 means that all
             neurons are shown).
-        xlabels
-            Boolean indicating if x-labels shall be plotted.
-        ylabels
-            Boolean indicating if y-labels shall be plotted.
+        xticklabels
+            Boolean indicating if x-ticklabels shall be plotted.
+        xlabel
+            Boolean indicating if x-label shall be plotted.
+        yticklabels
+            Boolean indicating if y-ticklabels shall be plotted.
         markersize_scale
             Scaling factor for marker size.
-
+        axvhline
+            Time point of vertical line in ms.
         Returns
         -------
         ax
@@ -202,16 +208,19 @@ class Plotting(base_class.BaseAnalysisPlotting):
                     'k',
                     linewidth=matplotlib.rcParams['axes.linewidth'])
 
+        if axvline:
+            plt.axvline(x=axvline, color='k')
+
         ax.set_xlim(time_interval[0], time_interval[1])
         ax.set_ylim(-np.sum(nums_shown), 0)
 
         ax.set_yticks(yticks)
 
-        if xlabels:
+        if xlabel:
             ax.set_xlabel('time (ms)')
-        else:
+        if not xticklabels:
             ax.set_xticklabels([])
-        if ylabels:
+        if yticklabels:
             ax.set_yticklabels(self.plot_dict['pop_labels'][:len(nums_shown)])
         else:
             ax.set_yticklabels([])
@@ -384,10 +393,9 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                nframes=30,
                                tickstep=2,
                                cbar=True,
-                               cbar_left=0.42,  # vertical
-                               cbar_width=0.02,  # vertical
-                               cbar_bottom=0.2,  # horizontal
-                               cbar_height=0.02  # horizontal
+                               cbar_orientation='horizontal',
+                               cbar_size='5%',
+                               cbar_pad=0.4,
                                ):
         """
         """
@@ -472,30 +480,19 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                rotation=90)
 
         if cbar:
-            fig = plt.gcf()
-            rect = np.array(ax.get_position().bounds)
+            cbar_label = 'FR (spikes/s)'
+            if cbar_orientation == 'horizontal':
 
-            if orientation == 'horizontal':
-                rect[0] += 0.0  # left
-                rect[2] += 0.0  # width
-                rect[1] -= cbar_bottom  # bottom
-                rect[3] = cbar_height  # height
-                cax = fig.add_axes(rect)
-                cb = fig.colorbar(
-                    im, cax=cax, orientation='horizontal', extend='max')
-                cax.xaxis.set_label_position('bottom')
-            elif orientation == 'vertical':
-                rect[0] += cbar_left  # left
-                rect[2] = cbar_width  # width
-                rect[1] += 0.0  # bottom
-                rect[3] += 0.0  # height
-                cax = fig.add_axes(rect)
-                cb = fig.colorbar(
-                    im, cax=cax, orientation='vertical', extend='max')
+                self.colorbar(ax, im, cbar_label, axis='bottom',
+                              size=cbar_size,
+                              pad=cbar_pad,
+                              orientation='horizontal', extend='max')
+            elif cbar_orientation == 'vertical':
 
-            cb.set_label('FR (spikes/s)')
-            cb.locator = MaxNLocator(nbins=5)
-            cb.update_ticks()  # necessary for location
+                self.colorbar(ax, im, cbar_label, axis='right',
+                              size=cbar_size,
+                              pad=cbar_pad,
+                              orientation='vertical', extend='max')
 
         return ax
 
@@ -506,9 +503,11 @@ class Plotting(base_class.BaseAnalysisPlotting):
             all_CCfuncs_thalamic_pulses,
             wspace=0.2,
             cbar=True,
-            cbar_left=0.4,
-            cbar_bottom=0.12,
-            cbar_height=0.02):
+            cbar_orientation='horizontal',
+            cbar_left=0.42,  # vertical
+            cbar_width=0.02,  # vertical
+            cbar_bottom=0.12,  # horizontal
+            cbar_height=0.02):  # horizontal
         """
         """
         ncols = int(np.floor(np.sqrt(len(populations))))
@@ -571,14 +570,23 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 if i == len(populations) - 1:
                     fig = plt.gcf()
                     rect = np.array(ax.get_position().bounds)
-                    rect[0] -= cbar_left  # left
-                    rect[2] += cbar_left  # width
-                    rect[1] -= cbar_bottom  # bottom
-                    rect[3] = cbar_height  # height
-
-                    cax = fig.add_axes(rect)
-                    cb = fig.colorbar(im, cax=cax, orientation='horizontal')
-                    cax.xaxis.set_label_position('bottom')
+                    if cbar_orientation == 'horizontal':
+                        rect[0] += 0.0  # left
+                        rect[2] += 0.0  # width
+                        rect[1] -= cbar_bottom  # bottom
+                        rect[3] = cbar_height  # height
+                        cax = fig.add_axes(rect)
+                        cb = fig.colorbar(
+                            im, cax=cax, orientation='horizontal')
+                        cax.xaxis.set_label_position('bottom')
+                    elif cbar_orientation == 'vertical':
+                        rect[0] += cbar_left  # left
+                        rect[2] = cbar_width  # width
+                        rect[1] += 0.0  # bottom
+                        rect[3] += 0.0  # height
+                        cax = fig.add_axes(rect)
+                        cb = fig.colorbar(
+                            im, cax=cax, orientation='vertical')
                     cb.set_label(r'CC$^\mathrm{FR}\, (\tau, r)$', labelpad=0.1)
                     ticks = [vmin, -linthresh, 0, linthresh, vmax]
                     cb.set_ticks(ticks)
@@ -760,8 +768,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
     def plot_parameters_matrix(
             self, ax, data, title='',
-            show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.5,
-            cmap='inferno', set_bad=[]):
+            show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.6,
+            cmap='inferno', set_bad=[], cbar=True, vmin=None, vmax=None):
         """
         TODO
 
@@ -809,7 +817,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
         cm = matplotlib.cm.get_cmap(cmap).copy()
         cm.set_bad('white')
 
-        im = ax.imshow(block_data, cmap=cm)
+        im = ax.imshow(block_data, cmap=cm, vmin=vmin,
+                       vmax=vmax, aspect='auto')
 
         # annotate with numbers
         if show_num:
@@ -859,13 +868,14 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax.set_yticklabels(tgt_labels)
         ax.set_ylabel('targets')
 
-        self.colorbar(ax, im, title)
+        if cbar:
+            self.colorbar(ax, im, title, powerlimits=True)
         return
 
     def plot_parameters_vector(
             self, ax, data, title='',
-            show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.5,
-            cmap='inferno', set_bad=[]):
+            show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.6,
+            cmap='inferno', set_bad=[], cbar=True, cbar_size='25%', vmin=None, vmax=None):
         """
         TODO
         Parameters
@@ -894,7 +904,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         cm = matplotlib.cm.get_cmap(cmap).copy()
         cm.set_bad('white')
 
-        im = ax.imshow(col_data, cmap=cm)
+        im = ax.imshow(col_data, cmap=cm, vmin=vmin, vmax=vmax, aspect='auto')
 
         # annotate with numbers
         if show_num:
@@ -924,7 +934,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax.set_yticklabels(labels)
         ax.set_xticks([])
 
-        self.colorbar(ax, im, title, size='50%')
+        if cbar:
+            self.colorbar(ax, im, title, powerlimits=True, size=cbar_size)
         return
 
     def __plot_parameters_show_numbers(
@@ -950,7 +961,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
                     fontsize=matplotlib.rcParams['font.size'] *
                     num_fontsize_scale)
                 txt.set_path_effects(
-                    [PathEffects.withStroke(linewidth=0.5, foreground='k')])
+                    [PathEffects.withStroke(linewidth=1, foreground='k')])
         return
 
     def plotfunc_distributions(self, ax, X, i, bins, data, MaxNLocatorNBins):
@@ -1026,9 +1037,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 markeredgecolor='none',
                 linestyle='',
                 zorder=zorder,
-                rasterized=True, 
-                label=f'{X}-{X}' if b == 0 else '_nolegend_')
-            
+                rasterized=True)
         return
 
     def plotfunc_instantaneous_rates(
@@ -1087,16 +1096,20 @@ class Plotting(base_class.BaseAnalysisPlotting):
             axis='right',
             size='5%',
             pad=0.05,
-            nbins=5):
+            nbins=5,
+            powerlimits=False,
+            **kwargs):
         """
         TODO
         """
         divider = make_axes_locatable(ax)
         cax = divider.append_axes(axis, size=size, pad=pad)
-        cb = plt.colorbar(im, cax=cax, label=label)
+        cb = plt.colorbar(im, cax=cax, label=label, **kwargs)
         cb.locator = MaxNLocator(nbins=nbins)
+        if powerlimits:
+            cb.formatter.set_powerlimits((0, 0))
         cb.update_ticks()  # necessary for location
-        return
+        return cb
 
     def add_label(self, ax, label, offset=[0, 0],
                   weight='bold', fontsize_scale=1.2):

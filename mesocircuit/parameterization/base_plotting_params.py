@@ -17,8 +17,10 @@ plot_dict = {
         'figure.dpi': 300,
         # line width
         'lines.linewidth': 1.,
-        # labels close to ticklabels
+        # label pads
         'axes.labelpad': 0.1,
+        'xtick.major.pad': 0.2,
+        'ytick.major.pad': 0.2,
         # handling of .svg fonts:
         # 'path' (embed characters as paths) or 'none'
         'svg.fonttype': 'none',
@@ -66,8 +68,8 @@ plot_dict = {
 
     # parameters for plot_raster()
     # time intervals for raster plots (in ms)
-    'raster_time_interval_short': np.array([600., 800.]),
-    'raster_time_interval_long': np.array([500., 1500.]),
+    'raster_time_interval_short': np.array([1000., 1200.]),
+    'raster_time_interval_long': np.array([1000., 2000.]),
     # sample step of raster plot (1 means all neurons are shown).
     # if not a number, but 'auto' is given, a sample step is automatically
     # computed

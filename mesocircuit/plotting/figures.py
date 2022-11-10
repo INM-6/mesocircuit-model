@@ -272,7 +272,7 @@ def spatial_snapshots(plot, all_inst_rates_bintime_binspace):
 
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 3.))
     gs = gridspec.GridSpec(1, 1)
-    gs.update(left=0.09, right=0.97, top=1.1, bottom=0.2)
+    gs.update(left=0.09, right=0.97, top=1, bottom=0)
     ax = plot.plot_spatial_snapshots(
         gs[0, 0],
         pops,
