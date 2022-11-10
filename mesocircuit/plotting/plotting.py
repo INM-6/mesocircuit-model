@@ -398,6 +398,42 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                cbar_pad=0.4,
                                ):
         """
+        Plot a sequence of snapshots of spatiotemporally binned firing rates.
+
+        Parameters
+        ----------
+        gs
+            A gridspec cell to plot into.
+        populations
+            List of population names.
+        all_inst_rates_bintime_binspace
+            Open h5 file with all instantaneous firing rates binned in time and
+            space.
+        binsize_time
+            Temporal bin size in ms.
+        orientation
+            Vertical or horizontal plot.
+        start_time
+            Start time in ms.
+        step
+            Step between individual frames.
+        nframes
+            Number of frames to show.
+        tickstep
+            Step of showing ticks.
+        cbar
+            Whether to plot a color bar.
+        cbar_orientation
+            Orientation of the color bar.
+        cbar_size
+            Width (or height) of the color bar in %.
+        cbar_pad
+            Pad of the color bar.
+
+        Returns
+        -------
+        ax
+            Axis to put a label to.
         """
         # if the start time is a string, the respective entry from the stimulus
         # parameters is used
