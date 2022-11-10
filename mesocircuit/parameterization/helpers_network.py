@@ -159,6 +159,13 @@ def derive_dependent_parameters(base_net_dict):
 
     net_dict['indegrees_1mm2'] = np.round(indegrees_1mm2).astype(int)
 
+    # mask radius (maximum distance of connections)
+    mask_radius = net_dict['mask_scaling'] * net_dict['beta']
+    # maximum mask radius is half of the extent
+    mask_radius[mask_radius > net_dict['extent'] / 2.] = \
+        net_dict['extent'] / 2.
+    net_dict['mask_radius'] = mask_radius
+
     # in-degrees are scaled only if the extent is > 1 and
     # connect_method is 'fixedindegree_exp' or distr_indegree_exp;
     # otherwise the indegrees from the 1mm2 network are preserved
@@ -166,12 +173,12 @@ def derive_dependent_parameters(base_net_dict):
             'fixedindegree_exp', 'distr_indegree_exp', 'distr_indegree_gauss']):
         # scale indegrees from disc of 1mm2 to disc of radius extent/2.
         if net_dict['K_area_scale_method'] == 'PD2014':
-            net_dict['K_area_scaling'] = scale_indegrees_to_extent(
-                extent=net_dict['extent'],
+            net_dict['K_area_scaling'] = scale_indegrees_to_mask_radius(
+                mask_radius=net_dict['mask_radius'],
                 decay=np.ones_like(net_dict['beta']) * 0.3, profile='gaussian')
         elif net_dict['K_area_scale_method'] == 'beta':
-            net_dict['K_area_scaling'] = scale_indegrees_to_extent(
-                extent=net_dict['extent'],
+            net_dict['K_area_scaling'] = scale_indegrees_to_mask_radius(
+                mask_radius=net_dict['mask_radius'],
                 decay=net_dict['beta'], profile='exponential')
         elif net_dict['K_area_scale_method'] == 'old':
             net_dict['K_area_scaling'] = old_indegree_scaling()
@@ -318,13 +325,6 @@ def derive_dependent_parameters(base_net_dict):
     # spatial connectivity
     ############################################################################
 
-    # mask radius
-    mask_radius = net_dict['mask_scaling'] * net_dict['beta']
-    # maximum mask radius is half of the extent
-    mask_radius[mask_radius > net_dict['extent'] / 2.] = \
-        net_dict['extent'] / 2.
-    net_dict['mask_radius'] = mask_radius
-
     # p0 is computed for non-fixed in-degrees
     # connectivity profile: p0 * exp(-r/beta)
     if net_dict['connect_method'] in [
@@ -366,15 +366,16 @@ def old_indegree_scaling():
     return K_indegree_scaling
 
 
-def scale_indegrees_to_extent(extent, decay, profile):
+def scale_indegrees_to_mask_radius(mask_radius, decay, profile):
     """
     Computes a matrix of factors to scale indegrees from a disc of area 1mm2 to
     a disc with radius of half of the extent.
 
     Parameters
     ----------
-    extent
-        Side length (in mm) of square sheets where neurons are distributed.
+    mask_radius
+        Matrix of mask radii. They are equal to the maximum distance of
+        connections (in mm).
     decay
         Matrix of decay parameters (in mm).
     profile
@@ -401,11 +402,9 @@ def scale_indegrees_to_extent(extent, decay, profile):
             raise Exception('Connectivity profile incorrect.')
 
     radius_1mm2 = 1. / np.sqrt(np.pi)
-    radius_area = extent / 2.
 
-    K_indegree_scaling = (expression(radius_area, decay, profile) /
+    K_indegree_scaling = (expression(mask_radius, decay, profile) /
                           expression(radius_1mm2, decay, profile))
-
     return K_indegree_scaling
 
 
