@@ -156,3 +156,4 @@ arm64
 *.swp
 .vscode
 ms_figures
+scripts/mesocircuit_data
