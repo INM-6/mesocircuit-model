@@ -597,7 +597,7 @@ unset DISPLAY
                     for i, (executable, arg) in enumerate(zip(executables, scriptargs)):
                         y = arg.split(' ')[0]
                         y = y.replace('(', '').replace(')', '')
-                        stdout = os.path.join('stdout', f'{name}_{y}.txt')
+                        stdout = os.path.join(self.data_dir_circuit, 'stdout', f'{name}_{y}.txt')
                         js = copy.copy(jobscript)
                         js += executable
                         if machine == 'hpc':
