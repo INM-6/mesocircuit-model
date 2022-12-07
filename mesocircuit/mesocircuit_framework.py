@@ -574,14 +574,14 @@ unset DISPLAY
                         # split cell types (y) from other argumets
                         # cell types shall be printed in ""
                         y = arg.split(' ')[0]
-                        y = y.replace('(', '').replace(')', '')
-                        vars = arg.split(' ')[1:]
-                        vars = ' '.join(vars)
-                        stdout = os.path.join('stdout', f'{name}_{y}.txt')
+                        y_ = y.replace('(', '').replace(')', '')
+                        variables = arg.split(' ')[1:]
+                        variables = ' '.join(variables)
+                        stdout = os.path.join('stdout', f'{name}_{y_}.txt')
                         o_0 = f'2>&1 | tee {stdout}' if machine == 'local' else ''
                         o_1 = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
                         executables += [
-                            f'{run_cmd} python3 -u $RUN_PATH/{py} "{y}" {vars} {o_0 if i == 0 else o_1}'
+                            f'{run_cmd} python3 -u $RUN_PATH/{py} "{y}" {variables} {o_0 if i == 0 else o_1}'
                         ]
                 elif name == 'lfp_postprocess':
                     executables = [
@@ -615,8 +615,8 @@ unset DISPLAY
                             # fill in work string
                             js = js.format(
                                 dic['partition'],
-                                stdout_hpc,
-                                stdout_hpc,
+                                stdout,
+                                stdout,
                                 dic['num_nodes'],
                                 dic['num_mpi_per_node'],
                                 dic['local_num_threads'],
