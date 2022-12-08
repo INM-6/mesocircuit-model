@@ -6,14 +6,12 @@ from mesocircuit.analysis.spike_analysis import SpikeAnalysis
 from mesocircuit.helpers.io import load_h5_to_sparse_X
 
 
-def write_mua_file(sim_dict, net_dict, ana_dict,
+def write_mua_file(circuit,
                    PS, path_lfp_data, networkSim):
     '''
     Parameters
     ----------
-    sim_dict:
-    net_dict:
-    ana_dict:
+    circuit:
     PS: ParameterSet
         LFP model parameters
     path_lfp_data: path
@@ -21,7 +19,8 @@ def write_mua_file(sim_dict, net_dict, ana_dict,
     networkSim: CachedTopoNetwork instance
     '''
     # need method SpikeAnalysis._time_and_space_binned_sptrains_X()
-    sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+    # sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
+    sana = SpikeAnalysis(circuit)
 
     # monkey patch spatial bin edges to match electrode grid
     sana.space_bins = PS.MUA_bin_edges
@@ -45,9 +44,9 @@ def write_mua_file(sim_dict, net_dict, ana_dict,
         else:
             MUA = MUA + tmp
     # convert from #spikes to #spikes / s
-    MUA = MUA * 1000 / ana_dict['binsize_time']
+    MUA = MUA * 1000 / circuit.ana_dict['binsize_time']
 
     # write file
     with h5py.File(os.path.join(path_lfp_data, PS.MUAFile), 'w') as f:
         f['data'] = MUA.todense()
-        f['srate'] = 1000 / ana_dict['binsize_time']
+        f['srate'] = 1000 / circuit.ana_dict['binsize_time']

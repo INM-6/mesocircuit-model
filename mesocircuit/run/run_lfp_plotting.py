@@ -119,7 +119,7 @@ networkSim = CachedTopoNetwork(**PS.network_params)
 # Compute MUA signal and write to file
 ##########################################################################
 if not os.path.isfile(os.path.join(path_lfp_data, PS.MUAFile)):
-    write_mua_file(sim_dict, net_dict, ana_dict,
+    write_mua_file(circuit,
                    PS, path_lfp_data, networkSim)
 
 
