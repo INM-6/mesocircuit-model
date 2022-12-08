@@ -353,7 +353,10 @@ lfpplt.remove_axis_junk(axd)
 plt.setp(axd.get_yticklabels(), visible=False)
 
 # file with precomputed pairwise correlations
-fname = os.path.join('processed_data', 'all_CCs_distances.h5')
+fname = os.path.join(
+    circuit.data_dir_circuit, 
+    'processed_data', 
+    'all_CCs_distances.h5')
 with h5py.File(fname, 'r') as f:
     p = Plotting(sim_dict, net_dict, ana_dict, plot_dict)
     for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [40, 10])):
