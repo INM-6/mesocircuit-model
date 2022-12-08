@@ -358,7 +358,8 @@ fname = os.path.join(
     'processed_data', 
     'all_CCs_distances.h5')
 with h5py.File(fname, 'r') as f:
-    p = Plotting(sim_dict, net_dict, ana_dict, plot_dict)
+    # p = Plotting(sim_dict, net_dict, ana_dict, plot_dict)
+    p = Plotting(circuit)
     for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [40, 10])):
         p.plotfunc_CCs_distance(
             ax=ax, X=X, i=i, data=f,
