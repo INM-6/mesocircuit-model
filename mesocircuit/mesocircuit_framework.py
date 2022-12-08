@@ -577,7 +577,7 @@ unset DISPLAY
                         y_ = y.replace('(', '').replace(')', '')
                         variables = arg.split(' ')[1:]
                         variables = ' '.join(variables)
-                        stdout = os.path.join('stdout', f'{name}_{y_}.txt')
+                        stdout = os.path.join(self.data_dir_circuit, 'stdout', f'{name}_{y_}.txt')
                         o_0 = f'2>&1 | tee {stdout}' if machine == 'local' else ''
                         o_1 = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
                         executables += [
