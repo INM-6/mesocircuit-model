@@ -15,11 +15,7 @@ import numpy as np
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import matplotlib
-import pickle
 import os
-if 'DISPLAY' not in os.environ:
-    import matplotlib
-    matplotlib.use('Agg')
 
 
 ##########################################################################
@@ -47,7 +43,6 @@ matplotlib.rcParams.update(plot_dict['rcParams'])
 ##########################################################################
 # LFP output directory
 ##########################################################################
-# path_lfp_data = os.path.join(os.path.split(path_parameters)[0], 'lfp')
 path_lfp_data = os.path.join(circuit.data_dir_circuit, 'lfp')
 path_fig_files = os.path.join(path_lfp_data, 'figures')
 
@@ -105,8 +100,6 @@ ax.set_title('simulation time')
 print(df[['y', 'per_s']])
 print(df[['per_s']].to_numpy().flatten().tolist())
 
-# plt.show()
-# raise Exception
 
 #########################################################################
 # Create an object representation containing the spiking activity of the
@@ -358,7 +351,6 @@ fname = os.path.join(
     'processed_data', 
     'all_CCs_distances.h5')
 with h5py.File(fname, 'r') as f:
-    # p = Plotting(sim_dict, net_dict, ana_dict, plot_dict)
     p = Plotting(circuit)
     for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [40, 10])):
         p.plotfunc_CCs_distance(
@@ -536,5 +528,3 @@ fig = lfpplt.network_lfp_activity_animation(
     save_anim=True)
 # plt.close(fig)
 '''
-
-plt.show()

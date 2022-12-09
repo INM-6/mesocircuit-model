@@ -19,7 +19,6 @@ def write_mua_file(circuit,
     networkSim: CachedTopoNetwork instance
     '''
     # need method SpikeAnalysis._time_and_space_binned_sptrains_X()
-    # sana = SpikeAnalysis(sim_dict, net_dict, ana_dict)
     sana = SpikeAnalysis(circuit)
 
     # monkey patch spatial bin edges to match electrode grid
