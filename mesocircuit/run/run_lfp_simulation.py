@@ -228,4 +228,4 @@ if PROPERRUN:
 print(('Execution time: %.3f seconds' % (time() - tic)))
 
 
-COMM.Barrier()
+# COMM.Barrier()
