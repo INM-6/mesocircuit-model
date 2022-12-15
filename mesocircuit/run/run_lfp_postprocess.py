@@ -41,7 +41,7 @@ from lfpykit import CurrentDipoleMoment, VolumetricCurrentSourceDensity
 import mesocircuit
 import mesocircuit.mesocircuit_framework as mesoframe
 from mesocircuit.lfp.lfp_parameters import get_parameters
-from mesocircuit.lfp.periodiclfp import PeriodicLFP
+from mesocircuit.lfp.periodiclfp import PeriodicLFP, LaminarProbe
 from hybridLFPy import PostProcess
 import neuron  # needs to be imported before MPI
 from time import time
@@ -149,6 +149,7 @@ ticc = tic
 if PROPERRUN:
     probes = []
     probes.append(PeriodicLFP(cell=None, **PS.electrodeParams))
+    probes.append(LaminarProbe(cell=None, **PS.laminarProbeParams))
     probes.append(VolumetricCurrentSourceDensity(cell=None, **PS.CSDParams))
     probes.append(CurrentDipoleMoment(cell=None))
 
