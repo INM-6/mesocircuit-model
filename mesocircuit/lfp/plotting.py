@@ -719,8 +719,9 @@ def plot_signal_correlation_or_covariance(
 
 def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,
                     ylabels=True, scalebar=True, vlimround=None,
-                    T=[800, 1000], ylim=[-100, 0], colors='k',
-                    label='', transient=500, rasterized=False):
+                    T=[800, 1000], ylim=[-100, 0], color='k',
+                    label='', transient=500, rasterized=False,
+                    skipyticks=2):
     '''
     on axes plot the summed LFP contributions
 
@@ -749,6 +750,8 @@ def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,
         color of shown lines
     label: str
         line labels
+    skipyticks: int
+        skip every skipyticks yticklabel
 
 
     Returns
@@ -799,12 +802,12 @@ def plot_signal_sum(ax, PS, fname='LFPsum.h5', unit='mV', scaling_factor=1.,
 
     for i, z in enumerate(zvec):
         if i == 0:
-            ax.plot(tvec[slica], data[i] / vlimround + z, lw=1.,
+            ax.plot(tvec[slica], data[i] / vlimround + z, lw=1., color=color,
                     rasterized=rasterized, label=label, clip_on=False)
         else:
-            ax.plot(tvec[slica], data[i] / vlimround + z, lw=1.,
+            ax.plot(tvec[slica], data[i] / vlimround + z, lw=1., color=color,
                     rasterized=rasterized, clip_on=False)
-        if i % 2 == 0:
+        if i % skipyticks == 0:
             yticklabels.append('%i' % (i + 1))
         else:
             yticklabels.append('')

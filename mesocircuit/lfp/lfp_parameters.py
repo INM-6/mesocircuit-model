@@ -266,6 +266,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         ),
         CSDFile='VolumetricCurrentSourceDensity_sum.h5',
         MUAFile='MUA.h5',
+        CurrentDipoleMomentFile='CurrentDipoleMoment_sum.h5',
         Y_MUA=['L23E', 'L23I'],
         MUA_bin_edges=np.linspace(-2000, 2000, 11),
         X=net_dict['populations'].tolist(),
@@ -311,7 +312,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         PS.y))
 
     # define morphology file paths
-    testing = False  # if True, use ball-and-stick type morphologies
+    testing = True  # if True, use ball-and-stick type morphologies
     if testing:
         PS.PATH_m_y = os.path.join(file_prefix, 'morphologies')
         PS.m_y = [Y + '_' + y + '.hoc' for Y, y in PS.mapping_Yy]
