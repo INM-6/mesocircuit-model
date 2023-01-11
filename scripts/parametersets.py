@@ -46,6 +46,22 @@ ps_dicts = {
         'sys_dict': {'hpc': {'network': {'num_nodes': 16}}}
     },
 
+    # inhomogeneous thalamic activity
+    'mesocircuit_MAMV1_th_imhomogeneous': {
+        'sim_dict': {
+            **local_sim_dict,
+        },
+        'net_dict': {
+            **net_dict_mesocircuit_MAMV1,
+            'thalamic_input': 'inhomogeneous',
+            'ext_indegree_scaling': np.array([
+                [2, 0.9], # L4E
+                [3, 0.9], # L4I
+                [6, 0.9], # L6E
+                [7, 0.9]  # L6I
+                ])
+        },
+    },
     # Potjans & Diesmann (2014) microcircuit
     'microcircuit_PD': {
         'net_dict': {
@@ -63,6 +79,25 @@ ps_dicts = {
             **net_dict_mesocircuit_MAMV1,
             'N_scaling': 0.005,
             'K_scaling': 0.5,
+        },
+    },
+    
+    # inhomogeneous thalamic activity
+    'local_mesocircuit_MAMV1_th_imhomogeneous': {
+        'sim_dict': {
+            **local_sim_dict,
+        },
+        'net_dict': {
+            **net_dict_mesocircuit_MAMV1,
+            'N_scaling': 0.1,
+            'K_scaling': 0.5,
+            'thalamic_input': 'inhomogeneous',
+            'ext_indegree_scaling': np.array([
+                [2, 1], # L4E
+                [3, 0.9], # L4I
+                [6, 0.9], # L6E
+                [7, 0.9]  # L6I
+                ])
         },
     },
 

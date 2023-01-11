@@ -487,6 +487,71 @@ class Network:
                             positions=nest.spatial.grid(
                                 shape=[1, 1],
                                 edge_wrap=True))
+        elif self.net_dict['thalamic_input'] == 'inhomogeneous':
+            self.nonstationary_poisson_input_th = nest.Create(
+                'inhomogeneous_poisson_generator',
+                positions=nest.spatial.grid(
+                    shape=[self.net_dict['th_inhomogeneous_n']] * 2,
+                    extent=[self.net_dict['extent']] * 2,
+                    center=[0., 0.],
+                    edge_wrap=True,
+                    ),
+                )
+            
+            # compute rates for each node on Rank 0
+            # TODO: Move!
+            nt = self.net_dict['th_inhomogeneous_nt']
+            nx, ny = [self.net_dict['th_inhomogeneous_n']] * 2
+            if nest.Rank() == 0:
+                # create noise in Fourier domain:
+                n = np.zeros((nx, ny), dtype=complex)
+                x, t, y = np.meshgrid(np.arange(nx), 
+                                      np.arange(nt), 
+                                      np.arange(ny))
+                n = np.exp(
+                    1j * np.random.uniform(0, 2 * np.pi, (nt, nx, ny))
+                    ) / (1E1 + x**2 + 1E-1 * t**2 + y**2)**2
+                # transform to time domain:
+                nu = np.fft.ifftn(n).real
+                # normalize:
+                nu -= nu.mean()
+                nu /= nu.std()
+                # rescale:
+                nu *= self.net_dict['th_inhomogeneous_std']
+                nu += self.net_dict['th_inhomogeneous_mean']
+                # truncate and reshape:
+                nu[nu < 0] = 0.
+                nu = nu.reshape((nt, -1))
+
+                # store rate profiles
+                np.save(os.path.join(self.data_dir_circuit, 'th_inhomogeneous_nu.npy'), nu)
+            else:
+                nu = np.empty((nt, nx * ny), dtype=float)
+
+            # broadcast
+            if MPI.COMM_WORLD.Get_size() > 1:
+                MPI.COMM_WORLD.Bcast(nu, root=0)
+
+            # repeat the time series a certain number of times
+            nu = np.repeat(
+                nu, self.net_dict['th_inhomogeneous_repeats'], 
+                axis=0)
+            times = np.arange(nu.shape[0]) * \
+                self.net_dict['th_inhomogeneous_dt'] + \
+                self.net_dict['th_inhomogeneous_start']
+
+            # set rate and time steps
+            for i in range(nx * ny):
+                nest.SetStatus(
+                    self.nonstationary_poisson_input_th[i], 
+                    params=dict(
+                        rate_times=times, 
+                        rate_values=nu[:, i]
+                    )
+                )
+            # clear
+            del nu, times
+
         return
 
     def __create_dc_stim_input(self):
@@ -669,6 +734,26 @@ class Network:
             nest.Connect(self.spike_pulse_input_th, self.pops[-1],
                          conn_spec=conn_dict_pulse_th,
                          syn_spec=syn_dict_pulse_th)
+        elif self.net_dict['thalamic_input'] == 'inhomogeneous':
+            d = self.net_dict['extent'] / self.net_dict['th_inhomogeneous_n']
+            conn_spec_inhomogeneous = {
+                'rule': 'fixed_indegree',
+                'indegree': 1,
+                'mask': {
+                    'rectangular': {
+                        'lower_left': [-d / 2, -d / 2],
+                        'upper_right': [d / 2, d / 2]
+                        }
+                    }
+                }
+            nest.Connect(
+                self.nonstationary_poisson_input_th, 
+                self.pops[-1],
+                conn_spec=conn_spec_inhomogeneous,
+                )
+        else:
+            mssg = f'self.net_dict["thalamic_input"]={self.net_dict["thalamic_input"]} not supported'  # noqa 501
+            raise NotImplementedError(mssg)
         return
 
     def __connect_dc_stim_input(self):
