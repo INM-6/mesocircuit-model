@@ -11,7 +11,7 @@ import parametersets
 # Specify a name and the parameters for the upscaled model with evoked activtiy
 # by thalamic stimulation.
 
-name = 'live_paper'
+name = 'live_paper_mesocircuit'
 custom_params = parametersets.ps_dicts['mesocircuit_MAMV1_evoked']
 
 ################################################################################

@@ -26,7 +26,6 @@ circuit = mesoframe.Mesocircuit(
     data_dir=sys.argv[-3], name_exp=sys.argv[-2], ps_id=sys.argv[-1],
     load_parameters=True)
 
-
 ##########################################################################
 # Instantiate a Plotting object.
 # Load preprocessed data and pre-computed statistics.
@@ -51,16 +50,10 @@ functions = [
      [pl]],
 
     [figures.raster,
-     [pl, d['all_sptrains'], d['all_pos_sorting_arrays'], 'short']],
-
-    [figures.raster,
-     [pl, d['all_sptrains'], d['all_pos_sorting_arrays'], 'long']],
+     [pl, d['all_sptrains'], d['all_pos_sorting_arrays']]],
 
     [figures.instantaneous_firing_rates,
-     [pl, d['all_sptrains_bintime'], 'short']],
-
-    [figures.instantaneous_firing_rates,
-     [pl, d['all_sptrains_bintime'], 'long']],
+     [pl, d['all_sptrains_bintime']]],
 
     [figures.statistics_overview,
      [pl, d['all_FRs'], d['all_LVs'], d['all_CCs_distances'], d['all_PSDs']]],
