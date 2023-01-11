@@ -67,9 +67,9 @@ plot_dict = {
 
 
     # parameters for plot_raster()
-    # time intervals for raster plots (in ms)
-    'raster_time_interval_short': np.array([1000., 1200.]),
-    'raster_time_interval_long': np.array([1000., 2000.]),
+    # list of time intervals for raster plots and instantaneous rates (in ms)
+    # if 'all' in list: use full simulation time
+    'raster_time_intervals': np.array(['all', [1050., 1150.]]),
     # sample step of raster plot (1 means all neurons are shown).
     # if not a number, but 'auto' is given, a sample step is automatically
     # computed
