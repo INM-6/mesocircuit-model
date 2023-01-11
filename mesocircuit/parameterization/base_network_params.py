@@ -272,7 +272,7 @@ net_dict = {
 
     # thalamic_input = 'poisson'
     # start of the thalamic input (in ms)
-    'th_start': 700.0,
+    'th_start': 1000.0,
     # duration of the thalamic input (in ms)
     'th_duration': 10.0,
     # rate of the thalamic input (in spikes/s)
@@ -283,7 +283,7 @@ net_dict = {
     # the radius is th_rel_radius * extent
     'th_rel_radius': 0.1,
     # time of first pulse (in ms)
-    'th_pulse_start': 700.0,
+    'th_pulse_start': 1000.0,
     # pulse interval (in ms)
     'th_interval': 100.0,
     # delay between the pulse spike generator and the thalamic neurons

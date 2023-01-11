@@ -135,7 +135,7 @@ def parameters(plot):
     return
 
 
-def raster(plot, all_sptrains, all_pos_sorting_arrays, length):
+def raster(plot, all_sptrains, all_pos_sorting_arrays):
     """
     Creates a figure with a raster plot.
 
@@ -144,17 +144,10 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays, length):
     plot
     all_sptrains
     all_pos_sorting_arrays
-    length [short, long]
     """
-    print(f'Plotting spike raster ({length}).')
 
     # population sizes
     N_X = [all_pos_sorting_arrays[X].size for X in plot.X]
-
-    if length == 'short':
-        raster_time_interval = plot.plot_dict['raster_time_interval_short']
-    elif length == 'long':
-        raster_time_interval = plot.plot_dict['raster_time_interval_long']
 
     if plot.net_dict['thalamic_input']:
         pops = plot.X
@@ -163,33 +156,50 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays, length):
         pops = plot.Y
         num_neurons = N_X[:-1]
 
-    # automatically compute a sample step for this figure
-    if plot.plot_dict['raster_sample_step'] == 'auto':
-        target_num_dots = 40000
-        # assume an average firing rate of 4 Hz to estimate the number of
-        # dots if all neurons were shown
-        rate_estim = 4.
-        full_num_dots_estim = \
-            np.diff(raster_time_interval) * 1e-3 * \
-            rate_estim * \
-            np.sum(num_neurons)
-        raster_sample_step = 1 + int(full_num_dots_estim / target_num_dots)
-        print('  Automatically set raster_sample_step to ' +
-              str(raster_sample_step) + '.')
+    for time_interval in plot.plot_dict['raster_time_intervals']:
+        # full simulation duration
+        if time_interval == 'all':
+            time_interval = [
+                0., plot.sim_dict['t_presim'] + plot.sim_dict['t_sim']]
+            fig_width = plot.plot_dict['fig_width_2col']
+            target_num_dots = 80000
+            left = 0.09
+            right = 0.98
+        else:
+            fig_width = plot.plot_dict['fig_width_1col']
+            target_num_dots = 40000
+            left = 0.17
+            right = 0.92
 
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 5.))
-    gs = gridspec.GridSpec(1, 1)
-    gs.update(top=0.98, bottom=0.1, left=0.17, right=0.92)
-    ax = plot.plot_raster(
-        gs[0, 0],
-        pops,
-        all_sptrains,
-        all_pos_sorting_arrays,
-        plot.sim_dict['sim_resolution'],
-        raster_time_interval,
-        raster_sample_step)
+        print(f'Plotting spike raster for interval: {time_interval} ms')
 
-    plot.savefig(f'raster_{length}', eps_conv=True)
+        # automatically compute a sample step for this figure
+        if plot.plot_dict['raster_sample_step'] == 'auto':
+            # assume an average firing rate of 4 Hz to estimate the number of
+            # dots if all neurons were shown
+            rate_estim = 4.
+            full_num_dots_estim = \
+                np.diff(time_interval) * 1e-3 * \
+                rate_estim * \
+                np.sum(num_neurons)
+            raster_sample_step = 1 + int(full_num_dots_estim / target_num_dots)
+            print(
+                f'  Automatically set raster_sample_step to {raster_sample_step}.')
+
+        fig = plt.figure(figsize=(fig_width, 5.))
+        gs = gridspec.GridSpec(1, 1)
+        gs.update(top=0.98, bottom=0.1, left=left, right=right)
+        ax = plot.plot_raster(
+            gs[0, 0],
+            pops,
+            all_sptrains,
+            all_pos_sorting_arrays,
+            plot.sim_dict['sim_resolution'],
+            time_interval,
+            raster_sample_step)
+
+        plot.savefig(f'raster_{int(time_interval[0])}-{int(time_interval[1])}ms',
+                     eps_conv=True)
     return
 
 
@@ -270,16 +280,18 @@ def spatial_snapshots(plot, all_inst_rates_bintime_binspace):
     else:
         pops = plot.Y
 
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 3.))
-    gs = gridspec.GridSpec(1, 1)
-    gs.update(left=0.09, right=0.97, top=1, bottom=0)
-    ax = plot.plot_spatial_snapshots(
-        gs[0, 0],
-        pops,
-        all_inst_rates_bintime_binspace,
-        plot.ana_dict['binsize_time'],
-        orientation='horizontal')
-    plot.savefig('spatial_snapshots')
+    for start_time in plot.plot_dict['snapshots_start_times']:
+        fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 3.))
+        gs = gridspec.GridSpec(1, 1)
+        gs.update(left=0.09, right=0.97, top=1, bottom=0)
+        ax = plot.plot_spatial_snapshots(
+            gs[0, 0],
+            pops,
+            all_inst_rates_bintime_binspace,
+            plot.ana_dict['binsize_time'],
+            orientation='horizontal',
+            start_time=start_time)
+        plot.savefig(f'spatial_snapshots_{int(start_time)}ms')
     return
 
 
@@ -313,36 +325,47 @@ def crosscorrelation_funcs_thalamic_pulses(plot, all_CCfuncs_thalamic_pulses):
     return
 
 
-def instantaneous_firing_rates(plot, all_sptrains_bintime, length):
+def instantaneous_firing_rates(plot, all_sptrains_bintime):
     """
     Creates a figure with histograms of instantaneous firing rates.
     """
-    print(f'Plotting instantaneous firing rates ({length}).')
-
-    if length == 'short':
-        raster_time_interval = plot.plot_dict['raster_time_interval_short']
-    elif length == 'long':
-        raster_time_interval = plot.plot_dict['raster_time_interval_long']
 
     if plot.net_dict['thalamic_input']:
         pops = plot.X
     else:
         pops = plot.Y
 
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 5.))
-    gs = gridspec.GridSpec(1, 1)
-    gs.update(top=0.98, bottom=0.1, left=0.17, right=0.92)
-    ax = plot.plot_population_panels(
-        gs[0, 0],
-        plotfunc=plot.plotfunc_instantaneous_rates,
-        populations=pops,
-        xlabel='time (ms)',
-        ylabel=r'$\nu (s^{-1})$',
-        sptrains=all_sptrains_bintime,
-        time_step=plot.ana_dict['binsize_time'],
-        time_interval=raster_time_interval)
+    for time_interval in plot.plot_dict['raster_time_intervals']:
+        # full simulation duration
+        if time_interval == 'all':
+            time_interval = [
+                0., plot.sim_dict['t_presim'] + plot.sim_dict['t_sim']]
+            fig_width = plot.plot_dict['fig_width_2col']
+            left = 0.09
+            right = 0.98
+        else:
+            fig_width = plot.plot_dict['fig_width_1col']
+            left = 0.17
+            right = 0.92
 
-    plot.savefig(f'instantaneous_rates_{length}')
+        print(
+            f'Plotting instantaneous firing rates for interval: {time_interval} ms')
+
+        fig = plt.figure(figsize=(fig_width, 5.))
+        gs = gridspec.GridSpec(1, 1)
+        gs.update(top=0.98, bottom=0.1, left=left, right=right)
+        ax = plot.plot_population_panels(
+            gs[0, 0],
+            plotfunc=plot.plotfunc_instantaneous_rates,
+            populations=pops,
+            xlabel='time (ms)',
+            ylabel=r'$\nu (s^{-1})$',
+            sptrains=all_sptrains_bintime,
+            time_step=plot.ana_dict['binsize_time'],
+            time_interval=time_interval)
+
+        plot.savefig(
+            f'instantaneous_rates_{int(time_interval[0])}-{int(time_interval[1])}ms')
     return
 
 
