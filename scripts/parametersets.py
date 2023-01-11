@@ -48,9 +48,6 @@ ps_dicts = {
 
     # inhomogeneous thalamic activity
     'mesocircuit_MAMV1_th_imhomogeneous': {
-        'sim_dict': {
-            **local_sim_dict,
-        },
         'net_dict': {
             **net_dict_mesocircuit_MAMV1,
             'thalamic_input': 'inhomogeneous',
@@ -61,6 +58,7 @@ ps_dicts = {
                 [7, 0.9]  # L6I
                 ])
         },
+        'sys_dict': {'hpc': {'network': {'num_nodes': 16}}}
     },
     # Potjans & Diesmann (2014) microcircuit
     'microcircuit_PD': {
