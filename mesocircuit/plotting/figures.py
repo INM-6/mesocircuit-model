@@ -280,16 +280,18 @@ def spatial_snapshots(plot, all_inst_rates_bintime_binspace):
     else:
         pops = plot.Y
 
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 3.))
-    gs = gridspec.GridSpec(1, 1)
-    gs.update(left=0.09, right=0.97, top=1, bottom=0)
-    ax = plot.plot_spatial_snapshots(
-        gs[0, 0],
-        pops,
-        all_inst_rates_bintime_binspace,
-        plot.ana_dict['binsize_time'],
-        orientation='horizontal')
-    plot.savefig('spatial_snapshots')
+    for start_time in plot.plot_dict['snapshots_start_times']:
+        fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 3.))
+        gs = gridspec.GridSpec(1, 1)
+        gs.update(left=0.09, right=0.97, top=1, bottom=0)
+        ax = plot.plot_spatial_snapshots(
+            gs[0, 0],
+            pops,
+            all_inst_rates_bintime_binspace,
+            plot.ana_dict['binsize_time'],
+            orientation='horizontal',
+            start_time=start_time)
+        plot.savefig(f'spatial_snapshots_{int(start_time)}ms')
     return
 
 

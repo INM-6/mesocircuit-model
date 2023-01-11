@@ -69,7 +69,7 @@ plot_dict = {
     # parameters for plot_raster()
     # list of time intervals for raster plots and instantaneous rates (in ms)
     # if 'all' in list: use full simulation time
-    'raster_time_intervals': np.array(['all', [1050., 1150.]]),
+    'raster_time_intervals': np.array(['all', [1050., 1150.]], dtype=object),
     # sample step of raster plot (1 means all neurons are shown).
     # if not a number, but 'auto' is given, a sample step is automatically
     # computed
@@ -89,6 +89,8 @@ plot_dict = {
     'psd_max_freq': 750,
 
     # parameters for plot_spatial_snapshots()
+    # list of start times = first snapshot
+    'snapshots_start_times': np.array([1100., 1400.]),
     # maximum rate on color bar (in spikes/s)
     'snapshots_max_rate': 50.0
 

@@ -388,7 +388,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                all_inst_rates_bintime_binspace,
                                binsize_time,
                                orientation='horizontal',
-                               start_time='th_pulse_start',  # ms
+                               start_time=1000.,  # ms
                                step=1,  # multiplication
                                nframes=30,
                                tickstep=2,
@@ -435,10 +435,6 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax
             Axis to put a label to.
         """
-        # if the start time is a string, the respective entry from the stimulus
-        # parameters is used
-        if isinstance(start_time, str):
-            start_time = self.net_dict[start_time]
 
         start_frame = int(start_time / binsize_time)
         end_frame = start_frame + (nframes - 1) * step
