@@ -13,8 +13,9 @@ if 'HOSTNAME' in os.environ:
                  if os.environ['HOSTNAME'].rfind('jureca') > 0
                  else 'batch')
 elif 'SYSTEMNAME' in os.environ:
-    if os.environ['SYSTEMNAME'] == 'jurecadc':
-        partition = 'dc-cpu'
+    partition = ('dc-cpu'
+                 if os.environ['SYSTEMNAME'] == 'jurecadc'
+                 else None)
 else:
     partition = None
 
