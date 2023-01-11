@@ -264,8 +264,7 @@ def derive_dependent_parameters(base_net_dict):
     net_dict['num_synapses'] = np.round(full_num_synapses *
                                         net_dict['N_scaling'] *
                                         net_dict['K_scaling']).astype(int)
-    ext_indegrees = np.round(full_ext_indegrees *
-                             net_dict['K_scaling']).astype(int)
+    ext_indegrees = full_ext_indegrees * net_dict['K_scaling']
 
     # adjust weights and DC amplitude if the indegree is scaled
     if net_dict['K_scaling'] != 1:
