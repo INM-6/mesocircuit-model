@@ -935,8 +935,8 @@ def get_data_coherence(data_x, data_y,
                     if phase_coherence:
                         c[i, j, ] = np.divide(Pxy, np.abs(Pxy))
                     else:
-                        c[i, j, ] = np.sqrt(
-                            np.divide(np.absolute(Pxy)**2, Pxx * Pyy))
+                        c[i, j, ] = np.divide(np.absolute(Pxy)**2, 
+                                              Pxx * Pyy)
     elif method == 'scipy':
         for i in range(x.size):
             freqs, Pxx = ss.welch(data_x_d[i, ],
@@ -954,8 +954,8 @@ def get_data_coherence(data_x, data_y,
                     if phase_coherence:
                         raise NotImplementedError
                     else:
-                        c[i, j, ] = np.sqrt(
-                            np.divide(np.absolute(Pxy)**2, Pxx * Pyy))
+                        c[i, j, ] = np.divide(np.absolute(Pxy)**2, 
+                                              Pxx * Pyy)
 
     # mask lower triangle of correlation/covariance matrices, mask
     # autocoherences/autocorrelatiosn

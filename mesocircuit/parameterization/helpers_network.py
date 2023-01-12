@@ -676,16 +676,16 @@ def num_synapses_from_conn_probs(
 
 
 def postsynaptic_potential_to_current(C_m, tau_m, tau_syn):
-    """ Computes a factor to convert postsynaptic potentials to currents.
+    """Computes a factor to convert postsynaptic potentials to currents.
 
     The time course of the postsynaptic potential ``v`` is computed as
     :math: `v(t)=(i*h)(t)`
     with the exponential postsynaptic current
-    :math:`i(t)=J\mathrm{e}^{-t/\tau_\mathrm{syn}}\Theta (t)`,
+    :math:`i(t)=J\\mathrm{e}^{-t/\tau_\\mathrm{syn}}\\Theta (t)`,
     the voltage impulse response
-    :math:`h(t)=\frac{1}{\tau_\mathrm{m}}\mathrm{e}^{-t/\tau_\mathrm{m}}\Theta (t)`,
+    :math:`h(t)=\frac{1}{\tau_\\mathrm{m}}\\mathrm{e}^{-t/\tau_\\mathrm{m}}\\Theta (t)`,
     and
-    :math:`\Theta(t)=1` if :math:`t\geq 0` and zero otherwise.
+    :math:`\\Theta(t)=1` if :math:`t\\geq 0` and zero otherwise.
 
     The ``PSP`` is considered as the maximum of ``v``, i.e., it is
     computed by setting the derivative of ``v(t)`` to zero.
