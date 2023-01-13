@@ -218,8 +218,6 @@ class MesocircuitExperiment():
                                 if np.all(np.equal(psets[h][d1_dict][d1_param], val1)):
                                     if dim == 2:
                                         hashmap[i][j] = h
-                                    # else:
-                                    #     d2_dict, d2_param, d2_range = ranges[2]
             if dim == 1:
                 hashmap = hashmap.reshape(-1, 1)
 

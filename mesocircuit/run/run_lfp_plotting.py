@@ -317,8 +317,8 @@ for ax, fname, unit, title in zip(axes, fnames, units, titles):
     ax.set_prop_cycle('color', [plt.cm.gray(i)
                                 for i in np.linspace(0, 200, 10).astype(int)])
     lfpplt.plot_signal_sum(
-        ax, PS, fname, unit, T=[
-            sim_dict['t_presim'], sim_dict['t_presim'] + 100], 
+        ax, PS, fname, unit, 
+        T=[sim_dict['t_presim'], sim_dict['t_presim'] + 100], 
         color=None)
     ax.set_title(title)
 
