@@ -312,7 +312,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         PS.y))
 
     # define morphology file paths
-    testing = True  # if True, use ball-and-stick type morphologies
+    testing = False  # if True, use ball-and-stick type morphologies
     if testing:
         PS.PATH_m_y = os.path.join(file_prefix, 'morphologies')
         PS.m_y = [Y + '_' + y + '.hoc' for Y, y in PS.mapping_Yy]
