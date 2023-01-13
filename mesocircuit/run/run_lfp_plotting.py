@@ -317,11 +317,34 @@ for ax, fname, unit, title in zip(axes, fnames, units, titles):
     ax.set_prop_cycle('color', [plt.cm.gray(i)
                                 for i in np.linspace(0, 200, 10).astype(int)])
     lfpplt.plot_signal_sum(
-        ax, PS, fname, unit, T=[
-            sim_dict['t_presim'], sim_dict['t_presim'] + 100])
+        ax, PS, fname, unit, 
+        T=[sim_dict['t_presim'], sim_dict['t_presim'] + 100], 
+        color=None)
     ax.set_title(title)
 
 fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_II.pdf'))
+
+
+# Laminar LFP and Currend tiole moment
+fig, axes = plt.subplots(1, 2, figsize=(plot_dict['fig_width_2col'],
+                                      plot_dict['fig_width_2col']),
+                         sharex=True, sharey=False)
+fnames = [os.path.join(path_lfp_data, PS.laminarProbeFile),
+          os.path.join(path_lfp_data, PS.CurrentDipoleMomentFile)]
+units = ['mV', 'nA/µm']
+titles = ['Laminar LFP', 'Current dipole moment']
+for ax, fname, unit, title in zip(axes, fnames, units, titles):
+    lfpplt.plot_signal_sum(
+        ax, PS, fname, unit, T=[
+            sim_dict['t_presim'], sim_dict['t_presim'] + 500],
+            color='k', skipyticks=1)
+    ax.set_title(title)
+    ax.axis(ax.axis('tight'))
+
+ax.set_yticklabels(['$P_x$', '$P_y$', '$P_z$'])
+ax.set_ylabel('')
+
+fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_III.pdf'))
 
 
 # Figure 8: new

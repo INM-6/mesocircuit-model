@@ -40,7 +40,7 @@ from lfpykit import CurrentDipoleMoment, VolumetricCurrentSourceDensity
 import mesocircuit
 import mesocircuit.mesocircuit_framework as mesoframe
 from mesocircuit.lfp.lfp_parameters import get_parameters
-from mesocircuit.lfp.periodiclfp import PeriodicLFP
+from mesocircuit.lfp.periodiclfp import PeriodicLFP, LaminarProbe
 from hybridLFPy import CachedTopoNetwork, TopoPopulation
 import neuron  # needs to be imported before MPI
 from time import time
@@ -166,6 +166,7 @@ print(('NEST simulation and gdf file processing done in  %.3f seconds' % toc))
 if PROPERRUN:
     probes = []
     probes.append(PeriodicLFP(cell=None, **PS.electrodeParams))
+    probes.append(LaminarProbe(cell=None, **PS.laminarProbeParams))
     probes.append(VolumetricCurrentSourceDensity(cell=None, **PS.CSDParams))
     probes.append(CurrentDipoleMoment(cell=None))
 
@@ -225,6 +226,3 @@ if PROPERRUN:
 
 # tic toc
 print(('Execution time: %.3f seconds' % (time() - tic)))
-
-
-COMM.Barrier()

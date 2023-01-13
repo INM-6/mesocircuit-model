@@ -59,6 +59,20 @@ class PeriodicLFP(RecExtElectrode):
         return M
 
 
+class LaminarProbe(PeriodicLFP):
+    '''
+    LaminarProbe class wrapping PeriodicLFP class
+
+    Parameters
+    ----------
+    **kwargs
+        parameters parsed to class PeriodicLFP
+    '''
+    def __init__(self, **kwargs):
+        '''Initialize LaminarProbe class wrapping PeriodicLFP class'''
+        super().__init__(**kwargs)
+
+
 if __name__ == '__main__':
     '''test sim checking that imaginary sources across periodic boundaries
     are contributing to the EP'''

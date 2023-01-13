@@ -8,6 +8,7 @@ Parameterspace evaluation and job execution.
 import mesocircuit
 from mesocircuit.parameterization import helpers_network as helpnet
 import os
+import sys
 import subprocess
 import pickle
 import json
@@ -217,8 +218,6 @@ class MesocircuitExperiment():
                                 if np.all(np.equal(psets[h][d1_dict][d1_param], val1)):
                                     if dim == 2:
                                         hashmap[i][j] = h
-                                    else:
-                                        d2_dict, d2_param, d2_range = ranges[2]
             if dim == 1:
                 hashmap = hashmap.reshape(-1, 1)
 
@@ -543,6 +542,9 @@ unset DISPLAY
                             else:
                                 run_cmd = f'{mpiexec} --mpi=pmi2'
                             break
+                    # get rid of annoying openmpi segfault on macOS
+                    if sys.platform == 'darwin':
+                        run_cmd = 'export TMPDIR=/tmp\n' + run_cmd
                 else:
                     raise NotImplementedError(
                         f'machine {machine} not recognized')

@@ -19,9 +19,9 @@ jobs:
             python-version: [3.8, 3.9]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python 3
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -30,6 +30,7 @@ jobs:
             brew install openmpi
         elif [ "$RUNNER_OS" == "Linux" ]; then
             sudo apt-get update
+            sudo apt upgrade -y
             sudo apt install build-essential libopenmpi-dev openmpi-bin
         else
             echo "$RUNNER_OS not supported"
