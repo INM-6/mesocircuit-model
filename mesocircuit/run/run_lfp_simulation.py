@@ -226,6 +226,3 @@ if PROPERRUN:
 
 # tic toc
 print(('Execution time: %.3f seconds' % (time() - tic)))
-
-
-# COMM.Barrier()
