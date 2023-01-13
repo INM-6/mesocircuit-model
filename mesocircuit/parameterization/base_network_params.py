@@ -262,12 +262,21 @@ net_dict = {
     # parameters for external stimulus
     # optional thalamic input
     # options are:
-    # False:        thalamic neurons are created and connected, but they are not
-    #               active
-    # 'poisson':    persistent thalamic poisson input for a given duration to
-    #               all thalamic neurons
-    # 'pulses':     repetitive pulses from stimulating thalamic neurons  in the
-    #               center of the network
+    # False:
+    #   thalamic neurons are created and connected, but they are not
+    #   active
+    # 'poisson':
+    #   persistent thalamic poisson input for a given duration to               
+    #   all thalamic neurons
+    # 'pulses':
+    #   repetitive pulses from stimulating thalamic neurons  in the                
+    #   center of the network
+    # 'inhomogeneous':
+    #   create a n x n grid layer of inhomogeneous poisson processes
+    #   connecting to the thalamac population using square masks
+    #   of dimension L/n x L/n. The rate profile of each process
+    #   is generated as 1/f^2 noise across the spatial and temporal
+    #   dimensions.
     'thalamic_input': False,
 
     # thalamic_input = 'poisson'
@@ -288,6 +297,24 @@ net_dict = {
     'th_interval': 100.0,
     # delay between the pulse spike generator and the thalamic neurons
     'th_delay_pulse_generator': 1.0,
+
+    # thalamic_input = 'inhomogeneous'
+    # set up nx x ny grid of inhomogeneous poisson generators
+    # with a time-variable rate profile for each.
+    # number of generators across each axis:
+    'th_inhomogeneous_n': 32,
+    # mean rate
+    'th_inhomogeneous_mean': 5.,
+    # standard deviation
+    'th_inhomogeneous_std' : 5.,
+    # start time
+    'th_inhomogeneous_start': 100.,
+    # time resolution (ms)
+    'th_inhomogeneous_dt' : 1.,
+    # period (timesteps)
+    'th_inhomogeneous_nt': 500,
+    # repeats
+    'th_inhomogeneous_repeats': 10,
 
     # optional DC input
     # turn DC input on or off (True or False)
