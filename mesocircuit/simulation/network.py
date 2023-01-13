@@ -510,8 +510,6 @@ class Network:
                         rate_values=rates[:, i]
                     )
                 )
-            # clear
-            del nu, times
 
         return
 
