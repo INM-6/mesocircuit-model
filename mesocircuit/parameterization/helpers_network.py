@@ -349,7 +349,7 @@ def derive_dependent_parameters(base_net_dict):
         net_dict['repeat_connect'] = np.ones_like(indegrees, dtype=int)
 
     # absolute radius for thalamic pulses
-    if net_dict['thalamic_input'] == 'pulses':
+    if net_dict['thalamic_input_type'] == 'pulses':
         net_dict['th_radius'] = net_dict['th_rel_radius'] * net_dict['extent']
 
     return net_dict

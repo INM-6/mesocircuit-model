@@ -157,7 +157,7 @@ class MesocircuitExperiment():
             # add parameterset values of ranges to parameterview
             parameterview['paramsets'][ps_id] = {}
             for dic in parameterview['custom_params']['ranges']:
-                self.parameterview['paramsets'][ps_id][dic] = {}
+                parameterview['paramsets'][ps_id][dic] = {}
                 for param, val in \
                         parameterview['custom_params']['ranges'][dic].items():
                     parameterview[

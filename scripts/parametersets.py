@@ -43,7 +43,7 @@ ps_dicts = {
     'mesocircuit_MAMV1_evoked': {
         'net_dict': {
             **net_dict_mesocircuit_MAMV1,
-            'thalamic_input': 'pulses',
+            'thalamic_input': True,
         },
         'sys_dict': {'hpc': {'network': {'num_nodes': 16}}}
     },

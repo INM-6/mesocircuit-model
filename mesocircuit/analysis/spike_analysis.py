@@ -781,7 +781,9 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 # distance-dependent cross-correlation functions with the
                 # thalamic population TC only for pulses
                 elif datatype == 'CCfuncs_thalamic_pulses':
-                    if self.net_dict['thalamic_input'] == 'pulses' and X != 'TC':
+                    if (self.net_dict['thalamic_input'] == True and
+                        self.net_dict['thalamic_input_type'] == 'pulses' and
+                        X != 'TC'):
                         # load data from TC
                         fn_TC = os.path.join(self.data_dir_circuit, 'processed_data',
                                              'sptrains_bintime_binspace_TC.h5')
