@@ -244,7 +244,7 @@ net_dict = {
     'beta_scaling': 1.,
 
     # scaling factor for mask to be multiplied with the respective beta
-    'mask_scaling': 6.,
+    'mask_scaling': 5.,
 
     # TODO maybe remove
     # If beta_exh_inh is not False, it must be a list with excitatory and
