@@ -288,13 +288,19 @@ def derive_dependent_parameters(base_net_dict):
         net_dict['DC_amp'] = net_dict['full_DC_amp']
 
     ############################################################################
-    # scale specific external indegrees (changes are not compensated for)
+    # scale external indegrees (changes are not compensated for)
     ############################################################################
 
+    # population-specific changes
     if len(net_dict['ext_indegree_scaling']) > 0:
         for population, factor in net_dict['ext_indegree_scaling']:
             full_ext_indegrees[int(population)] *= factor
             ext_indegrees[int(population)] *= factor
+
+    # global scaling factor
+    full_ext_indegrees *= net_dict['ext_indegree_scaling_global']
+    ext_indegrees *= net_dict['ext_indegree_scaling_global']
+
     net_dict['full_ext_indegrees'] = np.round(full_ext_indegrees).astype(int)
     net_dict['ext_indegrees'] = np.round(ext_indegrees).astype(int)
 

@@ -175,6 +175,8 @@ net_dict = {
     # scaling factor for external indegrees; changes are not compensated for.
     # entries have the format: [population, factor]
     'ext_indegree_scaling': np.array([]),
+    # global scaling factor for external indegrees (applied to all populations)
+    'ext_indegree_scaling_global': 1.,
     'bg_rate': 8.,
     # delay from the Poisson generator to the network (in ms)
     'delay_poisson': 1.5,
