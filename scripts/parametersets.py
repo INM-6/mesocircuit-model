@@ -10,7 +10,7 @@ net_dict_mesocircuit_MAMV1 = {
     'g': -11.,
     'neuron_params': {'tau_syn_ex': 2., 'tau_syn_in': 8.},
     'indegree_scaling': np.array([[5, 4, 0.75], [3, 3, 1.8], [7, 7, 0.9]]),
-    'ext_indegree_scaling': np.array([[0, 1.15], [2, 1.1]]),
+    'ext_indegree_scaling': np.array([[0, 1.15], [2, 1.05]]),
     'ext_indegree_scaling_global': 1.04,
 }
 
