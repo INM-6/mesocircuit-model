@@ -549,7 +549,7 @@ unset DISPLAY
 
                         jobscript += f'export LD_PRELOAD={jemalloc_path}\n'
 
-                    run_cmd = f'srun --mpi=pmi2 --cpus-per-task={dic["local_num_threads"]} --threads-per-core=1 --cpu-bind=verbose,rank'
+                    run_cmd = f'srun --cpus-per-task={dic["local_num_threads"]} --threads-per-core=1 --cpu-bind=verbose,rank'
 
                 elif machine == 'local':
                     # check which executables are available
@@ -560,7 +560,7 @@ unset DISPLAY
                             if mpiexec in ['mpiexec', 'mpirun']:
                                 run_cmd = f'{mpiexec} -n {dic["num_mpi"]}'
                             else:
-                                run_cmd = f'{mpiexec} --mpi=pmi2'
+                                run_cmd = f'{mpiexec}'
                             break
                 else:
                     raise NotImplementedError(
