@@ -28,6 +28,13 @@ name_evoked = 'evoked'
 custom_params_evoked = parametersets.ps_dicts['mesocircuit_MAMV1_evoked']
 
 ################################################################################
+# Simulation time for manuscript figures in ms.
+
+#for cu_params in [custom_params_reference, custom_params_upscaled,
+#                  custom_params_upscaled_1mm2, custom_params_evoked]:
+#    cu_params.update({'sim_dict': {'t_sim': 5000.}})
+
+################################################################################
 # Initialize MesocircuitExperiments for each parameter combination and inspect
 # the custom parameters in each case.
 
@@ -51,9 +58,9 @@ print(meso_exp_evoked.parameterview)
 # Submit jobs.
 
 for meso_exp in [
-    # meso_exp_reference,
+    meso_exp_reference,
     meso_exp_upscaled,
-    # meso_exp_upscaled_1mm2,
+    meso_exp_upscaled_1mm2,
     meso_exp_evoked
 ]:
     circuit = meso_exp.circuits[0]
