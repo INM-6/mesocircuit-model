@@ -27,6 +27,8 @@ sys_dict = {
         'network': {
             # partition
             'partition': partition,
+            # maximum number of available cores per compute node
+            'max_num_cores': 128,
             # number of compute nodes
             'num_nodes': 4,
             # number of MPI processes per node
@@ -39,6 +41,7 @@ sys_dict = {
         # configuration
         'analysis_and_plotting': {
             'partition': partition,
+            'max_num_cores': 128,
             'num_nodes': 1,
             'num_mpi_per_node': 12,
             'local_num_threads': 1,
@@ -46,6 +49,7 @@ sys_dict = {
         },
         'lfp_simulation': {
             'partition': partition,
+            'max_num_cores': 128,
             'num_nodes': 16,
             'num_mpi_per_node': 128,
             'local_num_threads': 1,  # not used
@@ -59,6 +63,7 @@ sys_dict = {
         },
         'lfp_postprocess': {
             'partition': partition,
+            'max_num_cores': 128,
             'num_nodes': 1,
             'num_mpi_per_node': 8,
             'local_num_threads': 1,  # not used
@@ -66,6 +71,7 @@ sys_dict = {
         },
         'lfp_plotting': {
             'partition': partition,
+            'max_num_cores': 128,
             'num_nodes': 1,
             'num_mpi_per_node': 1,
             'local_num_threads': 1,  # not used

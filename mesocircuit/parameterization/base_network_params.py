@@ -175,6 +175,8 @@ net_dict = {
     # scaling factor for external indegrees; changes are not compensated for.
     # entries have the format: [population, factor]
     'ext_indegree_scaling': np.array([]),
+    # global scaling factor for external indegrees (applied to all populations)
+    'ext_indegree_scaling_global': 1.,
     'bg_rate': 8.,
     # delay from the Poisson generator to the network (in ms)
     'delay_poisson': 1.5,
@@ -244,7 +246,7 @@ net_dict = {
     'beta_scaling': 1.,
 
     # scaling factor for mask to be multiplied with the respective beta
-    'mask_scaling': 4.,
+    'mask_scaling': 5.,
 
     # TODO maybe remove
     # If beta_exh_inh is not False, it must be a list with excitatory and
@@ -260,17 +262,19 @@ net_dict = {
     'extent': 4.,
 
     # parameters for external stimulus
-    # optional thalamic input
-    # options are:
-    # False:        thalamic neurons are created and connected, but they are not
-    #               active
+    # whether to use thalamic input
+    # if False: thalamic neurons are created and connected, but they are not
+    #           active
+    'thalamic_input': False,
+
+    # type of thalamic input (applied if thalamic_input = True), options are:
     # 'poisson':    persistent thalamic poisson input for a given duration to
     #               all thalamic neurons
     # 'pulses':     repetitive pulses from stimulating thalamic neurons  in the
     #               center of the network
-    'thalamic_input': False,
+    'thalamic_input_type': 'pulses',
 
-    # thalamic_input = 'poisson'
+    # thalamic_input_type = 'poisson'
     # start of the thalamic input (in ms)
     'th_start': 1000.0,
     # duration of the thalamic input (in ms)
@@ -278,7 +282,7 @@ net_dict = {
     # rate of the thalamic input (in spikes/s)
     'th_rate': 120.0,
 
-    # thalamic_input = 'pulses'
+    # thalamic_input_type = 'pulses'
     # only thalamic neurons within a circle in the center are stimulated.
     # the radius is th_rel_radius * extent
     'th_rel_radius': 0.1,

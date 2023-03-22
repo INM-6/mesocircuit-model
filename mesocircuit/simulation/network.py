@@ -461,7 +461,7 @@ class Network:
             print('Creating thalamic input for external stimulation.')
 
         # input to thalamic population
-        if self.net_dict['thalamic_input'] == 'poisson':
+        if self.net_dict['thalamic_input_type'] == 'poisson':
             self.poisson_input_th = nest.Create('poisson_generator')
             self.poisson_input_th.set(
                 rate=self.net_dict['th_rate'],
@@ -470,7 +470,7 @@ class Network:
                     self.net_dict['th_start'] +
                     self.net_dict['th_duration']))
 
-        elif self.net_dict['thalamic_input'] == 'pulses':
+        elif self.net_dict['thalamic_input_type'] == 'pulses':
             # substract from pulse times the delay between pulse spike
             # generator and the thalamic population such that the first
             # thalamic pulse occurs exactly at th_pulse_start
@@ -656,9 +656,9 @@ class Network:
             print('Connecting thalamic input.')
 
         # connect input to thalamic population
-        if self.net_dict['thalamic_input'] == 'poisson':
+        if self.net_dict['thalamic_input_type'] == 'poisson':
             nest.Connect(self.poisson_input_th, self.pops[-1])
-        elif self.net_dict['thalamic_input'] == 'pulses':
+        elif self.net_dict['thalamic_input_type'] == 'pulses':
             conn_dict_pulse_th = {
                 'rule': 'pairwise_bernoulli',
                 'p': 1.0,

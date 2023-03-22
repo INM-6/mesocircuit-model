@@ -158,7 +158,7 @@ class MesocircuitExperiment():
             # add parameterset values of ranges to parameterview
             parameterview['paramsets'][ps_id] = {}
             for dic in parameterview['custom_params']['ranges']:
-                self.parameterview['paramsets'][ps_id][dic] = {}
+                parameterview['paramsets'][ps_id][dic] = {}
                 for param, val in \
                         parameterview['custom_params']['ranges'][dic].items():
                     parameterview[
@@ -518,18 +518,37 @@ class Mesocircuit():
                 # define machine specifics
                 if machine == 'hpc':
                     # assume SLURM, append resource definitions
+                    # the following could be added:
+                    # export OMP_DISPLAY_ENV=VERBOSE
+                    # export OMP_DISPLAY_AFFINITY=TRUE
                     jobscript += """#SBATCH --job-name=meso
 #SBATCH --partition={}
 #SBATCH --output={}
 #SBATCH --error={}
 #SBATCH --nodes={}
 #SBATCH --ntasks-per-node={}
-#SBATCH --cpus-per-task={}
 #SBATCH --time={}
-export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export NUMEXPR_MAX_THREADS={}
+export OMP_PROC_BIND=TRUE
+export OMP_NUM_THREADS={}
 unset DISPLAY
 """
-                    run_cmd = 'srun --mpi=pmi2'
+
+                    if name == 'network':
+                        # get path to jemalloc
+                        # "which jemalloc" executed on the command line returns
+                        # something like
+                        # '/p/software/jurecadc/stages/2022/software/jemalloc/5.2.1-GCCcore-11.2.0/bin/jemalloc.sh'
+                        which_jemalloc = subprocess.check_output(
+                            ["which", "jemalloc.sh"]).decode(sys.stdout.encoding).strip()
+                        # replace '/bin/jemalloc.sh' by '/lib64/libjemalloc.so'
+                        jemalloc_path = ('/').join(
+                            which_jemalloc.split('/')[:-2]) + \
+                            '/lib64/libjemalloc.so'
+
+                        jobscript += f'export LD_PRELOAD={jemalloc_path}\n'
+
+                    run_cmd = f'srun --cpus-per-task={dic["local_num_threads"]} --threads-per-core=1 --cpu-bind=verbose,rank'
 
                 elif machine == 'local':
                     # check which executables are available
@@ -540,7 +559,7 @@ unset DISPLAY
                             if mpiexec in ['mpiexec', 'mpirun']:
                                 run_cmd = f'{mpiexec} -n {dic["num_mpi"]}'
                             else:
-                                run_cmd = f'{mpiexec} --mpi=pmi2'
+                                run_cmd = f'{mpiexec}'
                             break
                     # get rid of annoying openmpi segfault on macOS
                     if sys.platform == 'darwin':
@@ -579,7 +598,8 @@ unset DISPLAY
                         y_ = y.replace('(', '').replace(')', '')
                         variables = arg.split(' ')[1:]
                         variables = ' '.join(variables)
-                        stdout = os.path.join(self.data_dir_circuit, 'stdout', f'{name}_{y_}.txt')
+                        stdout = os.path.join(
+                            self.data_dir_circuit, 'stdout', f'{name}_{y_}.txt')
                         o_0 = f'2>&1 | tee {stdout}' if machine == 'local' else ''
                         o_1 = f'2>&1 | tee -a {stdout}' if machine == 'local' else ''
                         executables += [
@@ -599,7 +619,8 @@ unset DISPLAY
                     for i, (executable, arg) in enumerate(zip(executables, scriptargs)):
                         y = arg.split(' ')[0]
                         y = y.replace('(', '').replace(')', '')
-                        stdout = os.path.join(self.data_dir_circuit, 'stdout', f'{name}_{y}.txt')
+                        stdout = os.path.join(
+                            self.data_dir_circuit, 'stdout', f'{name}_{y}.txt')
                         js = copy.copy(jobscript)
                         js += executable
                         if machine == 'hpc':
@@ -621,8 +642,9 @@ unset DISPLAY
                                 stdout,
                                 dic['num_nodes'],
                                 dic['num_mpi_per_node'],
-                                dic['local_num_threads'],
-                                wt  # dic['wall_clock_time']
+                                wt,  # dic['wall_clock_time']
+                                dic['max_num_cores'],
+                                dic['local_num_threads']
                             )
                         y = arg.split(' ')[0]
                         y = y.replace('(', '').replace(')', '')
@@ -630,6 +652,7 @@ unset DISPLAY
                             path, 'jobscripts', f"{machine}_{name}_{y}.sh")
                         with open(fname, 'w') as f:
                             f.write(js)
+
                 else:
                     jobscript += sep.join(executables)
                     if machine == 'hpc':
@@ -639,8 +662,9 @@ unset DISPLAY
                             stdout_hpc,
                             dic['num_nodes'],
                             dic['num_mpi_per_node'],
-                            dic['local_num_threads'],
-                            dic['wall_clock_time']
+                            dic['wall_clock_time'],
+                            dic['max_num_cores'],
+                            dic['local_num_threads']
                         )
 
                     # write jobscript
