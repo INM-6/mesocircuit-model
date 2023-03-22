@@ -520,6 +520,9 @@ class Mesocircuit():
                 # define machine specifics
                 if machine == 'hpc':
                     # assume SLURM, append resource definitions
+                    # the following could be added:
+                    # export OMP_DISPLAY_ENV=VERBOSE
+                    # export OMP_DISPLAY_AFFINITY=TRUE
                     jobscript += """#SBATCH --job-name=meso
 #SBATCH --partition={}
 #SBATCH --output={}
@@ -528,8 +531,6 @@ class Mesocircuit():
 #SBATCH --ntasks-per-node={}
 #SBATCH --time={}
 export NUMEXPR_MAX_THREADS={}
-export OMP_DISPLAY_ENV=VERBOSE
-export OMP_DISPLAY_AFFINITY=TRUE
 export OMP_PROC_BIND=TRUE
 export OMP_NUM_THREADS={}
 unset DISPLAY
