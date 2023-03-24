@@ -22,6 +22,8 @@ sim_dict = {
     # The full simulation time is the sum of a presimulation time and the main
     # simulation time.
     # presimulation time (in ms)
+    # a good choice for consistency is to choose it equal to
+    # ana_dict['t_transient'] for ignoring the spikes during analysis
     't_presim': 1000.0,
     # simulation time (in ms)
     't_sim': 1000.0,
