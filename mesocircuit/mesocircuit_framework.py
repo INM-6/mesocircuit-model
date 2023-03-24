@@ -539,14 +539,17 @@ unset DISPLAY
                         # "which jemalloc" executed on the command line returns
                         # something like
                         # '/p/software/jurecadc/stages/2022/software/jemalloc/5.2.1-GCCcore-11.2.0/bin/jemalloc.sh'
-                        which_jemalloc = subprocess.check_output(
-                            ["which", "jemalloc.sh"]).decode(sys.stdout.encoding).strip()
-                        # replace '/bin/jemalloc.sh' by '/lib64/libjemalloc.so'
-                        jemalloc_path = ('/').join(
-                            which_jemalloc.split('/')[:-2]) + \
-                            '/lib64/libjemalloc.so'
-
-                        jobscript += f'export LD_PRELOAD={jemalloc_path}\n'
+                        try:
+                            which_jemalloc = subprocess.check_output(
+                                ["which", "jemalloc.sh"]).decode(sys.stdout.encoding).strip()
+                            # replace '/bin/jemalloc.sh' by '/lib64/libjemalloc.so'
+                            jemalloc_path = ('/').join(
+                                which_jemalloc.split('/')[:-2]) + \
+                                '/lib64/libjemalloc.so'
+                            jobscript += f'export LD_PRELOAD={jemalloc_path}\n'
+                        except:
+                            print(
+                                "LD_PRELOAD skipped because jemalloc is not in PATH.")
 
                     run_cmd = f'srun --cpus-per-task={dic["local_num_threads"]} --threads-per-core=1 --cpu-bind=verbose,rank'
 
