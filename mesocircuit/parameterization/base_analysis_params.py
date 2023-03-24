@@ -55,7 +55,7 @@ ana_dict = {
     # startup transient to discard for computing statistics (in ms).
     # a good choice for consistency is to choose it equal to the presimulation
     # time sim_dict['t_presim']
-    't_transient': 500.0,
+    't_transient': 1000.0,
 
     # number of neurons to compute correlation coefficients from.
     # if 'auto': the population size of the smallest population is taken.
