@@ -551,7 +551,7 @@ unset DISPLAY
                             print(
                                 "LD_PRELOAD skipped because jemalloc is not in PATH.")
 
-                    run_cmd = f'srun --cpus-per-task={dic["local_num_threads"]} --threads-per-core=1 --cpu-bind=verbose,rank'
+                    run_cmd = f'srun --cpus-per-task={dic["local_num_threads"]} --threads-per-core=1 --cpu-bind=rank'
 
                 elif machine == 'local':
                     # check which executables are available
