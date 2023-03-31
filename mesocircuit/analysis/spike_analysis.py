@@ -110,7 +110,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             self.N_X = N_X_1mm2.astype(int)
 
         # minimal analysis as sanity check
-        self.__first_glance_at_data(self.N_X, num_spikes)
+        self.__first_glance_at_data(num_neurons, num_spikes)
 
         # preprocess data of each population in parallel
         pt.parallelize_by_array(self.X,
@@ -336,25 +336,25 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         return spikes_1mm2, positions_1mm2
 
-    def __first_glance_at_data(self, N_X, num_spikes):
+    def __first_glance_at_data(self, num_neurons, num_spikes):
         """
         Prints a table offering a first glance on the data.
 
         Parameters
         ----------
-        N_X
+        num_neurons
             Population sizes.
         num_spikes
             An array of spike counts per population.
         """
         # compute firing rates in 1/s
-        rates = num_spikes / N_X / \
+        rates = num_spikes / num_neurons / \
             ((self.sim_dict['t_sim'] + self.sim_dict['t_presim']) / 1000.)
 
         matrix = np.zeros((len(self.X) + 1, 3), dtype=object)
         matrix[0, :] = ['population', 'num_neurons', 'rate_s-1']
         matrix[1:, 0] = self.X
-        matrix[1:, 1] = N_X.astype(str)
+        matrix[1:, 1] = num_neurons.astype(str)
         matrix[1:, 2] = [str(np.around(rate, decimals=3)) for rate in rates]
 
         title = 'First glance at data'
