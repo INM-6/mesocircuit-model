@@ -904,7 +904,6 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         i_spt = 0
         for nid in np.arange(num_neurons_data):
             # extract spike train
-            # TODO check if row or column
             spt_nid = sptrains_X.getrow(nid).toarray()[0]
             # discard very last time bin
             spt_nid = spt_nid[:-1]
