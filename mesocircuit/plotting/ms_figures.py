@@ -122,9 +122,10 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit):
             all_sptrains=d[prefix + '_all_sptrains'],
             all_pos_sorting_arrays=d[prefix + '_all_pos_sorting_arrays'],
             time_step=plot.sim_dict['sim_resolution'],
-            # plot.plot_dict['raster_time_interval_short'],
             time_interval=[1000, 1050],
-            sample_step=1)
+            sample_step=1,
+            randomize_neuronids=True,
+        )
         plot.add_label(ax, labels[i])
         ax.set_title(titles[i])
 

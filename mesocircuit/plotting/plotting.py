@@ -124,12 +124,14 @@ class Plotting(base_class.BaseAnalysisPlotting):
                     yticks=True,
                     yticklabels=True,
                     markersize_scale=0.25,
-                    axvline=None):
+                    axvline=None,
+                    randomize_neuronids=False,
+                    random_seed=567):
         """
         Plots spike raster to gridspec cell.
 
         Neurons are sorted according to sorting_axis applied in
-        all_pos_sorting_arrays.
+        all_pos_sorting_arrays if randomize_neuronids=False.
 
         Parameters
         ----------
@@ -158,6 +160,11 @@ class Plotting(base_class.BaseAnalysisPlotting):
             Scaling factor for marker size.
         axvhline
             Time point of vertical line in ms.
+        randomize_neuronids
+            Whether to scramble neuron ids.
+        random_seed
+            Random seed used to scramble neuron ids.
+
         Returns
         -------
         ax
@@ -175,9 +182,16 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 time_interval[1] / time_step).astype(int)
             data = data[:, time_indices]
 
+            # deterministically randomize neuron ids
+            if randomize_neuronids:
+                np.random.seed(random_seed)
+                rnd_indices = np.arange(np.shape(data)[0])
+                np.random.shuffle(rnd_indices)
+                data = data[rnd_indices, :]
             # sort according to spatial axis
-            space_indices = all_pos_sorting_arrays[X][()]
-            data = data[space_indices, :]
+            else:
+                space_indices = all_pos_sorting_arrays[X][()]
+                data = data[space_indices, :]
 
             # subsample if specified
             if sample_step > 1:
