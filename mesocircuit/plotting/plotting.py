@@ -21,6 +21,7 @@ import warnings
 import h5py
 import numpy as np
 import matplotlib
+from scipy.optimize import curve_fit
 from mesocircuit.helpers.io import load_h5_to_sparse_X
 matplotlib.use('Agg')
 
@@ -568,6 +569,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
             vmax = 0.5
             vmin = -vmax
             linthresh = 0.05
+            color_fit = '#004488'
 
             cc_func = all_CCfuncs_thalamic_pulses[X]['cc_funcs']
             distances = all_CCfuncs_thalamic_pulses[X]['distances_mm']
@@ -587,6 +589,43 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                            vmax=vmax),
                            interpolation='nearest',
                            origin='lower')
+
+            # calculate propagation speed
+            min_distance = self.net_dict['th_radius']
+            max_distance = self.net_dict['extent'] / 2.
+
+            def linfunc(t, v):
+                return min_distance + v * t
+
+            speed_lags = []
+            speed_distances = []
+            threshold = 0.1 * np.max(cc_func)
+            for d, dist in enumerate(distances):
+                if dist >= min_distance:
+                    series = cc_func[d, :]
+                    if np.all(series < threshold):
+                        continue
+
+                    max_idx = np.argmax(series)
+                    max_val = series[max_idx]
+
+                    if max_val > threshold:
+                        speed_lags.append(lags[max_idx])
+                        speed_distances.append(dist)
+
+            # print(speed_lags)
+            # print(speed_distances)
+            # popt, pcov = curve_fit(linfunc, speed_lags, speed_distances)
+            speed = 0.3  # popt[0]
+
+            ax.plot([0, (max_distance - min_distance) / speed],
+                    [min_distance, max_distance], '-', color=color_fit)
+            ax.text(0.02, 0, f'v={speed:.2f} mm/ms',
+                    ha='left', va='bottom',
+                    transform=ax.transAxes,
+                    fontsize=matplotlib.rcParams['font.size'] * 0.8,
+                    color=color_fit)
+
             ax.axis(ax.axis('tight'))
             # grid lines
             ax.grid(which='major', axis='both', linestyle=':', color='k')
