@@ -304,17 +304,17 @@ net_dict = {
     # number of generators across each axis:
     'th_inhomogeneous_n': 32,
     # mean rate
-    'th_inhomogeneous_mean': 5.,
+    'th_inhomogeneous_mean': -5,
     # standard deviation
-    'th_inhomogeneous_std' : 5.,
+    'th_inhomogeneous_std' : 10,
     # start time
     'th_inhomogeneous_start': 100.,
     # time resolution (ms)
     'th_inhomogeneous_dt' : 1.,
     # period (timesteps)
-    'th_inhomogeneous_nt': 500,
+    'th_inhomogeneous_nt': 250,
     # repeats
-    'th_inhomogeneous_repeats': 10,
+    'th_inhomogeneous_repeats': 20,
 
     # optional DC input
     # turn DC input on or off (True or False)

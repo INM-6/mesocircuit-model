@@ -52,10 +52,10 @@ ps_dicts = {
             **net_dict_mesocircuit_MAMV1,
             'thalamic_input': 'inhomogeneous',
             'ext_indegree_scaling': np.array([
-                [2, 0.9], # L4E
-                [3, 0.9], # L4I
-                [6, 0.9], # L6E
-                [7, 0.9]  # L6I
+                #[2, 0.95], # L4E
+                #[3, 0.95], # L4I
+                [6, 0.95], # L6E
+                # [7, 0.95]  # L6I
                 ])
         },
         'sys_dict': {'hpc': {'network': {'num_nodes': 16}}}

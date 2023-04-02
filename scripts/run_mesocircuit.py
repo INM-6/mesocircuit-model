@@ -28,8 +28,9 @@ import parametersets
 # choices. These models base on the original microcircuit
 # (Potjans and Diesmann, 2014) and are downscaled for execution on a laptop.
 
-name = 'mesocircuit_MAMV1'
+# name = 'mesocircuit_MAMV1'
 # name = 'local_mesocircuit_PD'
+name = 'mesocircuit_MAMV1_th_imhomogeneous'
 custom_params = parametersets.ps_dicts[name]
 
 ################################################################################
@@ -65,9 +66,9 @@ for circuit in meso_exp.circuits:
         jobs=[
             'network',
             'analysis_and_plotting',
-            # 'lfp_simulation',
-            # 'lfp_postprocess',
-            # 'lfp_plotting',
+            #'lfp_simulation',
+            #'lfp_postprocess',
+            'lfp_plotting',
         ],
         machine='hpc',
         # machine='local'
