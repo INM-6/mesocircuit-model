@@ -316,7 +316,7 @@ def crosscorrelation_funcs_thalamic_pulses(plot, all_CCfuncs_thalamic_pulses):
 
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 4.))
     gs = gridspec.GridSpec(1, 1)
-    gs.update(left=0.22, right=0.97, top=0.99, bottom=0.22)
+    gs.update(left=0.22, right=0.97, top=0.95, bottom=0.22)
     ax = plot.plot_crosscorrelation_funcs_thalamic_pulses(
         gs[0, 0],
         plot.Y,

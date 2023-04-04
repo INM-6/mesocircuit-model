@@ -21,6 +21,7 @@ import warnings
 import h5py
 import numpy as np
 import matplotlib
+from scipy.optimize import curve_fit
 from mesocircuit.helpers.io import load_h5_to_sparse_X
 matplotlib.use('Agg')
 
@@ -553,7 +554,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
             cbar_left=0.42,  # vertical
             cbar_width=0.02,  # vertical
             cbar_bottom=0.12,  # horizontal
-            cbar_height=0.02):  # horizontal
+            cbar_height=0.02,  # horizontal
+            fit_speed=False):
         """
         """
         ncols = int(np.floor(np.sqrt(len(populations))))
@@ -564,10 +566,11 @@ class Plotting(base_class.BaseAnalysisPlotting):
         for i, X in enumerate(populations):
             ax = plt.subplot(gsf[i])
 
-            cmap = 'RdGy_r'
+            cmap = 'PuOr_r'
             vmax = 0.5
             vmin = -vmax
             linthresh = 0.05
+            color_fit = 'k'
 
             cc_func = all_CCfuncs_thalamic_pulses[X]['cc_funcs']
             distances = all_CCfuncs_thalamic_pulses[X]['distances_mm']
@@ -587,9 +590,58 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                            vmax=vmax),
                            interpolation='nearest',
                            origin='lower')
+
+            # calculate propagation speed
+            if fit_speed:
+                # start search at distance equal to the radius of the thalamic
+                # input; the maximum distance is half the network extent
+                min_distance = self.net_dict['th_radius']
+                max_distance = self.net_dict['extent'] / 2.
+
+                # disregard values lower than 10% of the maximum
+                threshold = 0.05 * np.max(cc_func)
+
+                # distance as a function of time (used to fit offset_distance r0
+                # and speed v)
+                def linfunc(t, r0, v):
+                    return r0 + v * t
+
+                # extract for each distance the time lag corresponding to the
+                # largest value of the cross-correlation function
+                speed_lags = []
+                speed_distances = []
+                for d, dist in enumerate(distances):
+                    if dist >= min_distance:
+                        series = cc_func[d, :]
+                        if np.all(series < threshold):
+                            continue
+
+                        max_idx = np.argmax(series)
+                        max_val = series[max_idx]
+
+                        if max_val > threshold:
+                            speed_lags.append(lags[max_idx])
+                            speed_distances.append(dist)
+
+                popt, pcov = curve_fit(linfunc, speed_lags, speed_distances)
+                offset_distance = popt[0]
+                speed = popt[1]
+
+                min_lag = (min_distance - offset_distance) / speed
+                max_lag = (max_distance - offset_distance) / speed
+
+                ax.plot([min_lag, max_lag],
+                        [min_distance, max_distance],
+                        '-', color=color_fit)
+                ax.text(0.02, 0.98, f'v={speed:.2f}\n     mm/ms',
+                        ha='left', va='top',
+                        transform=ax.transAxes,
+                        fontsize=matplotlib.rcParams['font.size'] * 0.9,
+                        color=color_fit)
+
             ax.axis(ax.axis('tight'))
             # grid lines
-            ax.grid(which='major', axis='both', linestyle=':', color='k')
+            ax.grid(which='major', axis='x', linestyle=':', color='k')
 
             ax.yaxis.set_major_locator(MaxNLocator(nbins=5))
 
