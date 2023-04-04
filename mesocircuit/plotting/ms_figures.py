@@ -206,9 +206,9 @@ def evoked_activity(output_dir, circuit):
         d['all_sptrains'],
         d['all_pos_sorting_arrays'],
         plot.sim_dict['sim_resolution'],
-        time_interval=plot.plot_dict['raster_time_interval_short'],
-        sample_step=100,
-        axvline=plot.net_dict['th_start'])
+        time_interval=[1050, 1150],
+        sample_step=25,
+        axvline=1100)
     ax.set_title('TC', pad=0.2, fontsize=plt.rcParams['font.size'])
     plot.add_label(ax, labels[0])
 
@@ -222,7 +222,7 @@ def evoked_activity(output_dir, circuit):
         sptrains=d['all_sptrains_bintime'],
         time_step=plot.ana_dict['binsize_time'],
         # time_interval=plot.plot_dict['raster_time_interval_short']
-        time_interval=[1000, 1200])
+        time_interval=[1050, 1150])
     plot.add_label(ax, labels[1])
 
     # spatial snapshots
@@ -245,7 +245,8 @@ def evoked_activity(output_dir, circuit):
         d['all_CCfuncs_thalamic_pulses'],
         cbar_orientation='vertical',
         cbar_left=0.11,
-        cbar_width=0.01
+        cbar_width=0.01,
+        fit_speed=True
     )
     plot.add_label(ax, labels[3])
 
