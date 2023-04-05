@@ -79,11 +79,11 @@ plot_dict = {
     # number of bins for distributions
     'distr_num_bins': 30,
     # maximum bin for rate distributions (in Hz), first is at 0
-    'distr_max_rate': 28.,
+    'distr_max_rate': 10.,
     # maximum bin for LV distributions, first is at 0
-    'distr_max_lv': 2.8,
+    'distr_max_lv': 2.,
     # maximum bin for CC distributions, symmetrically around 0)
-    'distr_max_cc': 0.08,
+    'distr_max_cc': 0.02,
 
     # maximum frequency to show for PSDs (in Hz)
     'psd_max_freq': 750,
