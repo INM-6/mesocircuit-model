@@ -76,36 +76,59 @@ class Plotting(base_class.BaseAnalysisPlotting):
         scale_fs
             Scaling factor for font size.
         """
-        ax = plt.subplot(gs, projection='3d')
+        ax = plt.subplot(gs, projection='3d', computed_zorder=False)
 
         pop_colors = self.plot_dict['pop_colors']
-        layer_labels = self.plot_dict['layer_labels']
+        pop_labels = self.plot_dict['pop_labels']
+        zcnt = 0
         for i, col in enumerate(pop_colors[::-1]):
             if i == 0:  # TC
                 patch = Circle((0.5, 0.5), 0.1, facecolor=col)
-                z = -2 / (len(pop_colors) - 1)
+                z = -5 / (len(pop_colors) - 1)
                 xshift = 0.4
                 yshift = 0.4
-                label = self.plot_dict['pop_labels'][-1]
             else:
                 patch = Rectangle((0, 0), 1, 1, facecolor=col)
-                z = i / (len(pop_colors) - 1)
+                z = 1.5*i / (len(pop_colors) - 1) + zcnt
                 xshift = -0.02
                 yshift = -0.02
-                label = layer_labels[::-1][int((i - 1) / 2)]
+                if not i % 2:
+                    zcnt += 2 / (len(pop_colors) - 1)
             ax.add_patch(patch)
             art3d.pathpatch_2d_to_3d(patch, z=z, zdir="z")
-            if not i % 2:
-                ax.text(1. - xshift, 1 - yshift, z, label,
-                        fontsize=matplotlib.rcParams['font.size'] * scale_fs,
-                        verticalalignment='top')
 
-        ax.text(1, 1, 1.05, '4 mm', 'x',
+            if i % 2:
+                zshift = 0.
+            else:
+                zshift = 0.07
+            if i == 0:
+                zshift = -0.05
+            ax.text(1. - xshift, 1 - yshift, z+zshift, pop_labels[::-1][i],
+                    fontsize=matplotlib.rcParams['font.size'] * scale_fs,
+                    verticalalignment='center')
+        ax.text(1, 1, 2.3, '4 mm', 'x',
                 fontsize=matplotlib.rcParams['font.size'] * scale_fs,
                 horizontalalignment='right')
-        ax.text(0, 0, 1.05, '4 mm', 'y',
+        ax.text(0, 0, 2.3, '4 mm', 'y',
                 fontsize=matplotlib.rcParams['font.size'] * scale_fs,
                 horizontalalignment='left')
+
+        # exponential profile indicating connectivity
+        xctr = 0.5
+        yctr = 0.5
+        X = np.arange(xctr-0.2, xctr+0.2, 0.01)
+        Y = np.arange(yctr - 0.2, yctr+0.2, 0.01)
+        X, Y = np.meshgrid(X, Y)
+        R = np.sqrt((X-xctr)**2 + (Y-yctr)**2)
+        Z = z + 0.25 * np.exp(-R/(0.2/4))
+
+        # make bottom of surface round
+        for i in np.arange(np.shape(Z)[0]):
+            for j in np.arange(np.shape(Z)[1]):
+                if ((X[i, j]-xctr)**2 + (Y[i, j]-yctr)**2) > 0.15**2:
+                    Z[i, j] = np.nan
+
+        ax.plot_surface(X, Y, Z, cmap='bone')
 
         ax.grid(False)
         ax.view_init(elev=elev, azim=azim)
@@ -475,8 +498,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 data0 = np.concatenate((data_apnd, separator_frames), axis=1)
 
             # append populations as rows
-            separator_pops = \
-                np.array([val_sep] * np.shape(data_apnd)[1]).reshape(1, -1)
+            separator_pops = np.array(
+                [val_sep] * np.shape(data_apnd)[1]).reshape(1, -1)
             if X == populations[0]:
                 plot_data0 = np.concatenate(
                     (data_apnd, separator_pops), axis=0)
@@ -867,7 +890,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
     def plot_parameters_matrix(
             self, ax, data, title='',
             show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.6,
-            cmap='inferno', set_bad=[], cbar=True, vmin=None, vmax=None):
+            cmap='viridis', set_bad=[], cbar=True, vmin=None, vmax=None):
         """
         TODO
 
@@ -973,7 +996,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
     def plot_parameters_vector(
             self, ax, data, title='',
             show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.6,
-            cmap='inferno', set_bad=[], cbar=True, cbar_size='25%', vmin=None, vmax=None):
+            cmap='viridis', set_bad=[], cbar=True, cbar_size='25%', vmin=None, vmax=None):
         """
         TODO
         Parameters
