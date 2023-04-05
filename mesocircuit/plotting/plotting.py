@@ -652,8 +652,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
                 ax.plot([min_lag, max_lag],
                         [min_distance, max_distance],
-                        '-', color=color_fit)
-                ax.text(0.02, 0.98, f'v={speed:.2f}\n     mm/ms',
+                        '--', color=color_fit)
+                ax.text(0.02, 0.98, r'$v_\mathrm{prop}$=' + f'{speed:.2f}\n     mm/ms',
                         ha='left', va='top',
                         transform=ax.transAxes,
                         fontsize=matplotlib.rcParams['font.size'] * 0.9,
@@ -661,7 +661,12 @@ class Plotting(base_class.BaseAnalysisPlotting):
 
             ax.axis(ax.axis('tight'))
             # grid lines
-            ax.grid(which='major', axis='x', linestyle=':', color='k')
+            # ax.grid(which='major', axis='x', linestyle=':', color='k')
+            ax.plot([0, 0], [0, self.net_dict['th_radius']],
+                    '-', color='k')
+            ax.text(0, self.net_dict['th_radius'], 'TC',
+                    horizontalalignment='center',
+                    verticalalignment='bottom')
 
             ax.yaxis.set_major_locator(MaxNLocator(nbins=5))
 
