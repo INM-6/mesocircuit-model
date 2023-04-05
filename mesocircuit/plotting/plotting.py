@@ -84,30 +84,32 @@ class Plotting(base_class.BaseAnalysisPlotting):
         for i, col in enumerate(pop_colors[::-1]):
             if i == 0:  # TC
                 patch = Circle((0.5, 0.5), 0.1, facecolor=col)
-                z = -3 / (len(pop_colors) - 1)
+                z = -5 / (len(pop_colors) - 1)
                 xshift = 0.4
                 yshift = 0.4
             else:
                 patch = Rectangle((0, 0), 1, 1, facecolor=col)
-                z = i / (len(pop_colors) - 1) + zcnt
+                z = 1.5*i / (len(pop_colors) - 1) + zcnt
                 xshift = -0.02
                 yshift = -0.02
                 if not i % 2:
-                    zcnt += 1 / (len(pop_colors) - 1)
+                    zcnt += 2 / (len(pop_colors) - 1)
             ax.add_patch(patch)
             art3d.pathpatch_2d_to_3d(patch, z=z, zdir="z")
 
             if i % 2:
-                zshift = 0.03
+                zshift = 0.
             else:
-                zshift = 0.08
+                zshift = 0.07
+            if i == 0:
+                zshift = -0.05
             ax.text(1. - xshift, 1 - yshift, z+zshift, pop_labels[::-1][i],
                     fontsize=matplotlib.rcParams['font.size'] * scale_fs,
-                    verticalalignment='top')
-        ax.text(1, 1, 1.4, '4 mm', 'x',
+                    verticalalignment='center')
+        ax.text(1, 1, 2.3, '4 mm', 'x',
                 fontsize=matplotlib.rcParams['font.size'] * scale_fs,
                 horizontalalignment='right')
-        ax.text(0, 0, 1.4, '4 mm', 'y',
+        ax.text(0, 0, 2.3, '4 mm', 'y',
                 fontsize=matplotlib.rcParams['font.size'] * scale_fs,
                 horizontalalignment='left')
 
@@ -118,7 +120,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         Y = np.arange(yctr - 0.2, yctr+0.2, 0.01)
         X, Y = np.meshgrid(X, Y)
         R = np.sqrt((X-xctr)**2 + (Y-yctr)**2)
-        Z = z + 0.18 * np.exp(-R/(0.2/4))
+        Z = z + 0.25 * np.exp(-R/(0.2/4))
 
         # make bottom of surface round
         for i in np.arange(np.shape(Z)[0]):
@@ -888,7 +890,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
     def plot_parameters_matrix(
             self, ax, data, title='',
             show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.6,
-            cmap='inferno', set_bad=[], cbar=True, vmin=None, vmax=None):
+            cmap='viridis', set_bad=[], cbar=True, vmin=None, vmax=None):
         """
         TODO
 
@@ -994,7 +996,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
     def plot_parameters_vector(
             self, ax, data, title='',
             show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.6,
-            cmap='inferno', set_bad=[], cbar=True, cbar_size='25%', vmin=None, vmax=None):
+            cmap='viridis', set_bad=[], cbar=True, cbar_size='25%', vmin=None, vmax=None):
         """
         TODO
         Parameters
