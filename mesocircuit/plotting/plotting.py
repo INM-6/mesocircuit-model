@@ -592,7 +592,6 @@ class Plotting(base_class.BaseAnalysisPlotting):
             cmap = 'PuOr_r'
             vmax = 0.5
             vmin = -vmax
-            linthresh = 0.05
             color_fit = 'k'
 
             cc_func = all_CCfuncs_thalamic_pulses[X]['cc_funcs']
@@ -607,10 +606,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                    lags[-1],
                                    distances[0] - dstep / 2.,
                                    distances[-1] + dstep / 2.],
-                           norm=SymLogNorm(linthresh=linthresh,
-                                           linscale=1,
-                                           vmin=vmin,
-                                           vmax=vmax),
+                           vmin=vmin,
+                           vmax=vmax,
                            interpolation='nearest',
                            origin='lower')
 
@@ -709,10 +706,6 @@ class Plotting(base_class.BaseAnalysisPlotting):
                         cb = fig.colorbar(
                             im, cax=cax, orientation='vertical')
                     cb.set_label(r'CC$^\mathrm{FR}\, (\tau, r)$', labelpad=0.1)
-                    ticks = [vmin, -linthresh, 0, linthresh, vmax]
-                    cb.set_ticks(ticks)
-                    cb.set_ticklabels(ticks)
-                    cb.update_ticks()  # necessary for locator
         return ax_return
 
     def plot_boxcharts(self, gs, data, xlabel='', ylabel='',
