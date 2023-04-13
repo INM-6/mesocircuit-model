@@ -253,7 +253,7 @@ def draw_edge_arrow(ax, x, y, z, xshift1, yshift1, xshift2, yshift2, color='k', 
                color=color)
 
 
-def plot_mesocircuit_icon3(gs, type='reference'):
+def plot_mesocircuit_icon3(gs, type='upscaled'):
     """
     Plots a schematic network icon to gridspec cell.
 
@@ -264,6 +264,7 @@ def plot_mesocircuit_icon3(gs, type='reference'):
     type
         'reference' or 'upscaled'
     """
+    np.random.seed(1242)
 
     # num_neurons_1mm2_SvA2018
     num_neurons = np.array(
@@ -277,13 +278,12 @@ def plot_mesocircuit_icon3(gs, type='reference'):
 
     pop_colors = plot_dict['pop_colors']
     type_colors = plot_dict['type_colors']
-    pop_labels = plot_dict['pop_labels']
     layer_labels = plot_dict['layer_labels']
 
     ctr_exc = [0.3, 0.2]
     ctr_inh = [0.7, 0.2]
 
-    conn_ctr = [0.8, 0.5]
+    conn_ctr = [0.8, 0.6]
 
     mutation_scale = 10
 
@@ -295,6 +295,8 @@ def plot_mesocircuit_icon3(gs, type='reference'):
         z_ctr = z + layer_sizes[::-1][i] / 2 - 0.04
         z_lctrs[i] = z_ctr
 
+        layer_size = layer_sizes[::-1][i]
+
         # layer
         layer = Rectangle(xy=(0, 0), width=1, height=1,
                           facecolor='white', edgecolor='k')
@@ -302,19 +304,32 @@ def plot_mesocircuit_icon3(gs, type='reference'):
         art3d.pathpatch_2d_to_3d(layer, z=z, zdir="z")
 
         # neurons
+        num_neurons_exc = int(num_neurons[::-1][1 + 2*i] / 100)
+        num_neurons_inh = int(num_neurons[::-1][2*i] / 100)
+        pos_x_exc = 0.02 + 0.96*np.random.rand(num_neurons_exc)
+        pos_y_exc = 0.02 + 0.96*np.random.rand(num_neurons_exc)
+        pos_x_inh = 0.02 + 0.96*np.random.rand(num_neurons_inh)
+        pos_y_inh = 0.02 + 0.96*np.random.rand(num_neurons_inh)
+        ax.scatter(xs=pos_x_exc, ys=pos_y_exc, zs=z,
+                   marker=',',
+                   s=matplotlib.rcParams['lines.markersize'] * 0.01,
+                   color=pop_colors[::-1][2 + 2*i], alpha=1)
+        ax.scatter(xs=pos_x_inh, ys=pos_y_inh, zs=z,
+                   marker=',',
+                   s=matplotlib.rcParams['lines.markersize'] * 0.01,
+                   color=pop_colors[::-1][1 + 2*i], alpha=1)
 
-        if False:  # i == 3:
-            conns = RegularPolygon(xy=conn_ctr, radius=0.1, numVertices=3, orientation=90,
+        if i == 3:
+            conns = RegularPolygon(xy=conn_ctr, radius=0.1, numVertices=3, orientation=12.05,
                                    facecolor=pop_colors[::-1][2 + 2*i],
                                    edgecolor='k')
             ax.add_patch(conns)
             art3d.pathpatch_2d_to_3d(conns, z=z, zdir="z")
 
         # exponential profile indicating connectivity
-        if False:  # i == 2:
+        if i == 2 and type == 'upscaled':
             xctr = conn_ctr[0]
             yctr = conn_ctr[1]
-            layer_size = layer_sizes[::-1][i]
             X = np.arange(xctr-0.2, xctr+0.2, 0.01)
             Y = np.arange(yctr - 0.2, yctr+0.2, 0.01)
             X, Y = np.meshgrid(X, Y)
@@ -327,7 +342,16 @@ def plot_mesocircuit_icon3(gs, type='reference'):
                     if ((X[k, l]-xctr)**2 + (Y[k, l]-yctr)**2) > 0.16**2:
                         Z[k, l] = np.nan
 
-            ax.plot_surface(X, Y, Z, cmap='bone')
+            ax.plot_surface(X, Y, Z,  rstride=1, cstride=1, shade=True,  # cmap='bone',
+                            antialiased=False, color=pop_colors[::-1][2 + 2*i])
+
+        if i == 2 and type == 'reference':
+            for j in np.arange(20):
+                ax.plot(xs=[pos_x_exc[j], conn_ctr[0]],
+                        ys=[pos_y_exc[j], conn_ctr[1]],
+                        zs=[z, z+layer_size],
+                        color=pop_colors[::-1][2+2*i],
+                        zorder=1)
 
         # front
         front = Rectangle(xy=(0, z), width=1, height=layer_sizes[::-1][i],
@@ -395,6 +419,7 @@ def plot_mesocircuit_icon3(gs, type='reference'):
     ax.set_box_aspect(aspect=(1, 1, 2))
 
     ax.view_init(elev=20, azim=-50)
+    #ax.view_init(elev=90, azim=0)
     #ax.view_init(elev=20, azim=-90)
     #ax.view_init(elev=45, azim=0)
     plt.axis('off')
@@ -454,7 +479,7 @@ def mesocircuit_icon():
     fig = plt.figure(figsize=(5, 5))
     gs = gridspec.GridSpec(1, 1)
     #gs.update(left=0.1, right=0.98, bottom=0.05, top=0.98)
-    plot_mesocircuit_icon3(gs[0])
+    plot_mesocircuit_icon3(gs[0], type='reference')
 
     plt.savefig('mesocircuit_icon.pdf')
     return
