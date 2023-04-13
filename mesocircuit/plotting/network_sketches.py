@@ -253,7 +253,7 @@ def draw_edge_arrow(ax, x, y, z, xshift1, yshift1, xshift2, yshift2, color='k', 
                color=color)
 
 
-def plot_mesocircuit_icon3(gs, elev=12, azim=-50, scale_fs=0.7):
+def plot_mesocircuit_icon3(gs, type='reference'):
     """
     Plots a schematic network icon to gridspec cell.
 
@@ -261,12 +261,8 @@ def plot_mesocircuit_icon3(gs, elev=12, azim=-50, scale_fs=0.7):
     ----------
     gs
         A gridspec cell to plot into.
-    elev
-        Elevation angle in z-plane.
-    azim
-        Azimuth angle in x,y-plane.
-    scale_fs
-        Scaling factor for font size.
+    type
+        'reference' or 'upscaled'
     """
 
     # num_neurons_1mm2_SvA2018
@@ -287,19 +283,51 @@ def plot_mesocircuit_icon3(gs, elev=12, azim=-50, scale_fs=0.7):
     ctr_exc = [0.3, 0.2]
     ctr_inh = [0.7, 0.2]
 
+    conn_ctr = [0.8, 0.5]
+
     mutation_scale = 10
 
     # cortex
     z = 0
+    z_lctrs = np.zeros(4)  # layer centers
     for i, ll in enumerate(layer_labels[::-1]):
 
-        z_ctr = z + layer_sizes[::-1][i] / 2
+        z_ctr = z + layer_sizes[::-1][i] / 2 - 0.04
+        z_lctrs[i] = z_ctr
 
         # layer
         layer = Rectangle(xy=(0, 0), width=1, height=1,
                           facecolor='white', edgecolor='k')
         ax.add_patch(layer)
         art3d.pathpatch_2d_to_3d(layer, z=z, zdir="z")
+
+        # neurons
+
+        if False:  # i == 3:
+            conns = RegularPolygon(xy=conn_ctr, radius=0.1, numVertices=3, orientation=90,
+                                   facecolor=pop_colors[::-1][2 + 2*i],
+                                   edgecolor='k')
+            ax.add_patch(conns)
+            art3d.pathpatch_2d_to_3d(conns, z=z, zdir="z")
+
+        # exponential profile indicating connectivity
+        if False:  # i == 2:
+            xctr = conn_ctr[0]
+            yctr = conn_ctr[1]
+            layer_size = layer_sizes[::-1][i]
+            X = np.arange(xctr-0.2, xctr+0.2, 0.01)
+            Y = np.arange(yctr - 0.2, yctr+0.2, 0.01)
+            X, Y = np.meshgrid(X, Y)
+            R = np.sqrt((X-xctr)**2 + (Y-yctr)**2)
+            Z = z + layer_size * np.exp(-R/(0.06))
+
+            # make bottom of surface round
+            for k in np.arange(np.shape(Z)[0]):
+                for l in np.arange(np.shape(Z)[1]):
+                    if ((X[k, l]-xctr)**2 + (Y[k, l]-yctr)**2) > 0.16**2:
+                        Z[k, l] = np.nan
+
+            ax.plot_surface(X, Y, Z, cmap='bone')
 
         # front
         front = Rectangle(xy=(0, z), width=1, height=layer_sizes[::-1][i],
@@ -308,7 +336,7 @@ def plot_mesocircuit_icon3(gs, elev=12, azim=-50, scale_fs=0.7):
         art3d.pathpatch_2d_to_3d(front, z=0, zdir="y")
 
         # excitatory neurons
-        exc = RegularPolygon(xy=(ctr_exc[0], z_ctr), radius=0.1, numVertices=3, orientation=0,
+        exc = RegularPolygon(xy=(ctr_exc[0], z_ctr-0.025), radius=0.1, numVertices=3, orientation=0,
                              facecolor=pop_colors[::-1][2 + 2*i],
                              edgecolor='k')
         ax.add_patch(exc)
@@ -323,15 +351,15 @@ def plot_mesocircuit_icon3(gs, elev=12, azim=-50, scale_fs=0.7):
 
         # excitatory connections
         ax.arrow3D(x=ctr_exc[0]+0.02, y=0, z=z_ctr+0.025,
-                   dx=0.34, dy=0, dz=0,
+                   dx=0.32, dy=0, dz=0,
                    mutation_scale=mutation_scale,
                    arrowstyle="->",
                    color=type_colors[0])
 
-        draw_edge_arrow(ax=ax, x=ctr_exc[0]-0.07, y=ctr_exc[1], z=z,
-                        xshift1=-0.06, yshift1=0.2,
-                        xshift2=0.13, yshift2=-0.1,
-                        color=type_colors[0])
+        draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.05, y=0, z=z_ctr,
+                                xshift1=-0.08, zshift1=0.16,
+                                xshift2=0.13, zshift2=-0.08,
+                                color=type_colors[0])
 
         # inhibitory connections
         ax.arrow3D(x=ctr_inh[0]-0.07, y=0, z=z_ctr-0.025,
@@ -339,12 +367,27 @@ def plot_mesocircuit_icon3(gs, elev=12, azim=-50, scale_fs=0.7):
                    mutation_scale=mutation_scale,
                    arrowstyle="->",
                    color=type_colors[1])
-        draw_edge_arrow(ax=ax, x=ctr_inh[0]+0.08, y=ctr_exc[1], z=z,
-                        xshift1=+0.05, yshift1=0.2,
-                        xshift2=-0.13, yshift2=-0.12,
-                        color=type_colors[1])
+
+        draw_edge_arrow_xzplane(ax=ax, x=ctr_inh[0]+0.09, y=0, z=z_ctr,
+                                xshift1=+0.04, zshift1=0.16,
+                                xshift2=-0.13, zshift2=-0.08,
+                                color=type_colors[1])
+
+        # layer annotations
+        ax.text(x=1.-0.02, y=0, z=z + layer_sizes[::-1][i]-0.02, zdir='x',
+                s=ll,
+                horizontalalignment='right', verticalalignment='top')
 
         z += layer_sizes[::-1][i]
+
+    # layer crossing connections
+    # reverse layer center such that top layer (2/3) has index 0
+    z_lctrs = z_lctrs[::-1]
+    # L2/3E -> L5E
+    draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.08, y=0, z=z_lctrs[0]-0.05,
+                            xshift1=-0.1, zshift1=-1.49,
+                            xshift2=0.1, zshift2=0,
+                            color=type_colors[0])
 
     # ax.grid(False)
     #ax.view_init(elev=elev, azim=azim)
@@ -352,9 +395,55 @@ def plot_mesocircuit_icon3(gs, elev=12, azim=-50, scale_fs=0.7):
     ax.set_box_aspect(aspect=(1, 1, 2))
 
     ax.view_init(elev=20, azim=-50)
+    #ax.view_init(elev=20, azim=-90)
     #ax.view_init(elev=45, azim=0)
-    # plt.axis('off')
+    plt.axis('off')
+
+    # TODO
+    # other connections to front
+    # illustration of distance dependence at back
+    # 4x4 mm^2 and 1 mm^2
+    # consider TC
+    # random dots in population colors
     return
+
+
+def draw_edge_arrow_xzplane(
+        ax, x, y, z, xshift1, zshift1, xshift2, zshift2, color='k', mutation_scale=10):
+    # xshift
+    ax.arrow3D(x=x, y=y, z=z,
+               dx=xshift1, dy=0, dz=0,
+               mutation_scale=mutation_scale,
+               arrowstyle='-',
+               shrinkA=0, shrinkB=0,
+               color=color)
+    # zshift
+    ax.arrow3D(x=x+xshift1, y=y, z=z,
+               dx=0, dy=0, dz=zshift1,
+               mutation_scale=mutation_scale,
+               arrowstyle='-',
+               shrinkA=0, shrinkB=0,
+               color=color)
+
+    if zshift2 == 0:
+        arrowstyle = '->'
+    else:
+        arrowstyle = '-'
+
+    # xshift back
+    ax.arrow3D(x=x+xshift1, y=y, z=z+zshift1,
+               dx=xshift2, dy=0, dz=0,
+               mutation_scale=mutation_scale,
+               arrowstyle=arrowstyle,
+               shrinkA=0, shrinkB=0,
+               color=color)
+    # zshift back
+    ax.arrow3D(x=x+xshift1+xshift2, y=y, z=z+zshift1,
+               dx=0, dy=0, dz=zshift2,
+               mutation_scale=mutation_scale,
+               arrowstyle='->',
+               shrinkA=0, shrinkB=0,
+               color=color)
 
 
 def mesocircuit_icon():
