@@ -20,19 +20,24 @@ def overview_and_parameters(output_dir, ref_circuit, ups_circuit):
     gs.update(left=0.01, right=0.96, bottom=0.09,
               top=0.94, hspace=0.5, wspace=0.5)
 
-    titles = ['reference model,\n' + r'1 mm$^2$',
-              'upscaled model,\n' + r'4$\times$4 mm$^2$']
+    titles = ['reference model',  # ,\n' + r'1 mm$^2$',
+              'upscaled model']  # ,\n' + r'4$\times$4 mm$^2$']
     pad = 10  # for panel titels
 
-    # model icons
-    mc = plt.imread('microcircuit.png')
+    # network model sketches
+    sketch_ref = plt.imread(
+        'network_sketches/network_model_sketch_reference.png')
     ax = plt.subplot(gs[0, :2])
-    ax.imshow(mc)
+    ax.imshow(sketch_ref, interpolation='none')
     plt.axis('off')
-    ax.set_title(titles[0], pad=11)
+    ax.set_title(titles[0], pad=12)
 
-    plot.plot_mesocircuit_icon(gs[1, :2])
-    plt.gca().set_title(titles[1], pad=20)
+    sketch_ups = plt.imread(
+        'network_sketches/network_model_sketch_upscaled.png')
+    ax = plt.subplot(gs[1, :2])
+    ax.imshow(sketch_ups, interpolation='none')
+    plt.axis('off')
+    plt.gca().set_title(titles[1], pad=12)
 
     lims = {}
     quantities = ['full_num_neurons', 'full_indegrees', 'full_ext_indegrees']
