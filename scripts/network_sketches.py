@@ -236,6 +236,13 @@ def plot_network_model_sketch(gs, model='upscaled'):
         ax.add_patch(inh)
         art3d.pathpatch_2d_to_3d(inh, z=0, zdir="y")
 
+        ax.text(x=ctr_exc[0]-0.015, y=0, z=z_lctrs[i]-0.03, s='E', zdir='x',
+                fontsize=matplotlib.rcParams['font.size'] * 1.5,
+                horizontalalignment='center', verticalalignment='center')
+        ax.text(x=ctr_inh[0]-0.01, y=0, z=z_lctrs[i], s='I', zdir='x',
+                fontsize=matplotlib.rcParams['font.size'] * 1.5,
+                horizontalalignment='center', verticalalignment='center')
+
         # excitatory connections ###############################################
 
         # same layer, E -> E
@@ -300,7 +307,7 @@ def plot_network_model_sketch(gs, model='upscaled'):
 
     # L4E -> L2/3E
     ax.arrow3D(x=ctr_exc[0], y=0, z=z_lctrs[1] + 0.16,
-               dx=0, dy=0, dz=0.63,
+               dx=0, dy=0, dz=0.62,
                mutation_scale=mutation_scale,
                arrowstyle='-|>',
                color=pop_colors[2])
@@ -319,8 +326,8 @@ def plot_network_model_sketch(gs, model='upscaled'):
                color=pop_colors[2])
 
     # L4E -> L5E
-    ax.arrow3D(x=ctr_exc[0], y=0, z=z_lctrs[1] - 0.06,
-               dx=0, dy=0, dz=-0.53,
+    ax.arrow3D(x=ctr_exc[0], y=0, z=z_lctrs[1] - 0.07,
+               dx=0, dy=0, dz=-0.51,
                mutation_scale=mutation_scale,
                arrowstyle='-|>',
                color=pop_colors[2])
@@ -333,61 +340,60 @@ def plot_network_model_sketch(gs, model='upscaled'):
                                 color=pop_colors[2], sign='exc')
 
     # L2/3E -> L4I
-    ax.arrow3D(x=ctr_exc[0]+0.05, y=0, z=z_lctrs[0] - 0.06,
-               dx=0.3, dy=0, dz=-0.75,
+    ax.arrow3D(x=ctr_exc[0]+0.05, y=0, z=z_lctrs[0] - 0.07,
+               dx=0.3, dy=0, dz=-0.73,
                mutation_scale=mutation_scale,
                arrowstyle='-|>',
                color=pop_colors[0])
 
     # L2/3E -> L5I
-    ax.arrow3D(x=ctr_exc[0]+0.04, y=0, z=z_lctrs[0] - 0.06,
-               dx=0.32, dy=0, dz=-1.38,
+    ax.arrow3D(x=ctr_exc[0]+0.04, y=0, z=z_lctrs[0] - 0.07,
+               dx=0.32, dy=0, dz=-1.36,
                mutation_scale=mutation_scale,
                arrowstyle='-|>',
                color=pop_colors[0])
 
     # L2/3E -> L5I
-    ax.arrow3D(x=ctr_exc[0]+0.03, y=0, z=z_lctrs[0] - 0.06,
-               dx=0.31, dy=0, dz=-1.68,
+    ax.arrow3D(x=ctr_exc[0]+0.03, y=0, z=z_lctrs[0] - 0.07,
+               dx=0.31, dy=0, dz=-1.66,
                mutation_scale=mutation_scale,
                arrowstyle='-|>',
                color=pop_colors[0])
 
     # L6E -> L4I
-    ax.arrow3D(x=ctr_exc[0]+0.017, y=0, z=z_lctrs[3] + 0.02,
-               dx=0.4, dy=0, dz=0.84,
+    ax.arrow3D(x=ctr_exc[0]+0.017, y=0, z=z_lctrs[3] + 0.03,
+               dx=0.4, dy=0, dz=0.83,
                mutation_scale=mutation_scale,
                arrowstyle='-|>',
                color=pop_colors[6])
 
-    if model == 'upscaled':
-        # thalamus
-        y_tc = -0.15
-        tc = RegularPolygon(xy=(0.5, y_tc), radius=0.1, numVertices=3, orientation=0,
-                            facecolor=pop_colors[-1],
-                            edgecolor='k')
-        ax.add_patch(tc)
-        art3d.pathpatch_2d_to_3d(tc, z=0, zdir="y")
+    # thalamus #################################################################
+    y_tc = -0.15
+    tc = RegularPolygon(xy=(0.5, y_tc), radius=0.1, numVertices=3, orientation=0,
+                        facecolor=pop_colors[-1],
+                        edgecolor='k')
+    ax.add_patch(tc)
+    art3d.pathpatch_2d_to_3d(tc, z=0, zdir="y")
 
-        # TC to L4 and L6
-        draw_edge_arrow_xzplane(ax=ax, x=0.5-0.07, y=0, z=y_tc,
-                                xshift1=-0.55,
-                                zshift1=-y_tc +
-                                np.sum(layer_sizes[2:]) +
-                                layer_sizes[1]/2. + z_ctr_offset,
-                                xshift2=0.12, zshift2=0,
-                                color=pop_colors[-1], sign='exc')
-        draw_edge_arrow_xzplane(ax=ax, x=0.5-0.07, y=0, z=y_tc,
-                                xshift1=-0.55,
-                                zshift1=-y_tc +
-                                layer_sizes[3]/2. + z_ctr_offset,
-                                xshift2=0.12, zshift2=0,
-                                color=pop_colors[-1], sign='exc')
+    # TC to L4 and L6
+    draw_edge_arrow_xzplane(ax=ax, x=0.5-0.07, y=0, z=y_tc,
+                            xshift1=-0.55,
+                            zshift1=-y_tc +
+                            np.sum(layer_sizes[2:]) +
+                            layer_sizes[1]/2. + z_ctr_offset,
+                            xshift2=0.12, zshift2=0,
+                            color=pop_colors[-1], sign='exc')
+    draw_edge_arrow_xzplane(ax=ax, x=0.5-0.07, y=0, z=y_tc,
+                            xshift1=-0.55,
+                            zshift1=-y_tc +
+                            layer_sizes[3]/2. + z_ctr_offset,
+                            xshift2=0.12, zshift2=0,
+                            color=pop_colors[-1], sign='exc')
 
-        # thalamus label
-        ax.text(x=1.-0.01, y=0, z=0-0.01, zdir='x',
-                s='TC', fontsize=matplotlib.rcParams['font.size']*2.5,
-                horizontalalignment='right', verticalalignment='top')
+    # thalamus label
+    ax.text(x=1.-0.01, y=0, z=0-0.01, zdir='x',
+            s='TC', fontsize=matplotlib.rcParams['font.size']*2.5,
+            horizontalalignment='right', verticalalignment='top')
 
     # size label ###############################################################
     if model == 'reference':
