@@ -9,7 +9,7 @@ from matplotlib.patches import Rectangle, Circle, RegularPolygon, FancyArrowPatc
 import mpl_toolkits.mplot3d.art3d as art3d
 from mpl_toolkits.mplot3d.proj3d import proj_transform
 from mpl_toolkits.mplot3d.axes3d import Axes3D
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 
 matplotlib.rcParams.update(plot_dict['rcParams'])
 
@@ -359,6 +359,8 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
         ax.add_patch(front)
         art3d.pathpatch_2d_to_3d(front, z=0, zdir="y")
 
+        ########################################################################
+
         # excitatory neurons
         exc = RegularPolygon(xy=(ctr_exc[0], z_ctr-0.025), radius=0.1, numVertices=3, orientation=0,
                              facecolor=pop_colors[::-1][2 + 2*i],
@@ -373,33 +375,45 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
         ax.add_patch(inh)
         art3d.pathpatch_2d_to_3d(inh, z=0, zdir="y")
 
-        # excitatory connections
-        ax.arrow3D(x=ctr_exc[0]+0.02, y=0, z=z_ctr+0.025,
-                   dx=0.32, dy=0, dz=0,
-                   mutation_scale=mutation_scale,
-                   arrowstyle='-|>',
-                   color=type_colors[0])
+        # excitatory connections ###############################################
 
-        draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.05, y=0, z=z_ctr,
-                                xshift1=-0.08, zshift1=0.16,
-                                xshift2=0.13, zshift2=-0.08,
-                                color=type_colors[0], sign='exc')
+        # same layer, E -> E
+        if ll in ['L2/3', 'L4', 'L5', 'L6']:
+            draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.05, y=0, z=z_ctr,
+                                    xshift1=-0.08, zshift1=0.16,
+                                    xshift2=0.13, zshift2=-0.08,
+                                    color=pop_colors[::-1][2 + 2*i], sign='exc')
 
-        # inhibitory connections
-        ax.arrow3D(x=ctr_inh[0]-0.07, y=0, z=z_ctr-0.025,
-                   dx=-0.27, dy=0, dz=0,
-                   mutation_scale=mutation_scale,
-                   arrowstyle='-',
-                   color=type_colors[1])
-        inhibitory_arrowhead_front(ax=ax, x=ctr_inh[0]-0.31, z=z_ctr-0.025,
-                                   color=type_colors[1])
+        # same layer, E -> I
+        if ll in ['L2/3', 'L4', 'L6']:
+            ax.arrow3D(x=ctr_exc[0]+0.02, y=0, z=z_ctr+0.025,
+                       dx=0.32, dy=0, dz=0,
+                       mutation_scale=mutation_scale,
+                       arrowstyle='-|>',
+                       color=pop_colors[::-1][2+2*i])
 
-        draw_edge_arrow_xzplane(ax=ax, x=ctr_inh[0]+0.09, y=0, z=z_ctr,
-                                xshift1=+0.04, zshift1=0.16,
-                                xshift2=-0.13, zshift2=-0.06,
-                                color=type_colors[1], sign='inh')
-        inhibitory_arrowhead_front(ax=ax, x=ctr_inh[0], z=z_ctr+0.11,
-                                   color=type_colors[1])
+        # inhibitory connections ###############################################
+
+        # same layer, I -> I
+        if ll in ['L2/3', 'L4', 'L6']:
+            draw_edge_arrow_xzplane(ax=ax, x=ctr_inh[0]+0.09, y=0, z=z_ctr,
+                                    xshift1=+0.04, zshift1=0.16,
+                                    xshift2=-0.13, zshift2=-0.06,
+                                    color=pop_colors[::-1][1+2*i], sign='inh')
+            inhibitory_arrowhead_front(ax=ax, x=ctr_inh[0], z=z_ctr+0.11,
+                                       color=pop_colors[::-1][1+2*i])
+
+        # same layer, I -> E
+        if ll in ['L2/3', 'L4', 'L5', 'L6']:
+            ax.arrow3D(x=ctr_inh[0]-0.07, y=0, z=z_ctr-0.025,
+                       dx=-0.27, dy=0, dz=0,
+                       mutation_scale=mutation_scale,
+                       arrowstyle='-',
+                       color=pop_colors[::-1][1+2*i])
+            inhibitory_arrowhead_front(ax=ax, x=ctr_inh[0]-0.31, z=z_ctr-0.025,
+                                       color=pop_colors[::-1][1+2*i])
+
+        ########################################################################
 
         # layer annotations
         ax.text(x=1.-0.01, y=0, z=z + layer_sizes[::-1][i]-0.01, zdir='x',
@@ -412,11 +426,90 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
     # reverse layer center such that top layer (2/3) has index 0
     z_lctrs = z_lctrs[::-1]
 
+    # additional cortical connections ##########################################
+
     # L2/3E -> L5E
     draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.08, y=0, z=z_lctrs[0]-0.05,
-                            xshift1=-0.1, zshift1=-1.49,
-                            xshift2=0.1, zshift2=0,
-                            color=type_colors[0], sign='exc')
+                            xshift1=-0.15, zshift1=-1.49,
+                            xshift2=0.15, zshift2=0,
+                            color=pop_colors[0], sign='exc')
+
+    # L4E -> L2/3E
+    ax.arrow3D(x=ctr_exc[0], y=0, z=z_lctrs[1] + 0.16,
+               dx=0, dy=0, dz=0.63,
+               mutation_scale=mutation_scale,
+               arrowstyle='-|>',
+               color=pop_colors[2])
+
+    # L6E -> L4E
+    draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.06, y=0, z=z_lctrs[3]-0.02,
+                            xshift1=-0.11, zshift1=0.88,
+                            xshift2=0.09, zshift2=0,
+                            color=pop_colors[6], sign='exc')
+
+    # L4E -> L4I
+    ax.arrow3D(x=ctr_exc[0]+0.02, y=0, z=z_lctrs[1] + 0.03,
+               dx=0.335, dy=0, dz=0.77,
+               mutation_scale=mutation_scale,
+               arrowstyle='-|>',
+               color=pop_colors[2])
+
+    # L4E -> L5I
+    ax.arrow3D(x=ctr_exc[0]+0.02, y=0, z=z_lctrs[1] - 0.07,
+               dx=0.32, dy=0, dz=-0.55,
+               mutation_scale=mutation_scale,
+               arrowstyle='-|>',
+               color=pop_colors[2])
+
+    # L4E -> L5E
+    ax.arrow3D(x=ctr_exc[0], y=0, z=z_lctrs[1] - 0.06,
+               dx=0, dy=0, dz=-0.42,
+               mutation_scale=mutation_scale,
+               arrowstyle='-|>',
+               color=pop_colors[2])
+
+    # L4E -> L6E
+    draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.06, y=0, z=z_lctrs[1]-0.02,
+                            xshift1=-0.14, zshift1=-0.96,
+                            xshift2=0.12, zshift2=0,
+                            color=pop_colors[2], sign='exc')
+
+    # L2/3E -> L4I
+    ax.arrow3D(x=ctr_exc[0]+0.05, y=0, z=z_lctrs[0] - 0.06,
+               dx=0.3, dy=0, dz=-0.75,
+               mutation_scale=mutation_scale,
+               arrowstyle='-|>',
+               color=pop_colors[0])
+
+    # L2/3E -> L5I
+    ax.arrow3D(x=ctr_exc[0]+0.04, y=0, z=z_lctrs[0] - 0.06,
+               dx=0.32, dy=0, dz=-1.38,
+               mutation_scale=mutation_scale,
+               arrowstyle='-|>',
+               color=pop_colors[0])
+
+    # L2/3E -> L5I
+    ax.arrow3D(x=ctr_exc[0]+0.03, y=0, z=z_lctrs[0] - 0.06,
+               dx=0.31, dy=0, dz=-1.68,
+               mutation_scale=mutation_scale,
+               arrowstyle='-|>',
+               color=pop_colors[0])
+
+    # L6E -> L4I
+    ax.arrow3D(x=ctr_exc[0]+0.017, y=0, z=z_lctrs[3] + 0.02,
+               dx=0.4, dy=0, dz=0.84,
+               mutation_scale=mutation_scale,
+               arrowstyle='-|>',
+               color=pop_colors[6])
+
+    # L4I -> L2/3E
+    ax.arrow3D(x=ctr_inh[0]-0.02, y=0, z=z_lctrs[1]+0.07,
+               dx=-0.28, dy=0, dz=0.67,
+               mutation_scale=mutation_scale,
+               arrowstyle='-',
+               color=pop_colors[3])
+    inhibitory_arrowhead_front(ax=ax, x=ctr_inh[0] - 0.3, z=z_lctrs[1] + 0.07+0.67,
+                               color=pop_colors[3])
 
     if type == 'upscaled':
         # thalamus
@@ -450,11 +543,11 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
     # ax.grid(False)
     # ax.view_init(elev=elev, azim=azim)
     ax.set_zlim(bottom=-0.2, top=np.sum(layer_sizes))
-    ax.set_box_aspect(aspect=(1, 1, 2))
+    ax.set_box_aspect(aspect=(1, 1, 2.2))
 
     ax.view_init(elev=20, azim=-50)
     # ax.view_init(elev=90, azim=0)
-    #ax.view_init(elev=20, azim=-90)
+    ax.view_init(elev=20, azim=-90)
     # ax.view_init(elev=45, azim=0)
     plt.axis('off')
 
@@ -522,12 +615,13 @@ def inhibitory_arrowhead_front(ax, x, z, color):
     art3d.pathpatch_2d_to_3d(head, z=0, zdir='y')
 
 
-def choose_connections_to_draw(threshold=500):
+def choose_connections_to_draw(threshold=150):
 
     # matrix = np.divide(net_dict['indegrees_1mm2_SvA2018'],
     #                   net_dict['num_neurons_1mm2_SvA2018'])
 
     matrix = net_dict['indegrees_1mm2_SvA2018']
+    matrix_int = np.round(net_dict['indegrees_1mm2_SvA2018']).astype(int)
 
     for i, src in enumerate(plot_dict['pop_labels'][:-1]):
         for j, tgt in enumerate(plot_dict['pop_labels'][:-1]):
@@ -535,7 +629,7 @@ def choose_connections_to_draw(threshold=500):
                 same_layer = True
             else:
                 same_layer = False
-            if matrix[j, i] > threshold:
+            if matrix_int[j, i] > threshold:
                 draw = True
             else:
                 draw = False
@@ -545,7 +639,25 @@ def choose_connections_to_draw(threshold=500):
                 emph = ' ->'
             else:
                 emph = '   '
-            print(emph, src, tgt, same_layer, draw, matrix[j, i])
+            print(emph, src, tgt, same_layer, draw, matrix_int[j, i])
+
+    # set bad
+    matrix[np.where(matrix < threshold)] = np.nan
+
+    # image
+    matrix = np.ma.masked_invalid(matrix)
+    cm = matplotlib.cm.get_cmap('viridis').copy()
+    cm.set_bad('white')
+
+    fig = plt.figure()
+    plt.imshow(matrix, cmap=cm)  # , vmin=vmin, vmax=vmax)
+    ax = plt.gca()
+    ax.set_xticks(np.arange(8))
+    ax.set_yticks(np.arange(8))
+    ax.set_xticklabels(plot_dict['pop_labels'][:-1])
+    ax.set_yticklabels(plot_dict['pop_labels'][:-1])
+    ax.set_title(f'threshold={threshold}')
+    plt.savefig(f'indegrees_threshold{threshold}.pdf')
 
 
 def mesocircuit_icon():
@@ -563,5 +675,5 @@ def mesocircuit_icon():
 
 
 if __name__ == '__main__':
-    # choose_connections_to_draw()
+    choose_connections_to_draw()
     mesocircuit_icon()
