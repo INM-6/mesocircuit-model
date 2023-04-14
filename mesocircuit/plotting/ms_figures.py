@@ -5,6 +5,7 @@ import numpy as np
 import os
 import h5py
 import matplotlib
+import network_sketches as netsketch
 matplotlib.use('Agg')
 
 
@@ -24,14 +25,11 @@ def overview_and_parameters(output_dir, ref_circuit, ups_circuit):
               'upscaled model,\n' + r'4$\times$4 mm$^2$']
     pad = 10  # for panel titels
 
-    # model icons
-    mc = plt.imread('microcircuit.png')
-    ax = plt.subplot(gs[0, :2])
-    ax.imshow(mc)
-    plt.axis('off')
-    ax.set_title(titles[0], pad=11)
+    # network model sketches
+    netsketch.plot_network_model_sketch(gs[1, :2], model='reference')
+    plt.gca().set_title(titles[0], pad=11)
 
-    plot.plot_mesocircuit_icon(gs[1, :2])
+    netsketch.plot_network_model_sketch(gs[1, :2], model='upscaled')
     plt.gca().set_title(titles[1], pad=20)
 
     lims = {}
