@@ -1,6 +1,6 @@
-# consider making it standalone in the future
 from mesocircuit.parameterization.base_network_params import net_dict
 from mesocircuit.parameterization.base_plotting_params import plot_dict
+import os
 import numpy as np
 import matplotlib
 import matplotlib.gridspec as gridspec
@@ -9,12 +9,12 @@ from matplotlib.patches import Rectangle, Circle, RegularPolygon, FancyArrowPatc
 import mpl_toolkits.mplot3d.art3d as art3d
 from mpl_toolkits.mplot3d.proj3d import proj_transform
 from mpl_toolkits.mplot3d.axes3d import Axes3D
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
 
 matplotlib.rcParams.update(plot_dict['rcParams'])
 
 
-def figure_mesocircuit_icon():
+def figure_mesocircuit_icon(output_dir):
     """
     """
     fig = plt.figure(figsize=(1.5, 1))
@@ -22,19 +22,22 @@ def figure_mesocircuit_icon():
     gs.update(left=-0.1, right=0.95, bottom=-0.15, top=1.25)
     plot_mesocircuit_icon(gs[0])
 
-    plt.savefig(f'mesocircuit_icon.pdf')
+    plt.savefig(os.path.join(output_dir, 'mesocircuit_icon.pdf'))
+    plt.savefig(os.path.join(output_dir, 'mesocircuit_icon.png'), dpi=300)
     return
 
 
-def figure_network_model_sketch(model='upscaled'):
+def figure_network_model_sketch(output_dir, model='upscaled'):
     """
     """
     fig = plt.figure(figsize=(3.6, 5.2))
     gs = gridspec.GridSpec(1, 1)
-    gs.update(left=-0.3, right=1.3, bottom=-0.1, top=1.1)
+    gs.update(left=-0.3, right=1.3, bottom=-0.05, top=1.1)
     plot_network_model_sketch(gs[0], model=model)
 
-    plt.savefig(f'network_model_sketch_{model}.pdf')
+    plt.savefig(os.path.join(output_dir, f'network_model_sketch_{model}.pdf'))
+    plt.savefig(os.path.join(
+        output_dir, f'network_model_sketch_{model}.png'), dpi=300)
     return
 
 
@@ -279,7 +282,7 @@ def plot_network_model_sketch(gs, model='upscaled'):
 
         # layer annotations ####################################################
         ax.text(x=1.-0.01, y=0, z=z + layer_sizes[::-1][i]-0.01, zdir='x',
-                s=ll, fontsize=matplotlib.rcParams['font.size']*1.8,
+                s=ll, fontsize=matplotlib.rcParams['font.size']*2.5,
                 horizontalalignment='right', verticalalignment='top')
 
         z += layer_sizes[::-1][i]
@@ -383,17 +386,20 @@ def plot_network_model_sketch(gs, model='upscaled'):
 
         # thalamus label
         ax.text(x=1.-0.01, y=0, z=0-0.01, zdir='x',
-                s='TC', fontsize=matplotlib.rcParams['font.size']*1.5,
+                s='TC', fontsize=matplotlib.rcParams['font.size']*2.5,
                 horizontalalignment='right', verticalalignment='top')
 
     # size label ###############################################################
     if model == 'reference':
-        model_label = r'$1\times 1 \mathrm{mm}^2$'
+        model_label = r'$1 \mathrm{mm}^2$'  # r'$1\times 1 \mathrm{mm}^2$'
+        ax.text(x=0.97, y=0.8, z=0, s=model_label, zdir='y',
+                fontsize=matplotlib.rcParams['font.size'] * 2.5,
+                horizontalalignment='center', verticalalignment='top')
     elif model == 'upscaled':
         model_label = r'$4\times 4 \mathrm{mm}^2$'
-    ax.text(x=0.95, y=0.8, z=0, s=model_label, zdir='y',
-            fontsize=matplotlib.rcParams['font.size'] * 1.8,
-            horizontalalignment='center', verticalalignment='top')
+        ax.text(x=0.9, y=0.8, z=0, s=model_label, zdir='y',
+                fontsize=matplotlib.rcParams['font.size'] * 2.5,
+                horizontalalignment='center', verticalalignment='top')
 
     # ax.grid(False)
     ax.set_zlim(bottom=-0.2, top=np.sum(layer_sizes))
@@ -406,7 +412,7 @@ def plot_network_model_sketch(gs, model='upscaled'):
     return
 
 
-def choose_connections_to_draw(threshold=300):
+def choose_connections_to_draw(output_dir, threshold=300):
     '''
     Data from reference model.
     '''
@@ -447,7 +453,8 @@ def choose_connections_to_draw(threshold=300):
     ax.set_xticklabels(plot_dict['pop_labels'][:-1])
     ax.set_yticklabels(plot_dict['pop_labels'][:-1])
     ax.set_title(f'threshold={threshold}')
-    plt.savefig(f'indegrees_threshold{threshold}.pdf')
+    plt.savefig(os.path.join(
+        output_dir, f'indegrees_threshold{threshold}.pdf'))
 
 
 ################################################################################
@@ -550,9 +557,14 @@ def inhibitory_arrowhead_front(ax, x, z, color):
     ax.add_patch(head)
     art3d.pathpatch_2d_to_3d(head, z=0, zdir='y')
 
+################################################################################
+
 
 if __name__ == '__main__':
-    figure_mesocircuit_icon()
-    figure_network_model_sketch(model='reference')
-    figure_network_model_sketch(model='upscaled')
-    # choose_connections_to_draw()
+    output_dir = 'network_sketches'
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+    figure_mesocircuit_icon(output_dir)
+    figure_network_model_sketch(output_dir, model='reference')
+    figure_network_model_sketch(output_dir, model='upscaled')
+    # choose_connections_to_draw(output_dir)

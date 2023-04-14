@@ -5,7 +5,6 @@ import numpy as np
 import os
 import h5py
 import matplotlib
-import network_sketches as netsketch
 matplotlib.use('Agg')
 
 
@@ -21,15 +20,23 @@ def overview_and_parameters(output_dir, ref_circuit, ups_circuit):
     gs.update(left=0.01, right=0.96, bottom=0.09,
               top=0.94, hspace=0.5, wspace=0.5)
 
-    titles = ['reference model,\n' + r'1 mm$^2$',
-              'upscaled model,\n' + r'4$\times$4 mm$^2$']
+    titles = ['reference model',  # ,\n' + r'1 mm$^2$',
+              'upscaled model']  # ,\n' + r'4$\times$4 mm$^2$']
     pad = 10  # for panel titels
 
     # network model sketches
-    netsketch.plot_network_model_sketch(gs[1, :2], model='reference')
-    plt.gca().set_title(titles[0], pad=11)
+    sketch_ref = plt.imread(
+        'network_sketches/network_model_sketch_reference.png')
+    ax = plt.subplot(gs[0, :2])
+    ax.imshow(sketch_ref)
+    plt.axis('off')
+    ax.set_title(titles[0], pad=11)
 
-    netsketch.plot_network_model_sketch(gs[1, :2], model='upscaled')
+    sketch_ups = plt.imread(
+        'network_sketches/network_model_sketch_upscaled.png')
+    ax = plt.subplot(gs[1, :2])
+    ax.imshow(sketch_ups)
+    plt.axis('off')
     plt.gca().set_title(titles[1], pad=20)
 
     lims = {}
