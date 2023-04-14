@@ -28,16 +28,16 @@ def overview_and_parameters(output_dir, ref_circuit, ups_circuit):
     sketch_ref = plt.imread(
         'network_sketches/network_model_sketch_reference.png')
     ax = plt.subplot(gs[0, :2])
-    ax.imshow(sketch_ref)
+    ax.imshow(sketch_ref, interpolation='none')
     plt.axis('off')
-    ax.set_title(titles[0], pad=11)
+    ax.set_title(titles[0], pad=12)
 
     sketch_ups = plt.imread(
         'network_sketches/network_model_sketch_upscaled.png')
     ax = plt.subplot(gs[1, :2])
-    ax.imshow(sketch_ups)
+    ax.imshow(sketch_ups, interpolation='none')
     plt.axis('off')
-    plt.gca().set_title(titles[1], pad=20)
+    plt.gca().set_title(titles[1], pad=12)
 
     lims = {}
     quantities = ['full_num_neurons', 'full_indegrees', 'full_ext_indegrees']
