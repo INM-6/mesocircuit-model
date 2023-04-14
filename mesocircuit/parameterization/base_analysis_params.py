@@ -61,9 +61,10 @@ ana_dict = {
     # if 'auto': the population size of the smallest population is taken.
     # if the given number is higher than the smallest population size, the
     # latter is also assumed.
-    'ccs_num_neurons': 500,
-    # time interval for computing correlation coefficients (in ms)
-    'ccs_time_interval': 5.,
+    'ccs_num_neurons': 200,
+    # time interval for computing correlation coefficients (in ms).
+    # a good choice is equal to the refractory time
+    'ccs_time_interval': 2.0,
 
     # number of data points used in each block for the FFT
     'psd_NFFT': 512,

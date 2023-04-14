@@ -110,7 +110,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
             self.N_X = N_X_1mm2.astype(int)
 
         # minimal analysis as sanity check
-        self.__first_glance_at_data(self.N_X, num_spikes)
+        self.__first_glance_at_data(num_neurons, num_spikes)
 
         # preprocess data of each population in parallel
         pt.parallelize_by_array(self.X,
@@ -336,25 +336,25 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
 
         return spikes_1mm2, positions_1mm2
 
-    def __first_glance_at_data(self, N_X, num_spikes):
+    def __first_glance_at_data(self, num_neurons, num_spikes):
         """
         Prints a table offering a first glance on the data.
 
         Parameters
         ----------
-        N_X
+        num_neurons
             Population sizes.
         num_spikes
             An array of spike counts per population.
         """
         # compute firing rates in 1/s
-        rates = num_spikes / N_X / \
+        rates = num_spikes / num_neurons / \
             ((self.sim_dict['t_sim'] + self.sim_dict['t_presim']) / 1000.)
 
         matrix = np.zeros((len(self.X) + 1, 3), dtype=object)
         matrix[0, :] = ['population', 'num_neurons', 'rate_s-1']
         matrix[1:, 0] = self.X
-        matrix[1:, 1] = N_X.astype(str)
+        matrix[1:, 1] = num_neurons.astype(str)
         matrix[1:, 2] = [str(np.around(rate, decimals=3)) for rate in rates]
 
         title = 'First glance at data'
@@ -783,7 +783,7 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
                 elif datatype == 'CCfuncs_thalamic_pulses':
                     if (self.net_dict['thalamic_input'] == True and
                         self.net_dict['thalamic_input_type'] == 'pulses' and
-                        X != 'TC'):
+                            X != 'TC'):
                         # load data from TC
                         fn_TC = os.path.join(self.data_dir_circuit, 'processed_data',
                                              'sptrains_bintime_binspace_TC.h5')
@@ -888,35 +888,48 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         else:
             num_neurons = self.ana_dict['ccs_num_neurons']
 
-        # spike trains and node ids
-        spt = sptrains_X.toarray()
-        spt = spt[:, :-1]  # discard very last time bin
+        # number of neurons in data
         num_neurons_data = sptrains_X.shape[0]
+        # number of time steps in data
+        num_timesteps = sptrains_X.shape[1] - 1  # last time bin discarded
+        # number of time bins to be combined
+        ntbin = int(self.ana_dict['ccs_time_interval'] / binsize_time)
+        # container for binned spike trains of the selected number
+        spt = np.empty((num_neurons, int(num_timesteps/ntbin)), dtype=int)
+        mask_nrns = np.zeros(num_neurons_data, dtype=bool)
 
-        # mask out non-spiking neurons
-        mask_nrns = np.ones(num_neurons_data, dtype=bool)
-        mask_nrns[np.all(spt == 0, axis=1)] = False
+        # iterate over all neurons in this population.
+        # this avoids loading all spike trains into one big dense matrix that
+        # might exceed the available memory for long simulations
+        i_spt = 0
+        for nid in np.arange(num_neurons_data):
+            # extract spike train
+            spt_nid = sptrains_X.getrow(nid).toarray()[0]
+            # discard very last time bin
+            spt_nid = spt_nid[:-1]
+            # if the spike train is not empty, bin it and add it to selected
+            # spike trains
+            if np.sum(spt_nid) > 0:
+                # bin data
+                spt[i_spt] = spt_nid.reshape(1, -1, ntbin).sum(axis=-1)
+                i_spt += 1
+                # mark that this neuron has spiked
+                mask_nrns[nid] = True
 
-        # extract at most num_neurons neurons from spike trains and from
-        # positions
-        spt = spt[mask_nrns][:num_neurons]
-        x_pos = positions_X['x-position_mm'][mask_nrns][:num_neurons]
-        y_pos = positions_X['y-position_mm'][mask_nrns][:num_neurons]
+            if i_spt == num_neurons:
+                break
 
-        # number of spiking neurons included
-        num_neurons_spk = np.shape(spt)[0]
+        # positions of selected selected neurons
+        x_pos = positions_X['x-position_mm'][mask_nrns]
+        y_pos = positions_X['y-position_mm'][mask_nrns]
 
         if X == 'L23E':
             print('    Using ' + str(num_neurons) + ' neurons in each ' +
                   'population for computing CCs (if no exception given).')
-        if num_neurons != num_neurons_spk:
+        if num_neurons != i_spt:
             print('    Exception: Computing CCs of ' + X + ' from ' +
-                  str(num_neurons_spk) + ' neurons because not all selected ' +
+                  str(i_spt) + ' neurons because not all selected ' +
                   str(num_neurons) + ' neurons spiked.')
-
-        # bin spike data according to given interval
-        ntbin = int(self.ana_dict['ccs_time_interval'] / binsize_time)
-        spt = spt.reshape(num_neurons_spk, -1, ntbin).sum(axis=-1)
 
         ccs = np.corrcoef(spt)
 
