@@ -378,7 +378,10 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
         # excitatory connections ###############################################
 
         # same layer, E -> E
-        if ll in ['L2/3', 'L4', 'L5', 'L6']:
+        e_e_list = ['L2/3', 'L4']
+        if type == 'upscaled':
+            e_e_list += ['L6']
+        if ll in e_e_list:
             draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.05, y=0, z=z_ctr,
                                     xshift1=-0.08, zshift1=0.16,
                                     xshift2=0.13, zshift2=-0.08,
@@ -395,7 +398,7 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
         # inhibitory connections ###############################################
 
         # same layer, I -> I
-        if ll in ['L2/3', 'L4', 'L6']:
+        if ll in ['L2/3', 'L4']:
             draw_edge_arrow_xzplane(ax=ax, x=ctr_inh[0]+0.09, y=0, z=z_ctr,
                                     xshift1=+0.04, zshift1=0.16,
                                     xshift2=-0.13, zshift2=-0.06,
@@ -404,7 +407,10 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
                                        color=pop_colors[::-1][1+2*i])
 
         # same layer, I -> E
-        if ll in ['L2/3', 'L4', 'L5', 'L6']:
+        i_e_list = ['L2/3', 'L4']
+        if type == 'reference':
+            i_e_list += ['L6']
+        if ll in i_e_list:
             ax.arrow3D(x=ctr_inh[0]-0.07, y=0, z=z_ctr-0.025,
                        dx=-0.27, dy=0, dz=0,
                        mutation_scale=mutation_scale,
@@ -454,25 +460,19 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
                arrowstyle='-|>',
                color=pop_colors[2])
 
-    # L4E -> L5I
-    ax.arrow3D(x=ctr_exc[0]+0.02, y=0, z=z_lctrs[1] - 0.07,
-               dx=0.32, dy=0, dz=-0.55,
-               mutation_scale=mutation_scale,
-               arrowstyle='-|>',
-               color=pop_colors[2])
-
     # L4E -> L5E
     ax.arrow3D(x=ctr_exc[0], y=0, z=z_lctrs[1] - 0.06,
-               dx=0, dy=0, dz=-0.42,
+               dx=0, dy=0, dz=-0.53,
                mutation_scale=mutation_scale,
                arrowstyle='-|>',
                color=pop_colors[2])
 
-    # L4E -> L6E
-    draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.06, y=0, z=z_lctrs[1]-0.02,
-                            xshift1=-0.14, zshift1=-0.96,
-                            xshift2=0.12, zshift2=0,
-                            color=pop_colors[2], sign='exc')
+    if type == 'upscaled':
+        # L4E -> L6E
+        draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.06, y=0, z=z_lctrs[1]-0.02,
+                                xshift1=-0.14, zshift1=-0.96,
+                                xshift2=0.12, zshift2=0,
+                                color=pop_colors[2], sign='exc')
 
     # L2/3E -> L4I
     ax.arrow3D(x=ctr_exc[0]+0.05, y=0, z=z_lctrs[0] - 0.06,
@@ -502,15 +502,6 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
                arrowstyle='-|>',
                color=pop_colors[6])
 
-    # L4I -> L2/3E
-    ax.arrow3D(x=ctr_inh[0]-0.02, y=0, z=z_lctrs[1]+0.07,
-               dx=-0.28, dy=0, dz=0.67,
-               mutation_scale=mutation_scale,
-               arrowstyle='-',
-               color=pop_colors[3])
-    inhibitory_arrowhead_front(ax=ax, x=ctr_inh[0] - 0.3, z=z_lctrs[1] + 0.07+0.67,
-                               color=pop_colors[3])
-
     if type == 'upscaled':
         # thalamus
         y_tc = -0.15
@@ -527,13 +518,13 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
                                 np.sum(layer_sizes[2:]) +
                                 layer_sizes[1]/2. + z_ctr_offset,
                                 xshift2=0.12, zshift2=0,
-                                color='k', sign='exc')
+                                color=pop_colors[-1], sign='exc')
         draw_edge_arrow_xzplane(ax=ax, x=0.5-0.07, y=0, z=y_tc,
                                 xshift1=-0.55,
                                 zshift1=-y_tc +
                                 layer_sizes[3]/2. + z_ctr_offset,
                                 xshift2=0.12, zshift2=0,
-                                color='k', sign='exc')
+                                color=pop_colors[-1], sign='exc')
 
         # thalamus label
         ax.text(x=1.-0.01, y=0, z=0-0.01, zdir='x',
@@ -617,9 +608,6 @@ def inhibitory_arrowhead_front(ax, x, z, color):
 
 def choose_connections_to_draw(threshold=150):
 
-    # matrix = np.divide(net_dict['indegrees_1mm2_SvA2018'],
-    #                   net_dict['num_neurons_1mm2_SvA2018'])
-
     matrix = net_dict['indegrees_1mm2_SvA2018']
     matrix_int = np.round(net_dict['indegrees_1mm2_SvA2018']).astype(int)
 
@@ -675,5 +663,5 @@ def mesocircuit_icon():
 
 
 if __name__ == '__main__':
-    choose_connections_to_draw()
+    # choose_connections_to_draw()
     mesocircuit_icon()
