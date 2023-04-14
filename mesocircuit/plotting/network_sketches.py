@@ -1,4 +1,5 @@
 # consider making it standalone in the future
+from mesocircuit.parameterization.base_network_params import net_dict
 from mesocircuit.parameterization.base_plotting_params import plot_dict
 import numpy as np
 import matplotlib
@@ -213,11 +214,11 @@ def plot_mesocircuit_icon2(gs, elev=12, azim=-50, scale_fs=0.7):
                         color=type_colors[1])
 
     # ax.grid(False)
-    #ax.view_init(elev=elev, azim=azim)
+    # ax.view_init(elev=elev, azim=azim)
     ax.set_zlim(top=3)
 
     ax.view_init(elev=20, azim=-50)
-    #ax.view_init(elev=45, azim=0)
+    # ax.view_init(elev=45, azim=0)
     plt.axis('off')
     return
 
@@ -266,9 +267,7 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
     """
     np.random.seed(1242)
 
-    # num_neurons_1mm2_SvA2018
-    num_neurons = np.array(
-        [47386, 13366, 70387, 17597, 20740, 4554, 19839, 4063])
+    num_neurons = net_dict['num_neurons_1mm2_SvA2018']
     layer_sizes = [num_neurons[i] + num_neurons[i+1]
                    for i in np.arange(8, step=2)]
     # scaled
@@ -282,6 +281,7 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
 
     ctr_exc = [0.3, 0.2]
     ctr_inh = [0.7, 0.2]
+    z_ctr_offset = -0.04
 
     conn_ctr = [0.8, 0.6]
 
@@ -292,7 +292,7 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
     z_lctrs = np.zeros(4)  # layer centers
     for i, ll in enumerate(layer_labels[::-1]):
 
-        z_ctr = z + layer_sizes[::-1][i] / 2 - 0.04
+        z_ctr = z + layer_sizes[::-1][i] / 2 + z_ctr_offset
         z_lctrs[i] = z_ctr
 
         layer_size = layer_sizes[::-1][i]
@@ -342,7 +342,7 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
                     if ((X[k, l]-xctr)**2 + (Y[k, l]-yctr)**2) > 0.16**2:
                         Z[k, l] = np.nan
 
-            ax.plot_surface(X, Y, Z,  rstride=1, cstride=1, shade=True,  # cmap='bone',
+            ax.plot_surface(X, Y, Z,  rstride=1, cstride=1, shade=True,
                             antialiased=False, color=pop_colors[::-1][2 + 2*i])
 
         if i == 2 and type == 'reference':
@@ -377,29 +377,33 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
         ax.arrow3D(x=ctr_exc[0]+0.02, y=0, z=z_ctr+0.025,
                    dx=0.32, dy=0, dz=0,
                    mutation_scale=mutation_scale,
-                   arrowstyle="->",
+                   arrowstyle='-|>',
                    color=type_colors[0])
 
         draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.05, y=0, z=z_ctr,
                                 xshift1=-0.08, zshift1=0.16,
                                 xshift2=0.13, zshift2=-0.08,
-                                color=type_colors[0])
+                                color=type_colors[0], sign='exc')
 
         # inhibitory connections
         ax.arrow3D(x=ctr_inh[0]-0.07, y=0, z=z_ctr-0.025,
-                   dx=-0.29, dy=0, dz=0,
+                   dx=-0.27, dy=0, dz=0,
                    mutation_scale=mutation_scale,
-                   arrowstyle="->",
+                   arrowstyle='-',
                    color=type_colors[1])
+        inhibitory_arrowhead_front(ax=ax, x=ctr_inh[0]-0.31, z=z_ctr-0.025,
+                                   color=type_colors[1])
 
         draw_edge_arrow_xzplane(ax=ax, x=ctr_inh[0]+0.09, y=0, z=z_ctr,
                                 xshift1=+0.04, zshift1=0.16,
-                                xshift2=-0.13, zshift2=-0.08,
-                                color=type_colors[1])
+                                xshift2=-0.13, zshift2=-0.06,
+                                color=type_colors[1], sign='inh')
+        inhibitory_arrowhead_front(ax=ax, x=ctr_inh[0], z=z_ctr+0.11,
+                                   color=type_colors[1])
 
         # layer annotations
-        ax.text(x=1.-0.02, y=0, z=z + layer_sizes[::-1][i]-0.02, zdir='x',
-                s=ll,
+        ax.text(x=1.-0.01, y=0, z=z + layer_sizes[::-1][i]-0.01, zdir='x',
+                s=ll, fontsize=matplotlib.rcParams['font.size']*1.5,
                 horizontalalignment='right', verticalalignment='top')
 
         z += layer_sizes[::-1][i]
@@ -407,34 +411,69 @@ def plot_mesocircuit_icon3(gs, type='upscaled'):
     # layer crossing connections
     # reverse layer center such that top layer (2/3) has index 0
     z_lctrs = z_lctrs[::-1]
+
     # L2/3E -> L5E
     draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.08, y=0, z=z_lctrs[0]-0.05,
                             xshift1=-0.1, zshift1=-1.49,
                             xshift2=0.1, zshift2=0,
-                            color=type_colors[0])
+                            color=type_colors[0], sign='exc')
+
+    if type == 'upscaled':
+        # thalamus
+        y_tc = -0.15
+        tc = RegularPolygon(xy=(0.5, y_tc), radius=0.1, numVertices=3, orientation=0,
+                            facecolor=pop_colors[-1],
+                            edgecolor='k')
+        ax.add_patch(tc)
+        art3d.pathpatch_2d_to_3d(tc, z=0, zdir="y")
+
+        # TC to L4 and L6
+        draw_edge_arrow_xzplane(ax=ax, x=0.5-0.07, y=0, z=y_tc,
+                                xshift1=-0.55,
+                                zshift1=-y_tc +
+                                np.sum(layer_sizes[2:]) +
+                                layer_sizes[1]/2. + z_ctr_offset,
+                                xshift2=0.12, zshift2=0,
+                                color='k', sign='exc')
+        draw_edge_arrow_xzplane(ax=ax, x=0.5-0.07, y=0, z=y_tc,
+                                xshift1=-0.55,
+                                zshift1=-y_tc +
+                                layer_sizes[3]/2. + z_ctr_offset,
+                                xshift2=0.12, zshift2=0,
+                                color='k', sign='exc')
+
+        # thalamus label
+        ax.text(x=1.-0.01, y=0, z=0-0.01, zdir='x',
+                s='TC', fontsize=matplotlib.rcParams['font.size']*1.5,
+                horizontalalignment='right', verticalalignment='top')
 
     # ax.grid(False)
-    #ax.view_init(elev=elev, azim=azim)
-    ax.set_zlim(bottom=0, top=np.sum(layer_sizes))
+    # ax.view_init(elev=elev, azim=azim)
+    ax.set_zlim(bottom=-0.2, top=np.sum(layer_sizes))
     ax.set_box_aspect(aspect=(1, 1, 2))
 
     ax.view_init(elev=20, azim=-50)
-    #ax.view_init(elev=90, azim=0)
+    # ax.view_init(elev=90, azim=0)
     #ax.view_init(elev=20, azim=-90)
-    #ax.view_init(elev=45, azim=0)
+    # ax.view_init(elev=45, azim=0)
     plt.axis('off')
 
     # TODO
     # other connections to front
-    # illustration of distance dependence at back
     # 4x4 mm^2 and 1 mm^2
     # consider TC
-    # random dots in population colors
+    # calculate proper connection probabilities for
     return
 
 
 def draw_edge_arrow_xzplane(
-        ax, x, y, z, xshift1, zshift1, xshift2, zshift2, color='k', mutation_scale=10):
+        ax, x, y, z, xshift1, zshift1, xshift2, zshift2, color='k', mutation_scale=10, sign='exc'):
+
+    if sign == 'exc':
+        head = '-|>'
+    elif sign == 'inh':
+        head = '-'
+
     # xshift
     ax.arrow3D(x=x, y=y, z=z,
                dx=xshift1, dy=0, dz=0,
@@ -451,7 +490,7 @@ def draw_edge_arrow_xzplane(
                color=color)
 
     if zshift2 == 0:
-        arrowstyle = '->'
+        arrowstyle = head
     else:
         arrowstyle = '-'
 
@@ -462,13 +501,51 @@ def draw_edge_arrow_xzplane(
                arrowstyle=arrowstyle,
                shrinkA=0, shrinkB=0,
                color=color)
+
+    if zshift2 == 0:
+        return
+
     # zshift back
     ax.arrow3D(x=x+xshift1+xshift2, y=y, z=z+zshift1,
                dx=0, dy=0, dz=zshift2,
                mutation_scale=mutation_scale,
-               arrowstyle='->',
+               arrowstyle=head,
                shrinkA=0, shrinkB=0,
                color=color)
+
+
+def inhibitory_arrowhead_front(ax, x, z, color):
+    head = Circle(xy=(x, z), radius=0.02,
+                  facecolor=color,
+                  edgecolor=None)
+    ax.add_patch(head)
+    art3d.pathpatch_2d_to_3d(head, z=0, zdir='y')
+
+
+def choose_connections_to_draw(threshold=500):
+
+    # matrix = np.divide(net_dict['indegrees_1mm2_SvA2018'],
+    #                   net_dict['num_neurons_1mm2_SvA2018'])
+
+    matrix = net_dict['indegrees_1mm2_SvA2018']
+
+    for i, src in enumerate(plot_dict['pop_labels'][:-1]):
+        for j, tgt in enumerate(plot_dict['pop_labels'][:-1]):
+            if src[:2] == tgt[:2]:
+                same_layer = True
+            else:
+                same_layer = False
+            if matrix[j, i] > threshold:
+                draw = True
+            else:
+                draw = False
+            if same_layer != draw and same_layer:
+                emph = '|->'
+            elif same_layer != draw and not same_layer:
+                emph = ' ->'
+            else:
+                emph = '   '
+            print(emph, src, tgt, same_layer, draw, matrix[j, i])
 
 
 def mesocircuit_icon():
@@ -478,12 +555,13 @@ def mesocircuit_icon():
 
     fig = plt.figure(figsize=(5, 5))
     gs = gridspec.GridSpec(1, 1)
-    #gs.update(left=0.1, right=0.98, bottom=0.05, top=0.98)
-    plot_mesocircuit_icon3(gs[0], type='reference')
+    # gs.update(left=0.1, right=0.98, bottom=0.05, top=0.98)
+    plot_mesocircuit_icon3(gs[0], type='upscaled')
 
     plt.savefig('mesocircuit_icon.pdf')
     return
 
 
 if __name__ == '__main__':
+    # choose_connections_to_draw()
     mesocircuit_icon()
