@@ -128,7 +128,7 @@ def plot_network_model_sketch(gs, model='upscaled'):
     model
         'reference' or 'upscaled'
     """
-    np.random.seed(1242)
+    np.random.seed(1234)
 
     num_neurons = net_dict['num_neurons_1mm2_SvA2018']
     layer_sizes = [num_neurons[i] + num_neurons[i+1]
@@ -160,18 +160,50 @@ def plot_network_model_sketch(gs, model='upscaled'):
         layer_size = layer_sizes[::-1][i]
 
         # layer ################################################################
-        layer = Rectangle(xy=(0, 0), width=1, height=1,
-                          facecolor='lightgrey', edgecolor='k')
+        if model == 'reference':
+            layer = Circle(xy=(0.5, 0.5), radius=0.5,
+                           facecolor='lightgrey',
+                           edgecolor='k')
+        elif model == 'upscaled':
+            layer = Rectangle(xy=(0, 0), width=1, height=1,
+                              facecolor='lightgrey', edgecolor='k')
         ax.add_patch(layer)
         art3d.pathpatch_2d_to_3d(layer, z=z, zdir="z")
 
         # neurons ##############################################################
         num_neurons_exc = int(num_neurons[::-1][1 + 2*i] / 100)
         num_neurons_inh = int(num_neurons[::-1][2*i] / 100)
-        pos_x_exc = 0.02 + 0.96*np.random.rand(num_neurons_exc)
-        pos_y_exc = 0.02 + 0.96*np.random.rand(num_neurons_exc)
-        pos_x_inh = 0.02 + 0.96*np.random.rand(num_neurons_inh)
-        pos_y_inh = 0.02 + 0.96*np.random.rand(num_neurons_inh)
+
+        rnds_exc = [np.random.rand(num_neurons_exc) for x in [0, 1]]
+        rnds_inh = [np.random.rand(num_neurons_inh) for x in [0, 1]]
+
+        offset = 0.02
+        scale = 0.96
+
+        pos_x_exc = offset + scale*rnds_exc[0]
+        pos_y_exc = offset + scale*rnds_exc[1]
+        pos_x_inh = offset + scale*rnds_inh[0]
+        pos_y_inh = offset + scale*rnds_inh[1]
+
+        if model == 'reference':
+            pxexc = []
+            pyexc = []
+            for p in np.arange(len(pos_x_exc)):
+                if (pos_x_exc[p]-0.5)**2 + (pos_y_exc[p]-0.5)**2 <= (0.5 - offset)**2:
+                    pxexc.append(pos_x_exc[p])
+                    pyexc.append(pos_y_exc[p])
+            pos_x_exc = np.array(pxexc)
+            pos_y_exc = np.array(pyexc)
+
+            pxinh = []
+            pyinh = []
+            for p in np.arange(len(pos_x_inh)):
+                if (pos_x_inh[p]-0.5)**2 + (pos_y_inh[p]-0.5)**2 <= (0.5 - offset)**2:
+                    pxinh.append(pos_x_inh[p])
+                    pyinh.append(pos_y_inh[p])
+            pos_x_inh = np.array(pxinh)
+            pos_y_inh = np.array(pyinh)
+
         ax.scatter(xs=pos_x_exc, ys=pos_y_exc, zs=z,
                    marker=',',
                    s=matplotlib.rcParams['lines.markersize'] * 0.01,
@@ -236,13 +268,16 @@ def plot_network_model_sketch(gs, model='upscaled'):
         ax.add_patch(inh)
         art3d.pathpatch_2d_to_3d(inh, z=0, zdir="y")
 
-        ax.text(x=ctr_exc[0]-0.015, y=0, z=z_lctrs[i]-0.03, s='E', zdir='x',
-                fontsize=matplotlib.rcParams['font.size'] * 1.5,
-                horizontalalignment='center', verticalalignment='center')
-        ax.text(x=ctr_inh[0]-0.01, y=0, z=z_lctrs[i], s='I', zdir='x',
-                fontsize=matplotlib.rcParams['font.size'] * 1.5,
-                horizontalalignment='center', verticalalignment='center')
-
+        import matplotlib.patheffects as PathEffects
+        e_label = ax.text(x=ctr_exc[0]-0.015, y=0, z=z_lctrs[i]-0.03, s='E', zdir='x',
+                          fontsize=matplotlib.rcParams['font.size'] * 1.5, color='white',
+                          horizontalalignment='center', verticalalignment='center')
+        i_label = ax.text(x=ctr_inh[0]-0.01, y=0, z=z_lctrs[i], s='I', zdir='x',
+                          fontsize=matplotlib.rcParams['font.size'] * 1.5, color='white',
+                          horizontalalignment='center', verticalalignment='center')
+        for label in [e_label, i_label]:
+            label.set_path_effects(
+                [PathEffects.withStroke(linewidth=1, foreground='k')])
         # excitatory connections ###############################################
 
         # same layer, E -> E
@@ -398,7 +433,7 @@ def plot_network_model_sketch(gs, model='upscaled'):
     # size label ###############################################################
     if model == 'reference':
         model_label = r'$1 \mathrm{mm}^2$'  # r'$1\times 1 \mathrm{mm}^2$'
-        ax.text(x=0.97, y=0.8, z=0, s=model_label, zdir='y',
+        ax.text(x=0.97, y=0.6, z=0, s=model_label, zdir='y',
                 fontsize=matplotlib.rcParams['font.size'] * 2.5,
                 horizontalalignment='center', verticalalignment='top')
     elif model == 'upscaled':
