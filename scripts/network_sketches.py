@@ -215,8 +215,8 @@ def plot_network_model_sketch(gs, model='upscaled'):
 
         if i == 3:
             conns = RegularPolygon(xy=conn_ctr, radius=0.1, numVertices=3, orientation=12.05,
-                                   facecolor=pop_colors[::-1][2 + 2*i],
-                                   edgecolor='k')
+                                   edgecolor=pop_colors[::-1][2 + 2*i],
+                                   facecolor='white')
             ax.add_patch(conns)
             art3d.pathpatch_2d_to_3d(conns, z=z, zdir="z")
 
@@ -256,28 +256,27 @@ def plot_network_model_sketch(gs, model='upscaled'):
         # excitatory neurons
         exc = RegularPolygon(xy=(ctr_exc[0], z_ctr-0.025), radius=0.1,
                              numVertices=3, orientation=0,
-                             facecolor=pop_colors[::-1][2 + 2*i],
-                             edgecolor='k')
+                             edgecolor=pop_colors[::-1][2 + 2*i],
+                             facecolor='white',
+                             linewidth=2)
         ax.add_patch(exc)
         art3d.pathpatch_2d_to_3d(exc, z=0, zdir="y")
 
         # inhibitory neurons
         inh = Circle(xy=(ctr_inh[0], z_ctr), radius=0.08,
-                     facecolor=pop_colors[::-1][1 + 2*i],
-                     edgecolor='k')
+                     edgecolor=pop_colors[::-1][1 + 2*i],
+                     facecolor='white',
+                     linewidth=2)
         ax.add_patch(inh)
         art3d.pathpatch_2d_to_3d(inh, z=0, zdir="y")
 
-        import matplotlib.patheffects as PathEffects
-        e_label = ax.text(x=ctr_exc[0]-0.015, y=0, z=z_lctrs[i]-0.03, s='E', zdir='x',
-                          fontsize=matplotlib.rcParams['font.size'] * 1.5, color='white',
-                          horizontalalignment='center', verticalalignment='center')
-        i_label = ax.text(x=ctr_inh[0]-0.01, y=0, z=z_lctrs[i], s='I', zdir='x',
-                          fontsize=matplotlib.rcParams['font.size'] * 1.5, color='white',
-                          horizontalalignment='center', verticalalignment='center')
-        for label in [e_label, i_label]:
-            label.set_path_effects(
-                [PathEffects.withStroke(linewidth=1, foreground='k')])
+        ax.text(x=ctr_exc[0]-0.015, y=0, z=z_lctrs[i]-0.03, s='E', zdir='x',
+                fontsize=matplotlib.rcParams['font.size'] * 1.5, color='k',
+                horizontalalignment='center', verticalalignment='center')
+        ax.text(x=ctr_inh[0]-0.01, y=0, z=z_lctrs[i], s='I', zdir='x',
+                fontsize=matplotlib.rcParams['font.size'] * 1.5, color='k',
+                horizontalalignment='center', verticalalignment='center')
+
         # excitatory connections ###############################################
 
         # same layer, E -> E
