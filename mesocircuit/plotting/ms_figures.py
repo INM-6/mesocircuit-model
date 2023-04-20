@@ -8,36 +8,17 @@ import matplotlib
 matplotlib.use('Agg')
 
 
-def overview_and_parameters(output_dir, ref_circuit, ups_circuit):
+def parameters(output_dir, ref_circuit, ups_circuit):
     """
     """
     # instantiate plotting object with referene circuit
     plot = plotting.Plotting(ref_circuit)
 
-    print('Plotting overview and parameters.')
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 5))
-    gs = gridspec.GridSpec(2, 10)
-    gs.update(left=0.01, right=0.96, bottom=0.09,
-              top=0.94, hspace=0.5, wspace=0.5)
-
-    titles = ['reference model',  # ,\n' + r'1 mm$^2$',
-              'upscaled model']  # ,\n' + r'4$\times$4 mm$^2$']
-    pad = 10  # for panel titels
-
-    # network model sketches
-    sketch_ref = plt.imread(
-        'network_sketches/network_model_sketch_reference.png')
-    ax = plt.subplot(gs[0, :2])
-    ax.imshow(sketch_ref, interpolation='none')
-    plt.axis('off')
-    ax.set_title(titles[0], pad=12)
-
-    sketch_ups = plt.imread(
-        'network_sketches/network_model_sketch_upscaled.png')
-    ax = plt.subplot(gs[1, :2])
-    ax.imshow(sketch_ups, interpolation='none')
-    plt.axis('off')
-    plt.gca().set_title(titles[1], pad=12)
+    print('Plotting parameters.')
+    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 7))
+    gs = gridspec.GridSpec(2, 7)
+    gs.update(left=0.08, right=0.95, bottom=0.06,
+              top=0.9, hspace=0.5, wspace=0)
 
     lims = {}
     quantities = ['full_num_neurons', 'full_indegrees', 'full_ext_indegrees']
@@ -48,17 +29,24 @@ def overview_and_parameters(output_dir, ref_circuit, ups_circuit):
         lims[q]['vmax'] = np.max(
             [np.max(ref_circuit.net_dict[q]), np.max(ups_circuit.net_dict[q])])
 
+    pad = 10
+    labels = ['A', 'B', 'C', 'D', 'E', 'F']
+    offset = [-0.78, 0.05]
+    lcnt = 0
     for i, circuit in enumerate([ref_circuit, ups_circuit]):
-        ax = plt.subplot(gs[i, 3])
+        ax = plt.subplot(gs[i, :1])
         q = 'full_num_neurons'
         # two separate color bars are used because of large difference
         plot.plot_parameters_vector(
             ax,
             data=circuit.net_dict[q],
-            show_num='all')
+            show_num='all',
+            num_fontsize_scale=1)
         ax.set_title('number of neurons', pad=pad)
+        plot.add_label(ax, labels[lcnt], offset=offset)
+        lcnt += 1
 
-        ax = plt.subplot(gs[i, 5:8])
+        ax = plt.subplot(gs[i, 2:-2])
         q = 'full_indegrees'
         plot.plot_parameters_matrix(
             ax,
@@ -66,21 +54,31 @@ def overview_and_parameters(output_dir, ref_circuit, ups_circuit):
             show_num='all',
             set_bad=[0],
             vmin=lims[q]['vmin'],
-            vmax=lims[q]['vmax'])
-        ax.set_title('in-degree', pad=pad)
+            vmax=lims[q]['vmax'],
+            num_fontsize_scale=0.9)
+        if i == 0:
+            title = 'reference model'
+        elif i == 1:
+            title = 'upscaled model'
+        ax.set_title(title + '\n\n in-degree', pad=pad)
+        plot.add_label(ax, labels[lcnt], offset=[-0.01, offset[1]])
+        lcnt += 1
 
-        ax = plt.subplot(gs[i, 9])
+        ax = plt.subplot(gs[i, -1:])
         q = 'full_ext_indegrees'
         plot.plot_parameters_vector(
             ax,
             data=circuit.net_dict[q],
             show_num='all',
             vmin=lims[q]['vmin'],
-            vmax=lims[q]['vmax'])
-        ax.set_title('external in-degree', pad=10)
+            vmax=lims[q]['vmax'],
+            num_fontsize_scale=1)
+        ax.set_title('external in-degree', pad=pad)
+        plot.add_label(ax, labels[lcnt], offset=offset)
+        lcnt += 1
 
     # TODO modify and use savefig
-    plt.savefig(os.path.join(output_dir, 'overview_and_parameters.pdf'))
+    plt.savefig(os.path.join(output_dir, 'parameters.pdf'))
 
     return
 
