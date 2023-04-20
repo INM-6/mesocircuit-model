@@ -202,35 +202,9 @@ def evoked_activity(output_dir, circuit):
 
     labels = ['A', 'B', 'C', 'D']
 
-    # raster
-    ax = plot.plot_raster(
-        gs[:2, 0],
-        plot.Y,
-        d['all_sptrains'],
-        d['all_pos_sorting_arrays'],
-        plot.sim_dict['sim_resolution'],
-        time_interval=[1050, 1150],
-        sample_step=25,
-        axvline=1100)
-    ax.set_title('TC', pad=0.2, fontsize=plt.rcParams['font.size'])
-    plot.add_label(ax, labels[0])
-
-    # instantaneous firing rates
-    ax = plot.plot_population_panels(
-        gs[:2, 1],
-        plotfunc=plot.plotfunc_instantaneous_rates,
-        populations=plot.X,
-        xlabel='time (ms)',
-        ylabel=r'$\nu (s^{-1})$',
-        sptrains=d['all_sptrains_bintime'],
-        time_step=plot.ana_dict['binsize_time'],
-        # time_interval=plot.plot_dict['raster_time_interval_short']
-        time_interval=[1050, 1150])
-    plot.add_label(ax, labels[1])
-
     # spatial snapshots
     ax = plot.plot_spatial_snapshots(
-        gs[2, :],
+        gs[0, :],
         plot.X,
         d['all_inst_rates_bintime_binspace'],
         plot.ana_dict['binsize_time'],
@@ -239,11 +213,37 @@ def evoked_activity(output_dir, circuit):
         cbar_size='2%',
         cbar_pad=0.1,
     )
+    plot.add_label(ax, labels[0])
+
+    # raster
+    ax = plot.plot_raster(
+        gs[1:, 0],
+        plot.Y,
+        d['all_sptrains'],
+        d['all_pos_sorting_arrays'],
+        plot.sim_dict['sim_resolution'],
+        time_interval=[1050, 1150],
+        sample_step=25,
+        axvline=1100)
+    ax.set_title('TC', pad=0.2, fontsize=plt.rcParams['font.size'])
+    plot.add_label(ax, labels[1])
+
+    # instantaneous firing rates
+    ax = plot.plot_population_panels(
+        gs[1:, 1],
+        plotfunc=plot.plotfunc_instantaneous_rates,
+        populations=plot.X,
+        xlabel='time (ms)',
+        ylabel=r'$\nu (s^{-1})$',
+        sptrains=d['all_sptrains_bintime'],
+        time_step=plot.ana_dict['binsize_time'],
+        # time_interval=plot.plot_dict['raster_time_interval_short']
+        time_interval=[1050, 1150])
     plot.add_label(ax, labels[2])
 
     # cross-correlation functions for thalamic pulses
     ax = plot.plot_crosscorrelation_funcs_thalamic_pulses(
-        gs[:2, 2],
+        gs[1:, 2],
         plot.Y,
         d['all_CCfuncs_thalamic_pulses'],
         cbar_orientation='vertical',
