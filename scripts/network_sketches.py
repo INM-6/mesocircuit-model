@@ -1,3 +1,4 @@
+import mesocircuit
 from mesocircuit.parameterization.base_network_params import net_dict
 from mesocircuit.parameterization.base_plotting_params import plot_dict
 import os
@@ -14,6 +15,55 @@ matplotlib.use('Agg')
 matplotlib.rcParams.update(plot_dict['rcParams'])
 
 
+def figure_network_model_sketches(output_dir):
+    '''
+    Network sketches for manuscript.
+    '''
+    fig = plt.figure(figsize=(plot_dict['fig_width_2col'], 4))
+    gs = gridspec.GridSpec(1, 2)
+    gs.update(left=-0.05, right=1.05, bottom=0, top=1, hspace=0, wspace=0)
+    plot_network_model_sketch(gs[0], model='reference')
+    ax_r = plt.gca()
+    ax_r.text2D(0.15, 0.95, 'A',
+                ha='left', va='bottom',
+                transform=ax_r.transAxes,
+                weight='bold',
+                fontsize=matplotlib.rcParams['font.size'] * 1.2)
+    ax_r.text2D(0.5, 0.95, 'reference model',
+                ha='center', va='bottom',
+                transform=ax_r.transAxes,
+                fontsize=matplotlib.rcParams['font.size'] * 1.2)
+
+    plot_network_model_sketch(gs[1], model='upscaled')
+    ax_u = plt.gca()
+    ax_u.text2D(0.15, 0.95, 'B',
+                ha='left', va='bottom',
+                transform=ax_u.transAxes,
+                weight='bold',
+                fontsize=matplotlib.rcParams['font.size'] * 1.2)
+    ax_u.text2D(0.5, 0.95, 'upscaled model',
+                ha='center', va='bottom',
+                transform=ax_u.transAxes,
+                fontsize=matplotlib.rcParams['font.size'] * 1.2)
+
+    plt.savefig(os.path.join(output_dir, f'network_sketches.pdf'))
+    return
+
+
+def figure_network_model_sketch(output_dir, model='upscaled'):
+    """
+    """
+    fig = plt.figure(figsize=(plot_dict['fig_width_1col'], 4))
+    gs = gridspec.GridSpec(1, 1)
+    gs.update(left=-0.07, right=1.07, bottom=0, top=1)
+    plot_network_model_sketch(gs[0], model=model)
+
+    plt.savefig(os.path.join(output_dir, f'network_model_sketch_{model}.pdf'))
+    plt.savefig(os.path.join(
+        output_dir, f'network_model_sketch_{model}.png'), dpi=300)
+    return
+
+
 def figure_mesocircuit_icon(output_dir):
     """
     """
@@ -26,19 +76,7 @@ def figure_mesocircuit_icon(output_dir):
     plt.savefig(os.path.join(output_dir, 'mesocircuit_icon.png'), dpi=300)
     return
 
-
-def figure_network_model_sketch(output_dir, model='upscaled'):
-    """
-    """
-    fig = plt.figure(figsize=(3.6, 5.2))
-    gs = gridspec.GridSpec(1, 1)
-    gs.update(left=-0.3, right=1.3, bottom=-0.05, top=1.1)
-    plot_network_model_sketch(gs[0], model=model)
-
-    plt.savefig(os.path.join(output_dir, f'network_model_sketch_{model}.pdf'))
-    plt.savefig(os.path.join(
-        output_dir, f'network_model_sketch_{model}.png'), dpi=300)
-    return
+################################################################################
 
 
 def plot_mesocircuit_icon(gs, elev=12, azim=-50, scale_fs=0.7):
@@ -171,14 +209,14 @@ def plot_network_model_sketch(gs, model='upscaled'):
         art3d.pathpatch_2d_to_3d(layer, z=z, zdir="z")
 
         # neurons ##############################################################
-        num_neurons_exc = int(num_neurons[::-1][1 + 2*i] / 100)
-        num_neurons_inh = int(num_neurons[::-1][2*i] / 100)
+        num_neurons_exc = int(num_neurons[::-1][1 + 2*i] / 30)
+        num_neurons_inh = int(num_neurons[::-1][2*i] / 30)
 
         rnds_exc = [np.random.rand(num_neurons_exc) for x in [0, 1]]
         rnds_inh = [np.random.rand(num_neurons_inh) for x in [0, 1]]
 
-        offset = 0.02
-        scale = 0.96
+        offset = 0.03
+        scale = 1-2*offset
 
         pos_x_exc = offset + scale*rnds_exc[0]
         pos_y_exc = offset + scale*rnds_exc[1]
@@ -192,8 +230,9 @@ def plot_network_model_sketch(gs, model='upscaled'):
                 if (pos_x_exc[p]-0.5)**2 + (pos_y_exc[p]-0.5)**2 <= (0.5 - offset)**2:
                     pxexc.append(pos_x_exc[p])
                     pyexc.append(pos_y_exc[p])
-            pos_x_exc = np.array(pxexc)
-            pos_y_exc = np.array(pyexc)
+            # reduce density from 16 mm2 to 1 mm2
+            pos_x_exc = np.array(pxexc)[::16]
+            pos_y_exc = np.array(pyexc)[::16]
 
             pxinh = []
             pyinh = []
@@ -201,8 +240,8 @@ def plot_network_model_sketch(gs, model='upscaled'):
                 if (pos_x_inh[p]-0.5)**2 + (pos_y_inh[p]-0.5)**2 <= (0.5 - offset)**2:
                     pxinh.append(pos_x_inh[p])
                     pyinh.append(pos_y_inh[p])
-            pos_x_inh = np.array(pxinh)
-            pos_y_inh = np.array(pyinh)
+            pos_x_inh = np.array(pxinh)[::16]
+            pos_y_inh = np.array(pyinh)[::16]
 
         ax.scatter(xs=pos_x_exc, ys=pos_y_exc, zs=z,
                    marker=',',
@@ -215,8 +254,8 @@ def plot_network_model_sketch(gs, model='upscaled'):
 
         if i == 3:
             conns = RegularPolygon(xy=conn_ctr, radius=0.1, numVertices=3, orientation=12.05,
-                                   edgecolor=pop_colors[::-1][2 + 2*i],
-                                   facecolor='white')
+                                   facecolor=pop_colors[::-1][2 + 2*i],
+                                   edgecolor='k')
             ax.add_patch(conns)
             art3d.pathpatch_2d_to_3d(conns, z=z, zdir="z")
 
@@ -271,10 +310,10 @@ def plot_network_model_sketch(gs, model='upscaled'):
         art3d.pathpatch_2d_to_3d(inh, z=0, zdir="y")
 
         ax.text(x=ctr_exc[0]-0.015, y=0, z=z_lctrs[i]-0.03, s='E', zdir='x',
-                fontsize=matplotlib.rcParams['font.size'] * 1.5, color='k',
+                fontsize=matplotlib.rcParams['font.size'], color='k',
                 horizontalalignment='center', verticalalignment='center')
         ax.text(x=ctr_inh[0]-0.01, y=0, z=z_lctrs[i], s='I', zdir='x',
-                fontsize=matplotlib.rcParams['font.size'] * 1.5, color='k',
+                fontsize=matplotlib.rcParams['font.size'], color='k',
                 horizontalalignment='center', verticalalignment='center')
 
         # excitatory connections ###############################################
@@ -286,7 +325,7 @@ def plot_network_model_sketch(gs, model='upscaled'):
         if ll in e_e_list:
             draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.05, y=0, z=z_ctr,
                                     xshift1=-0.08, zshift1=0.16,
-                                    xshift2=0.13, zshift2=-0.08,
+                                    xshift2=0.13, zshift2=-0.065,
                                     color=pop_colors[::-1][2 + 2*i], sign='exc')
 
         # same layer, E -> I
@@ -314,16 +353,16 @@ def plot_network_model_sketch(gs, model='upscaled'):
             i_e_list += ['L6']
         if ll in i_e_list:
             ax.arrow3D(x=ctr_inh[0]-0.07, y=0, z=z_ctr-0.025,
-                       dx=-0.27, dy=0, dz=0,
+                       dx=-0.26, dy=0, dz=0,
                        mutation_scale=mutation_scale,
                        arrowstyle='-',
                        color=pop_colors[::-1][1+2*i])
-            inhibitory_arrowhead_front(ax=ax, x=ctr_inh[0]-0.31, z=z_ctr-0.025,
+            inhibitory_arrowhead_front(ax=ax, x=ctr_inh[0]-0.3, z=z_ctr-0.025,
                                        color=pop_colors[::-1][1+2*i])
 
         # layer annotations ####################################################
-        ax.text(x=1.-0.01, y=0, z=z + layer_sizes[::-1][i]-0.01, zdir='x',
-                s=ll, fontsize=matplotlib.rcParams['font.size']*2.5,
+        ax.text(x=1, y=0, z=z + layer_sizes[::-1][i]+0.03, zdir='x',
+                s=ll, fontsize=matplotlib.rcParams['font.size']*1.8,
                 horizontalalignment='right', verticalalignment='top')
 
         z += layer_sizes[::-1][i]
@@ -349,7 +388,7 @@ def plot_network_model_sketch(gs, model='upscaled'):
     # L6E -> L4E
     draw_edge_arrow_xzplane(ax=ax, x=ctr_exc[0]-0.06, y=0, z=z_lctrs[3]-0.02,
                             xshift1=-0.11, zshift1=0.88,
-                            xshift2=0.09, zshift2=0,
+                            xshift2=0.085, zshift2=0,
                             color=pop_colors[6], sign='exc')
 
     # L4E -> L4I
@@ -395,8 +434,8 @@ def plot_network_model_sketch(gs, model='upscaled'):
                color=pop_colors[0])
 
     # L6E -> L4I
-    ax.arrow3D(x=ctr_exc[0]+0.017, y=0, z=z_lctrs[3] + 0.03,
-               dx=0.4, dy=0, dz=0.83,
+    ax.arrow3D(x=ctr_exc[0]+0.017, y=0, z=z_lctrs[3]-0.01,
+               dx=0.4, dy=0, dz=0.87,
                mutation_scale=mutation_scale,
                arrowstyle='-|>',
                color=pop_colors[6])
@@ -425,20 +464,20 @@ def plot_network_model_sketch(gs, model='upscaled'):
                             color=pop_colors[-1], sign='exc')
 
     # thalamus label
-    ax.text(x=1.-0.01, y=0, z=0-0.01, zdir='x',
-            s='TC', fontsize=matplotlib.rcParams['font.size']*2.5,
+    ax.text(x=1, y=0, z=0+0.03, zdir='x',
+            s='TC', fontsize=matplotlib.rcParams['font.size']*1.8,
             horizontalalignment='right', verticalalignment='top')
 
     # size label ###############################################################
     if model == 'reference':
         model_label = r'$1 \mathrm{mm}^2$'  # r'$1\times 1 \mathrm{mm}^2$'
         ax.text(x=0.97, y=0.6, z=0, s=model_label, zdir='y',
-                fontsize=matplotlib.rcParams['font.size'] * 2.5,
+                fontsize=matplotlib.rcParams['font.size'] * 1.8,
                 horizontalalignment='center', verticalalignment='top')
     elif model == 'upscaled':
         model_label = r'$4\times 4 \mathrm{mm}^2$'
         ax.text(x=0.9, y=0.8, z=0, s=model_label, zdir='y',
-                fontsize=matplotlib.rcParams['font.size'] * 2.5,
+                fontsize=matplotlib.rcParams['font.size'] * 1.8,
                 horizontalalignment='center', verticalalignment='top')
 
     # ax.grid(False)
@@ -608,3 +647,9 @@ if __name__ == '__main__':
     figure_network_model_sketch(output_dir, model='reference')
     figure_network_model_sketch(output_dir, model='upscaled')
     # choose_connections_to_draw(output_dir)
+
+    # manuscript figure of network sketches for both reference and upscaled model
+    output_dir = 'ms_figures'
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+    figure_network_model_sketches(output_dir)

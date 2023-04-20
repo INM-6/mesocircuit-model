@@ -22,7 +22,7 @@ if 0:
         'reference', load=True)
     meso_exp_upscaled = mesoframe.MesocircuitExperiment(
         'upscaled', load=True)
-    figures.overview_and_parameters(
+    figures.parameters(
         output_dir,
         meso_exp_reference.circuits[0], meso_exp_upscaled.circuits[0])
 
