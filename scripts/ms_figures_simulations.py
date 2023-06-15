@@ -13,38 +13,35 @@ import parametersets
 # For the comparison with the reference model, we create a second version of the
 # upscaled model, but analyze only the data within the center disk of an area of
 # 1mm2.
-
-name_reference = 'reference'
-custom_params_reference = parametersets.ps_dicts['microcircuit_MAMV1']
+# TODO The upscaled version is currently not used for the
 
 name_upscaled = 'upscaled'
 custom_params_upscaled = parametersets.ps_dicts['mesocircuit_MAMV1']
 
+name_reference = 'reference'
+custom_params_reference = parametersets.ps_dicts['microcircuit_MAMV1']
+custom_params_reference.update({'sim_dict': {'t_sim': 60000.}})
+
 name_upscaled_1mm2 = 'upscaled_1mm2'
 custom_params_upscaled_1mm2 = parametersets.ps_dicts['mesocircuit_MAMV1']
 custom_params_upscaled_1mm2.update({'ana_dict': {'extract_1mm2': True}})
+custom_params_upscaled_1mm2.update({'sim_dict': {'t_sim': 60000.}})
 
 name_evoked = 'evoked'
 custom_params_evoked = parametersets.ps_dicts['mesocircuit_MAMV1_evoked']
-
-################################################################################
-# Simulation time for manuscript figures in ms.
-
-#for cu_params in [custom_params_reference, custom_params_upscaled,
-#                  custom_params_upscaled_1mm2, custom_params_evoked]:
-#    cu_params.update({'sim_dict': {'t_sim': 5000.}})
+custom_params_evoked.update({'sim_dict': {'t_sim': 10000.}})
 
 ################################################################################
 # Initialize MesocircuitExperiments for each parameter combination and inspect
 # the custom parameters in each case.
 
-meso_exp_reference = mesoframe.MesocircuitExperiment(
-    name_reference, custom_params_reference)
-print(meso_exp_reference.parameterview)
-
 meso_exp_upscaled = mesoframe.MesocircuitExperiment(
     name_upscaled, custom_params_upscaled)
 print(meso_exp_upscaled.parameterview)
+
+meso_exp_reference = mesoframe.MesocircuitExperiment(
+    name_reference, custom_params_reference)
+print(meso_exp_reference.parameterview)
 
 meso_exp_upscaled_1mm2 = mesoframe.MesocircuitExperiment(
     name_upscaled_1mm2, custom_params_upscaled)
@@ -58,10 +55,10 @@ print(meso_exp_evoked.parameterview)
 # Submit jobs.
 
 for meso_exp in [
-    meso_exp_reference,
-    meso_exp_upscaled,
-    meso_exp_upscaled_1mm2,
-    meso_exp_evoked
+    # meso_exp_upscaled,
+    # meso_exp_reference,
+    # meso_exp_upscaled_1mm2,
+    # meso_exp_evoked
 ]:
     circuit = meso_exp.circuits[0]
     circuit.run_jobs(
