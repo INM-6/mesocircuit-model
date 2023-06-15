@@ -112,7 +112,7 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit):
     print('Plotting rasters.')
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 4.))
     gs = gridspec.GridSpec(1, 2)
-    gs.update(left=0.12, right=0.97, bottom=0.08, top=0.9)
+    gs.update(left=0.12, right=0.95, bottom=0.08, top=0.9)
 
     labels = ['A', 'B']
     titles = ['reference model,\n' + r'1 mm$^2$',
