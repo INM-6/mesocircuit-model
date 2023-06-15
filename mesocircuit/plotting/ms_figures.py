@@ -112,7 +112,7 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit):
     print('Plotting rasters.')
     fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 4.))
     gs = gridspec.GridSpec(1, 2)
-    gs.update(left=0.12, right=0.97, bottom=0.08, top=0.9)
+    gs.update(left=0.12, right=0.95, bottom=0.08, top=0.9)
 
     labels = ['A', 'B']
     titles = ['reference model,\n' + r'1 mm$^2$',
@@ -125,7 +125,7 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit):
             all_sptrains=d[prefix + '_all_sptrains'],
             all_pos_sorting_arrays=d[prefix + '_all_pos_sorting_arrays'],
             time_step=plot.sim_dict['sim_resolution'],
-            time_interval=[1000, 1050],
+            time_interval=[1050, 1100],
             sample_step=1,
             randomize_neuronids=True,
         )
@@ -209,6 +209,7 @@ def evoked_activity(output_dir, circuit):
         d['all_inst_rates_bintime_binspace'],
         plot.ana_dict['binsize_time'],
         orientation='horizontal',
+        start_time=1100.,  # ms
         cbar_orientation='vertical',
         cbar_size='2%',
         cbar_pad=0.1,
