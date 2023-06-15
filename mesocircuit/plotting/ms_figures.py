@@ -125,7 +125,7 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit):
             all_sptrains=d[prefix + '_all_sptrains'],
             all_pos_sorting_arrays=d[prefix + '_all_pos_sorting_arrays'],
             time_step=plot.sim_dict['sim_resolution'],
-            time_interval=[1000, 1050],
+            time_interval=[1050, 1100],
             sample_step=1,
             randomize_neuronids=True,
         )
@@ -209,6 +209,7 @@ def evoked_activity(output_dir, circuit):
         d['all_inst_rates_bintime_binspace'],
         plot.ana_dict['binsize_time'],
         orientation='horizontal',
+        start_time=1100.,  # ms
         cbar_orientation='vertical',
         cbar_size='2%',
         cbar_pad=0.1,
