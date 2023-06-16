@@ -189,7 +189,11 @@ class Plotting(base_class.BaseAnalysisPlotting):
         return ax
 
     def plot_statistics_overview(self,
-                                 gs, all_FRs, all_LVs, all_CCs, all_PSDs):
+                                 gs, all_FRs, all_LVs, all_CCs, all_PSDs,
+                                 ylims_boxcharts_FRs=False,
+                                 ylims_boxcharts_LVs=False,
+                                 ylims_boxcharts_CCs=False,
+                                 ylims_PSDs=False):
         """
         TODO
         """
@@ -205,18 +209,21 @@ class Plotting(base_class.BaseAnalysisPlotting):
         print('  Plotting boxcharts: rates')
         axes[0] = self.plot_boxcharts(gs_c0[0, 0],
                                       all_FRs, xlabel='', ylabel='FR (spikes/s)',
-                                      xticklabels=False)
+                                      xticklabels=False,
+                                      ylims=ylims_boxcharts_FRs)
 
         # middle: LVs
         print('  Plotting boxcharts: LVs')
         axes[1] = self.plot_boxcharts(gs_c0[1, 0],
                                       all_LVs, xlabel='', ylabel='LV',
-                                      xticklabels=False)
+                                      xticklabels=False,
+                                      ylims=ylims_boxcharts_LVs)
 
         # bottom: CCs
         print('  Plotting boxcharts: CCs')
         axes[2] = self.plot_boxcharts(gs_c0[2, 0],
-                                      all_CCs, xlabel='', ylabel='CC')
+                                      all_CCs, xlabel='', ylabel='CC',
+                                      ylims=ylims_boxcharts_CCs)
 
         # columns 1, 2, 3: distributions
 
@@ -260,7 +267,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
         axes[6] = self.plot_layer_panels(gs_cols[0, 10:],
                                          xlabel='f (Hz)', ylabel='PSD (s$^{-2}$/Hz)',
                                          plotfunc=self.plotfunc_PSDs,
-                                         data=all_PSDs)
+                                         data=all_PSDs,
+                                         ylims=ylims_PSDs)
         return axes
 
     def plot_theory_overview(self, gs, working_point, frequencies, power,
@@ -638,7 +646,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         return ax_return
 
     def plot_boxcharts(self, gs, data, xlabel='', ylabel='',
-                       xticklabels=True):
+                       xticklabels=True, ylims=False):
         """
         TODO
         """
@@ -676,11 +684,14 @@ class Plotting(base_class.BaseAnalysisPlotting):
         if not xticklabels:
             ax.set_xticklabels([])
 
+        if ylims:
+            ax.set_ylim(ylims[0], ylims[1])
+
         ax.yaxis.set_major_locator(MaxNLocator(3))
         return ax
 
     def plot_barcharts(self, gs, data, xlabel='', ylabel='',
-                       xticklabels=True):
+                       xticklabels=True, ylims=False):
         """
         TODO
         """
@@ -703,10 +714,14 @@ class Plotting(base_class.BaseAnalysisPlotting):
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
 
+        if ylims:
+            ax.set_ylim(ylims[0], ylims=[1])
+
         ax.yaxis.set_major_locator(MaxNLocator(3))
         return ax
 
-    def plot_layer_panels(self, gs, plotfunc, xlabel='', ylabel='', **kwargs):
+    def plot_layer_panels(self, gs, plotfunc, xlabel='', ylabel='', ylims=False,
+                          **kwargs):
         """
         Generic function to plot four vertically arranged panels, one for each
         layer, iterating over populations.
@@ -729,19 +744,25 @@ class Plotting(base_class.BaseAnalysisPlotting):
             # specific plot
             plotfunc(ax, X, i, **kwargs)
 
-            # ylim
-            if i % 2 == 0:
-                ymin, ymax = ax.get_ylim()
-            if i % 2 == 1:
-                ymin1, ymax1 = ax.get_ylim()
+            # y-scale and y-limits
+            # if ax.get_yscale() == 'log':
+            #    ax.set_yticks([10.**x for x in np.arange(-15, 15)])
 
-                if ax.get_yscale() == 'log':
-                    y0 = np.min([ymin, ymin1])
-                    ax.set_yticks([10.**x for x in np.arange(-10, 10)])
-                else:
-                    y0 = 0
+            if ylims:
+                ax.set_ylim(ylims[0], ylims[1])
+            else:
+                if i % 2 == 0:
+                    ymin, ymax = ax.get_ylim()
+                if i % 2 == 1:
+                    ymin1, ymax1 = ax.get_ylim()
 
-                ax.set_ylim(y0, np.max([ymax, ymax1]) * 1.1)
+                    if ax.get_yscale() == 'log':
+                        ax.set_yticks([10.**x for x in np.arange(-15, 15)])
+                        y0 = np.min([ymin, ymin1])
+                    else:
+                        y0 = 0
+
+                    ax.set_ylim(y0, np.max([ymax, ymax1]) * 1.1)
 
             if layer_count == len(self.plot_dict['layer_labels']) - 1:
                 ax.set_xlabel(xlabel)

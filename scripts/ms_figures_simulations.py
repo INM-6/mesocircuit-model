@@ -4,36 +4,29 @@
 This script needs to be executed before `ms_figures_plotting.py`.
 """
 
+import numpy as np
 from mesocircuit import mesocircuit_framework as mesoframe
 import parametersets
 
 ################################################################################
 # Decide which model to setup and whether to submit jobs.
-# 0: upscaled (not used for final figures)
-# 1: reference
-# 2: upscaled_1mm2
-# 3: evoked
+# 1: reference (1mm2 model of macaque V1)
+# 2: upscaled_1mm2 (full upscaled model simulated but only center 1mm2 analyzed)
+# 3: evoked (full upscaled model with evoked activity by thalamocortical
+#    stimulation)
+# 4: upscaled_CCs_only (full upscaled model simulated but only analysis for
+#    correlation coefficients)
 
 model = 1
 run_jobs = True
 
 ################################################################################
-# Configure the pararameters of the reference model, the upscaled model,
-# and the upscaled model with evoked activtiy by thalamic stimulation.
-# For the comparison with the reference model, we analyze only the data within
-# the center disk of an area of 1 mm2 of the upscaled model.
-# The biological model time is set to 5 min.
+# Configure the parameters of the simulation experiments.
+# The biological model time is in general set to 5 min, but for the evoked model
+# only to 10 s.
 
 t_sim = 5 * 60 * 1000.
-
-if model == 0:
-    name_upscaled = 'upscaled'
-    custom_params_upscaled = dict(parametersets.ps_dicts['mesocircuit_MAMV1'])
-    custom_params_upscaled.update({'sim_dict': {'t_sim': t_sim}})
-    custom_params_upscaled['sys_dict']['hpc']['network'].update(
-        {'wall_clock_time': '02:00:00'}),
-    custom_params_upscaled['sys_dict']['hpc'].update(
-        {'analysis_and_plotting': {'wall_clock_time': '02:00:00'}})
+t_sim_evoked = 10 * 1000.
 
 if model == 1:
     name_reference = 'reference'
@@ -60,16 +53,24 @@ if model == 3:
     name_evoked = 'evoked'
     custom_params_evoked = dict(
         parametersets.ps_dicts['mesocircuit_MAMV1_evoked'])
-    custom_params_evoked.update({'sim_dict': {'t_sim': 10000.}})
+    custom_params_evoked.update({'sim_dict': {'t_sim': t_sim_evoked}})
+
+if model == 4:
+    name_upscaled_CCs_only = 'upscaled_CCs_only'
+    custom_params_upscaled_CCs_only = dict(
+        parametersets.ps_dicts['mesocircuit_MAMV1'])
+    custom_params_upscaled_CCs_only.update({
+        'ana_dict': {'datatypes_preprocess': np.array(['positions', 'sptrains']),
+                     'datatypes_statistics': np.array(['CCs_distances'])}})
+    custom_params_upscaled_CCs_only.update({'sim_dict': {'t_sim': t_sim}})
+    custom_params_upscaled_CCs_only['sys_dict']['hpc']['network'].update(
+        {'wall_clock_time': '02:00:00'}),
+    custom_params_upscaled_CCs_only['sys_dict']['hpc'].update(
+        {'analysis_and_plotting': {'wall_clock_time': '02:00:00'}})
 
 ################################################################################
 # Initialize MesocircuitExperiments for each parameter combination and inspect
 # the custom parameters in each case.
-
-if model == 0:
-    meso_exp_upscaled = mesoframe.MesocircuitExperiment(
-        name_upscaled, custom_params_upscaled)
-    print(meso_exp_upscaled.parameterview)
 
 if model == 1:
     meso_exp_reference = mesoframe.MesocircuitExperiment(
@@ -86,13 +87,15 @@ if model == 3:
         name_evoked, custom_params_evoked)
     print(meso_exp_evoked.parameterview)
 
+if model == 4:
+    meso_exp_upscaled_CCs_only = mesoframe.MesocircuitExperiment(
+        name_upscaled_CCs_only, custom_params_upscaled_CCs_only)
+    print(meso_exp_upscaled_CCs_only.parameterview)
+
 ################################################################################
 # Submit jobs.
 # For the long simulation times, we only do the analysis but not the generic
 # plotting routines.
-
-if model == 0:
-    circuit = meso_exp_upscaled.circuits[0]
 
 if model == 1:
     circuit = meso_exp_reference.circuits[0]
@@ -102,6 +105,9 @@ if model == 2:
 
 if model == 3:
     circuit = meso_exp_evoked.circuits[0]
+
+if model == 4:
+    circuit = meso_exp_upscaled_CCs_only.circuits[0]
 
 if run_jobs:
     circuit.run_jobs(
