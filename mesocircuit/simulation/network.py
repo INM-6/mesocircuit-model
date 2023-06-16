@@ -602,7 +602,10 @@ class Network:
                             max=w_max),
                         'delay': nest.math.redraw(
                             delay_param,
-                            min=nest.resolution,
+                            # resulting minimum delay is equal to resolution, see:
+                            # https://nest-simulator.readthedocs.io/en/latest/nest_behavior
+                            # /random_numbers.html#rounding-effects-when-randomizing-delays
+                            min=nest.resolution - 0.5 * nest.resolution,
                             max=np.Inf)}
 
                     # repeat_connect is 1 apart from rule pairwise_bernoulli

@@ -122,16 +122,13 @@ net_dict = {
     # mean rates of the different populations in the non-scaled version of the
     # mesocircuit (in spikes/s; same order as in 'populations');
     # necessary for the scaling of the network.
-    # The values were optained by running this PyNEST microcircuit with 12 MPI
-    # processes and both 'N_scaling' and 'K_scaling' set to 1.
-    # TODO update with full-scale mesocircuit, or distinguish between full mean
-    # rates or mean rates of full 1mm2
+    # The values were optained by running both microcircuit versions
+    # (_PD and _SvA) with 8 MPI processes and 16 threads per MPI process with NEST 3.4;
+    # both 'N_scaling' and 'K_scaling' were set to 1.
     'mean_rates_PD2014':
-        np.array([0.943, 3.026, 4.368, 5.882, 7.733, 8.664, 1.096, 7.851]),
-    # TODO recorded with 1mm2 macaqueV1, but probably not final
+        np.array([0.909, 2.968, 4.391, 5.864, 7.535, 8.620, 1.099, 7.819]),
     'mean_rates_SvA2018':
-        np.array([0.15709281, 1.6874907, 2.4200633, 2.8021822,
-                  3.6009161, 4.2362757, 2.209184, 4.16761]),
+        np.array([0.158, 1.682, 2.408, 2.799, 3.587, 4.231, 2.216, 4.165]),
     # mean amplitude of excitatory postsynaptic potential (in mV)
     'PSP_exc_mean': 0.15,
     # relative standard deviation of the weight
