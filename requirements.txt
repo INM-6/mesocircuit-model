@@ -9,6 +9,7 @@ pandas
 mpi4py
 MEAutility
 neuron>=7.7.2
+nnmt
 git+https://github.com/LFPy/LFPy@v2.2.6#egg=LFPy
 git+https://github.com/INM-6/hybridLFPy@master#egg=hybridLFPy
 git+https://github.com/NeuralEnsemble/parameters@master#egg=parameters
