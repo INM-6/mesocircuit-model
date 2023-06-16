@@ -30,7 +30,8 @@ import parametersets
 
 name = 'mesocircuit_MAMV1'
 # name = 'local_mesocircuit_PD'
-custom_params = parametersets.ps_dicts[name]
+params_key = name
+custom_params = parametersets.ps_dicts[params_key]
 
 ################################################################################
 # Next, we instantiate a `MesocircuitExperiment` with the custom parameters.
