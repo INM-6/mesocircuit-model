@@ -208,21 +208,21 @@ class Plotting(base_class.BaseAnalysisPlotting):
         # top: FRs
         print('  Plotting boxcharts: rates')
         axes[0] = self.plot_boxcharts(gs_c0[0, 0],
-                                      all_FRs, xlabel='', ylabel='FR (spikes/s)',
+                                      all_FRs, xlabel='', ylabel=r'$FR$ (spikes/s)',
                                       xticklabels=False,
                                       ylims=ylims_boxcharts_FRs)
 
         # middle: LVs
         print('  Plotting boxcharts: LVs')
         axes[1] = self.plot_boxcharts(gs_c0[1, 0],
-                                      all_LVs, xlabel='', ylabel='LV',
+                                      all_LVs, xlabel='', ylabel=r'$LV$',
                                       xticklabels=False,
                                       ylims=ylims_boxcharts_LVs)
 
         # bottom: CCs
         print('  Plotting boxcharts: CCs')
         axes[2] = self.plot_boxcharts(gs_c0[2, 0],
-                                      all_CCs, xlabel='', ylabel='CC',
+                                      all_CCs, xlabel='', ylabel=r'$CC$',
                                       ylims=ylims_boxcharts_CCs)
 
         # columns 1, 2, 3: distributions
@@ -234,7 +234,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         # left: FRs
         print('  Plotting distributions: FRs')
         axes[3] = self.plot_layer_panels(gs_cols[0, 3:5],
-                                         xlabel='FR (spikes/s)',
+                                         xlabel=r'$FR$ (spikes/s)',
                                          plotfunc=self.plotfunc_distributions,
                                          bins=bins_unscaled *
                                          self.plot_dict['distr_max_rate'],
@@ -245,7 +245,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         # middle: LVs
         print('  Plotting distributions: LVs')
         axes[4] = self.plot_layer_panels(gs_cols[0, 5:7],
-                                         xlabel='LV',
+                                         xlabel=r'$LV$',
                                          plotfunc=self.plotfunc_distributions,
                                          bins=bins_unscaled *
                                          self.plot_dict['distr_max_lv'],
@@ -255,7 +255,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         # right: CCs
         print('  Plotting distributions: CCs')
         axes[5] = self.plot_layer_panels(gs_cols[0, 7:9],
-                                         xlabel='CC',
+                                         xlabel=r'$CC$',
                                          plotfunc=self.plotfunc_distributions,
                                          bins=2. * (bins_unscaled - 0.5) *
                                          self.plot_dict['distr_max_cc'],
@@ -265,7 +265,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
         # column 4: PSDs
         print('  Plotting PSDs')
         axes[6] = self.plot_layer_panels(gs_cols[0, 10:],
-                                         xlabel='f (Hz)', ylabel='PSD (s$^{-2}$/Hz)',
+                                         xlabel='frequency (Hz)', ylabel=r'$PSD$ (s$^{-2}$/Hz)',
                                          plotfunc=self.plotfunc_PSDs,
                                          data=all_PSDs,
                                          ylims=ylims_PSDs)
@@ -482,7 +482,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
                                rotation=90)
 
         if cbar:
-            cbar_label = 'FR (spikes/s)'
+            cbar_label = r'$FR$ (spikes/s)'
             if cbar_orientation == 'horizontal':
 
                 self.colorbar(ax, im, cbar_label, axis='bottom',
@@ -605,7 +605,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
             layer = self.plot_dict['layer_labels'][int(i / 2.)]
             if i == 0:
                 ax.set_title('E')
-                ax.set_ylabel('r (mm)\n' + layer)
+                ax.set_ylabel('distance (mm)\n' + layer)
                 ax_return = ax
             if i % ncols == 0 and i != 0:
                 ax.set_ylabel(layer)
@@ -617,7 +617,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
                 ax.set_yticklabels([])
 
             if i >= len(populations) - 2:
-                ax.set_xlabel(r'$\tau$ (ms)')
+                ax.set_xlabel(r'time lag (ms)')
             else:
                 ax.set_xticklabels([])
 
@@ -642,7 +642,7 @@ class Plotting(base_class.BaseAnalysisPlotting):
                         cax = fig.add_axes(rect)
                         cb = fig.colorbar(
                             im, cax=cax, orientation='vertical')
-                    cb.set_label(r'CC$^\mathrm{FR}\, (\tau, r)$', labelpad=0.1)
+                    cb.set_label(r'$CC^\mathrm{FR}$', labelpad=0.1)
         return ax_return
 
     def plot_boxcharts(self, gs, data, xlabel='', ylabel='',
@@ -781,6 +781,8 @@ class Plotting(base_class.BaseAnalysisPlotting):
             populations,
             xlabel='',
             ylabel='',
+            ylim_top=False,
+            yticklabels=True,
             **kwargs):
         """
         Generic function to plot four vertically arranged panels, one for each
@@ -810,6 +812,12 @@ class Plotting(base_class.BaseAnalysisPlotting):
             if i == 0:
                 ax.set_ylabel(ylabel)
                 ax_label = ax
+
+            if ylim_top:
+                ax.set_ylim(top=ylim_top)
+
+            if not yticklabels:
+                ax.set_yticklabels([])
         return ax_label
 
     def plot_matrix(self, ax, data, title='', xlabel='', ylabel='',

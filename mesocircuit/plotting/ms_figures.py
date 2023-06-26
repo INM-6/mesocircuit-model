@@ -95,7 +95,8 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
             prefix = 'ups'
 
         # load data
-        for all_datatype in ['all_sptrains', 'all_pos_sorting_arrays',
+        for all_datatype in ['all_sptrains', 'all_sptrains_bintime',
+                             'all_pos_sorting_arrays',
                              'all_FRs', 'all_LVs', 'all_CCs_distances',
                              'all_PSDs']:
             fn = os.path.join(
@@ -110,15 +111,16 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
 
     #####
     if plot_rasters:
-        print('Plotting rasters.')
-        fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 4.))
-        gs = gridspec.GridSpec(1, 2)
-        gs.update(left=0.12, right=0.95, bottom=0.08, top=0.9)
+        print('Plotting rasters and instantaneous firing rates.')
+        fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 4.))
+        gs = gridspec.GridSpec(1, 4)
+        gs.update(left=0.05, right=0.98, bottom=0.08, top=0.9, wspace=0.3)
 
-        labels = ['A', 'B']
+        labels = ['A', 'B', 'C', 'D']
         titles = ['reference model,\n' + r'1 mm$^2$',
                   'upscaled model,\n' + r'1 mm$^2$ sampled']
 
+        # rasters
         for i, prefix in enumerate(['ref', 'ups']):
             ax = plot.plot_raster(
                 gs[0, i],
@@ -132,9 +134,26 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
             )
             plot.add_label(ax, labels[i])
             ax.set_title(titles[i])
-
             if i == 1:
                 ax.set_yticklabels([])
+
+        # instantaneous firing rates
+        for i, prefix in enumerate(['ref', 'ups']):
+            ax = plot.plot_population_panels(
+                gs[0, i+2],
+                plotfunc=plot.plotfunc_instantaneous_rates,
+                populations=plot.Y,
+                xlabel='time (ms)',
+                ylabel=r'$FR$ (spikes/s)' if i == 0 else '',
+                sptrains=d[prefix + '_all_sptrains_bintime'],
+                time_step=plot.ana_dict['binsize_time'],
+                # one additional time step for label
+                time_interval=[1050, 1100+1],
+                ylim_top=11,
+                yticklabels=True if i == 0 else False)
+
+            plot.add_label(ax, labels[i+2])
+            ax.set_title(titles[i])
 
         # TODO modify and use savefig
         plt.savefig(os.path.join(output_dir, 'ref_vs_ups_rasters.pdf'))
@@ -241,7 +260,7 @@ def evoked_activity(output_dir, circuit):
         plotfunc=plot.plotfunc_instantaneous_rates,
         populations=plot.X,
         xlabel='time (ms)',
-        ylabel=r'$\nu (s^{-1})$',
+        ylabel=r'$FR$ (spikes/s)',
         sptrains=d['all_sptrains_bintime'],
         time_step=plot.ana_dict['binsize_time'],
         # time_interval=plot.plot_dict['raster_time_interval_short']
