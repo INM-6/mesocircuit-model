@@ -8,6 +8,7 @@ import numpy as np
 import unittest
 import mesocircuit.analysis.spike_analysis as spike_analysis
 import mesocircuit.mesocircuit_framework as mesoframe
+from mesocircuit.parameterization import helpers_network as helpnet
 
 
 class TestSuite(unittest.TestCase):
@@ -559,3 +560,62 @@ class TestSuite(unittest.TestCase):
                               (6, 0.3, 0.1),
                               ], dtype=dtype_positions)
         return circuit, spikes, positions
+
+    def test_get_delay_lin_effective(self):
+        '''
+        Test effective mean delay from delays with linear distance dependency.
+        '''
+
+        radius = 1./np.sqrt(np.pi)
+        beta = np.array([[0.232, 0.161], [0.125, 0.120]])
+        delay_offset_matrix = np.array([[0.5, 0.5], [0.5, 0.5]])
+        prop_speed_matrix = np.array([[0.3, 0.3], [0.3, 0.3]])
+
+        # function to be tested
+        delay_lin_eff_mean_matrix, delay_lin_eff_std_matrix = \
+            helpnet.get_delay_lin_effective(
+                radius,
+                beta,
+                delay_offset_matrix,
+                prop_speed_matrix)
+
+        # alternative approach: sample mean distance and calculate delay
+        def mean_distance_sampled(radius, beta, num_nodes, num_distances):
+            xs = []
+            ys = []
+            for n in np.arange(num_nodes):
+                accept = False
+                while not accept:
+                    x, y = 2 * radius * np.random.rand(2) - radius
+                    dist_to_center = np.sqrt(x**2 + y**2)
+                    if dist_to_center < radius:
+                        accept = True
+                        xs.append(x)
+                        ys.append(y)
+
+            distances = []
+            for n in np.arange(num_distances):
+                accept = False
+                while not accept:
+                    s, t = np.random.randint(low=0, high=num_nodes, size=2)
+                    distance = np.sqrt((xs[t] - xs[s])**2 + (ys[t] - ys[s])**2)
+                    if np.random.random() < np.exp(-distance / beta):
+                        accept = True
+                        distances.append(distance)
+            mean_distance = np.mean(distances)
+            return xs, ys, mean_distance
+
+        num_nodes = 10000
+        num_distances = 1000
+        for i in np.arange(2):
+            for j in np.arange(2):
+                xs, ys, mean_distance = mean_distance_sampled(
+                    radius, beta[i, j], num_nodes, num_distances)
+                mean_delay_sampled = delay_offset_matrix[i, j] \
+                    + mean_distance / prop_speed_matrix[i, j]
+
+                # print(delay_lin_eff_mean_matrix[i, j], mean_delay_sampled)
+                self.assertAlmostEqual(delay_lin_eff_mean_matrix[i, j] /
+                                       mean_delay_sampled,
+                                       1.,
+                                       places=1)  # one decimal place (10%)
