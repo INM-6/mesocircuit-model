@@ -580,7 +580,6 @@ class TestSuite(unittest.TestCase):
                 prop_speed_matrix)
 
         # alternative approach: sample mean distance and calculate delay
-        # do this just for element [0,0]
         def mean_distance_sampled(radius, beta, num_nodes, num_distances):
             xs = []
             ys = []
