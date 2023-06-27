@@ -577,6 +577,8 @@ def get_delay_lin_effective(
     """
     Computes the effective mean and standard deviation of the linear delay.
 
+    Uses Sheng (1985), Theorem 2.4 (a=b, c=0)
+
     Parameters
     ----------
     radius
@@ -605,8 +607,8 @@ def get_delay_lin_effective(
         return np.exp(-r / b)
 
     def integrand(r, R, b, variable):
-        atan = 4. * scipy.arctan(np.sqrt((2. * R - r) / (2. * R + r)))
-        return variable * connfunc(r, b) * r * (atan - np.sin(atan))
+        alpha = 2. * np.arctan(np.sqrt((2. * R - r) / (2. * R + r)))
+        return variable * connfunc(r, b) * r * (2. * alpha - np.sin(2. * alpha))
 
     def integrand_delay_mean(r, R, b, d0, v):
         return integrand(r, R, b, delayfunc(r, d0, v))
@@ -617,7 +619,7 @@ def get_delay_lin_effective(
     def integrand_conn_norm(r, R, b):
         return integrand(r, R, b, 1)
 
-    limits = [0., radius]  # integral bounds
+    limits = [0., 2. * radius]  # integral bounds
     num_pops = len(delay_offset_matrix)
 
     delay_lin_eff_mean_matrix = np.zeros((num_pops, num_pops))
