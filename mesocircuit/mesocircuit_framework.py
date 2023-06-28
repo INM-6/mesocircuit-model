@@ -7,6 +7,7 @@ Parameterspace evaluation and job execution.
 
 import mesocircuit
 from mesocircuit.parameterization import helpers_network as helpnet
+from mesocircuit.parameterization import helpers_analysis as helpana
 import os
 import sys
 import subprocess
@@ -331,6 +332,10 @@ class Mesocircuit():
         # compute dependent network parameters
         paramset['net_dict'] = helpnet.derive_dependent_parameters(
             paramset['net_dict'])
+
+        # compute dependent analysis parameters
+        paramset['ana_dict'] = helpana.derive_dependent_parameters(
+            paramset['net_dict'], paramset['sim_dict'], paramset['ana_dict'])
 
         # write final parameters to file
         for dic in ['sys_dict', 'sim_dict', 'net_dict', 'ana_dict', 'plot_dict']:
