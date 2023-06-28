@@ -120,7 +120,7 @@ if not os.path.isfile(os.path.join(path_lfp_data, PS.MUAFile)):
 # Create plots and animations
 ##########################################################################
 
-# Figure 6
+# Figure 6 (old)
 fig, ax = plt.subplots(1, 1,
                        figsize=(plot_dict['fig_width_2col'],
                                 plot_dict['fig_width_2col'] * 0.5))
@@ -128,6 +128,15 @@ fig.subplots_adjust(left=0.13, right=1, bottom=0.0, top=1.)
 lfpplt.morphology_table(ax, PS)
 fig.savefig(os.path.join(path_fig_files, 'morphology_table.pdf'))
 
+# Figure 6
+fig, ax = plt.subplots(1, 1,
+                       figsize=(plot_dict['fig_width_2col'],
+                                plot_dict['fig_width_2col'] * 0.4))
+fig.subplots_adjust(left=0.08, right=1, bottom=0.0, top=1.)
+lfpplt.morphology_table(ax, PS, annotations=False)
+fig.savefig(os.path.join(path_fig_files, 'figure_06.pdf'))
+
+raise Exception
 
 # Figure 7A
 CONTACTPOS = ((600, 600), (600, 1000), (-1400, -1400))
