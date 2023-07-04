@@ -1,6 +1,7 @@
 import mesocircuit
 from mesocircuit.parameterization.base_network_params import net_dict
 from mesocircuit.parameterization.base_plotting_params import plot_dict
+from mesocircuit.parameterization.base_plotting_params import rcParams
 import os
 import numpy as np
 import matplotlib
@@ -11,8 +12,7 @@ import mpl_toolkits.mplot3d.art3d as art3d
 from mpl_toolkits.mplot3d.proj3d import proj_transform
 from mpl_toolkits.mplot3d.axes3d import Axes3D
 matplotlib.use('Agg')
-
-matplotlib.rcParams.update(plot_dict['rcParams'])
+matplotlib.rcParams.update(rcParams)
 
 
 def figure_network_model_sketches(output_dir):
