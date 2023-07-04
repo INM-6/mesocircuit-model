@@ -708,7 +708,8 @@ def plot_signal_correlation_or_covariance(
     remove_axis_junk(axd)
     plt.setp(axd.get_yticklabels(), visible=False)
 
-    bins = np.linspace(np.nanmin(c), np.nanmax(c), nbins)
+    # bins = np.linspace(np.nanmin(c), np.nanmax(c), nbins)
+    bins = np.linspace(c[mask].min(), c[mask].max(), nbins)
     axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
              color='k', clip_on=False)
 

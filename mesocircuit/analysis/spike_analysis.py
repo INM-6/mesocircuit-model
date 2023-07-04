@@ -11,6 +11,7 @@ from mesocircuit.helpers import parallelism_time as pt
 from mesocircuit.helpers.io import load_h5_to_sparse_X
 from mesocircuit.analysis import stats
 from mpi4py import MPI
+from hybridLFPy import helperfun
 import matplotlib.pyplot as plt  # for PSD
 import os
 import warnings
@@ -938,9 +939,11 @@ class SpikeAnalysis(base_class.BaseAnalysisPlotting):
         mask = np.triu(np.ones(ccs.shape), k=1).astype(bool)
         ccs = ccs[mask]
 
-        # pair-distances between correlated neurons]
+        # pairwise-distances between correlated neurons
         xy_pos = np.vstack((x_pos, y_pos)).T
-        distances = spatial.distance.pdist(xy_pos, metric='euclidean')
+        distances = stats.pdist_pbc(xy_pos, 
+                                    extent=[self.net_dict['extent']] * 2, 
+                                    edge_wrap=True)
 
         ccs_dic = {'ccs': ccs,
                    'distances_mm': distances}
