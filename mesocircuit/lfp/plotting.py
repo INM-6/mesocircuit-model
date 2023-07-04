@@ -1230,30 +1230,3 @@ def plot_coherence_vs_distance_vs_frequency(
     cax = fig.add_axes(rect)
     cbar = plt.colorbar(im, cax=cax)
     cbar.set_label('coherence', labelpad=0)
-
-
-def add_label(ax, label, offset=[0, 0],
-              weight='bold', fontsize_scale=1.2):
-    """
-    Adds label to axis with given offset.
-
-    Parameters
-    ----------
-    ax
-        Axis to add label to.
-    label
-        Label should be a letter.
-    offset
-        x-,y-Offset.
-    weight
-        Weight of font.
-    fontsize_scale
-        Scaling factor for font size.
-    """
-    label_pos = [0. + offset[0], 1. + offset[1]]
-    ax.text(label_pos[0], label_pos[1], label,
-            ha='left', va='bottom',
-            transform=ax.transAxes,
-            weight=weight,
-            fontsize=matplotlib.rcParams['font.size'] * fontsize_scale)
-    return
