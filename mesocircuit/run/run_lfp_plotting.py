@@ -7,6 +7,7 @@ import h5py
 import pandas as pd
 import mesocircuit.mesocircuit_framework as mesoframe
 import mesocircuit.plotting.plotting as plot
+from mesocircuit.parameterization.base_plotting_params import rcParams
 from mesocircuit.lfp.compute_mua import write_mua_file
 import mesocircuit.lfp.plotting as lfpplt
 from mesocircuit.lfp.lfp_parameters import get_parameters
@@ -38,7 +39,7 @@ ana_dict = circuit.ana_dict
 plot_dict = circuit.plot_dict
 
 # Set some matplotlib defaults
-matplotlib.rcParams.update(plot_dict['rcParams'])
+matplotlib.rcParams.update(rcParams)
 
 ##########################################################################
 # LFP output directory
@@ -374,9 +375,8 @@ fname = os.path.join(
     'processed_data',
     'all_CCs_distances.h5')
 with h5py.File(fname, 'r') as f:
-    p = Plotting(circuit)
     for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [40, 10])):
-        p.plotfunc_CCs_distance(
+        plot.plotfunc_CCs_distance(
             ax=ax, X=X, i=i, data=f,
             max_num_pairs=n_pairs,
             markersize_scale=0.4,
