@@ -8,6 +8,7 @@ import matplotlib
 import LFPy
 from mesocircuit.analysis import stats
 from mesocircuit.parameterization.base_plotting_params import plot_dict
+from mesocircuit.parameterization.base_plotting_params import rcParams
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
@@ -20,7 +21,7 @@ if 'DISPLAY' not in os.environ:
 
 
 # Set some matplotlib defaults
-matplotlib.rcParams.update(plot_dict['rcParams'])
+matplotlib.rcParams.update(rcParams)
 
 
 pop_colors = plot_dict['pop_colors']
@@ -938,7 +939,7 @@ def get_data_coherence(data_x, data_y,
                     if phase_coherence:
                         c[i, j, ] = np.divide(Pxy, np.abs(Pxy))
                     else:
-                        c[i, j, ] = np.divide(np.absolute(Pxy)**2, 
+                        c[i, j, ] = np.divide(np.absolute(Pxy)**2,
                                               Pxx * Pyy)
     elif method == 'scipy':
         for i in range(x.size):
@@ -957,7 +958,7 @@ def get_data_coherence(data_x, data_y,
                     if phase_coherence:
                         raise NotImplementedError
                     else:
-                        c[i, j, ] = np.divide(np.absolute(Pxy)**2, 
+                        c[i, j, ] = np.divide(np.absolute(Pxy)**2,
                                               Pxx * Pyy)
 
     # mask lower triangle of correlation/covariance matrices, mask
