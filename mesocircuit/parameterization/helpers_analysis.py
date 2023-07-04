@@ -14,7 +14,6 @@ def derive_dependent_parameters(net_dict, sim_dict, base_ana_dict):
     """
     Derives analysis parameters which depend on the network and anaylsis base
     parameters.
-    TODO Returns the dictionaries which serve as input to the Network class.
 
     Parameters
     ----------
