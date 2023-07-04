@@ -5,6 +5,7 @@ Functions starting with 'plot_' plot to a gridspec cell and are used in
 figures.py.
 """
 
+from mesocircuit.parameterization.base_plotting_params import rcParams
 from re import I
 import matplotlib.patheffects as PathEffects
 from matplotlib.patches import Rectangle
@@ -21,6 +22,7 @@ import matplotlib
 from scipy.optimize import curve_fit
 from mesocircuit.helpers.io import load_h5_to_sparse_X
 matplotlib.use('Agg')
+matplotlib.rcParams.update(rcParams)
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
