@@ -2,7 +2,7 @@
 import os
 import h5py
 import numpy as np
-from mesocircuit.analysis.spike_analysis import SpikeAnalysis
+import mesocircuit.analysis.spike_analysis as sana
 from mesocircuit.helpers.io import load_h5_to_sparse_X
 
 
@@ -18,11 +18,6 @@ def write_mua_file(circuit,
         Path to LFP output folder
     networkSim: CachedTopoNetwork instance
     '''
-    # need method SpikeAnalysis._time_and_space_binned_sptrains_X()
-    sana = SpikeAnalysis(circuit)
-
-    # monkey patch spatial bin edges to match electrode grid
-    sana.space_bins = PS.MUA_bin_edges
 
     MUA = None
     for X in PS.Y_MUA:
@@ -34,9 +29,13 @@ def write_mua_file(circuit,
         with h5py.File(os.path.join(os.path.split(path_lfp_data)[0],
                                     'processed_data',
                                     'all_sptrains_bintime.h5'), 'r') as f:
-            sptrains_bintime = load_h5_to_sparse_X(X=X, h5data=f, sparsetype='coo')
+            sptrains_bintime = load_h5_to_sparse_X(
+                X=X, h5data=f, sparsetype='coo')
         tmp = sana._time_and_space_binned_sptrains_X(
-            positions=positions, sptrains_bintime=sptrains_bintime,
+            positions=positions,
+            sptrains_bintime=sptrains_bintime,
+            # monkey patch spatial bin edges to match electrode grid
+            space_bins=PS.MUA_bin_edges,
             dtype=np.uint16)
         if MUA is None:
             MUA = tmp
