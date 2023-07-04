@@ -280,7 +280,6 @@ def evoked_activity(output_dir, circuit):
     # cross-correlation functions for thalamic pulses
     ax = plot.plot_crosscorrelation_funcs_thalamic_pulses(
         gs[1:, 2],
-        circuit.ana_dict['Y'],
         d['all_CCfuncs_thalamic_pulses'],
         circuit.ana_dict['Y'],
         circuit.net_dict['extent'],
