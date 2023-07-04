@@ -11,7 +11,6 @@ import numpy as np
 from mesocircuit import mesocircuit_framework as mesoframe
 import parametersets
 import nnmt
-import mesocircuit.plotting.plotting as plotting
 import mesocircuit.plotting.figures as figures
 
 ################################################################################
@@ -57,9 +56,8 @@ sensitivity_dict = nnmt.lif.exp.sensitivity_measure_all_eigenmodes(nw)
 ################################################################################
 # The results are plotted as an overview figure.
 
-pl = plotting.Plotting(circuit)
 figures.theory_overview(
-    plot=pl,
+    circuit=circuit,
     working_point=wp,
     frequencies=freqs,
     power=power,

@@ -1,8 +1,7 @@
-"""PyNEST Mesocircuit: SpikeAnalysis Class
-------------------------------------------
+"""PyNEST Mesocircuit: Spike analysis
+-------------------------------------
 
-The SpikeAnalysis Class defines functions to preprocess spike activity and
-compute statistics.
+Functions to preprocess spike activity and compute statistics.
 
 """
 
