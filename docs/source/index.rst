@@ -12,6 +12,10 @@ Mesocircuit Model
    acknowledgments
    license
 
+.. image:: images/network_model_sketch_upscaled.png
+  :width: 300
+  :alt: Network model sketch upscaled
+
 A mesoscopic layered cortical network model for spiking activity and local field
 potentials.
 
