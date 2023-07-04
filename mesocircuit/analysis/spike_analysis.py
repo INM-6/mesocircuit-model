@@ -4,7 +4,7 @@
 Functions to preprocess spike activity and compute statistics.
 
 """
-
+from mesocircuit.parameterization import helpers_analysis as helpana
 from mesocircuit.helpers import parallelism_time as pt
 from mesocircuit.helpers.io import load_h5_to_sparse_X, write_dataset_to_h5_X
 from mesocircuit.analysis import stats
@@ -380,6 +380,16 @@ def _preprocess_data_X(i, X, circuit):
         A mesocircuit.Mesocircuit object with loaded parameters.
     """
 
+    # get arrays for time and space bins
+    time_bins_sim = helpana.get_time_bins(
+        circuit.sim_dict['t_presim'], circuit.sim_dict['t_sim'],
+        circuit.sim_dict['sim_resolution'])
+    time_bins_rs = helpana.get_time_bins(
+        circuit.sim_dict['t_presim'], circuit.sim_dict['t_sim'],
+        circuit.ana_dict['binsize_time'])
+    space_bins = helpana.get_space_bins(
+        circuit.net_dict['extent'], circuit.ana_dict['binsize_space'])
+
     spikes, positions = _load_plain_spikes_and_positions(
         X,
         circuit.data_dir_circuit,
@@ -405,25 +415,25 @@ def _preprocess_data_X(i, X, circuit):
         elif datatype == 'sptrains':
             datasets[datatype] = _time_binned_sptrains_X(
                 circuit.ana_dict['N_X'][i], spikes,
-                circuit.ana_dict['time_bins_sim'], dtype=np.uint8)
+                time_bins_sim, dtype=np.uint8)
 
         # time-binned spike trains
         elif datatype == 'sptrains_bintime':
             datasets[datatype] = _time_binned_sptrains_X(
                 circuit.ana_dict['N_X'][i], spikes,
-                circuit.ana_dict['time_bins_rs'], dtype=np.uint8)
+                time_bins_rs, dtype=np.uint8)
 
         # time-binned and space-binned spike trains
         elif datatype == 'sptrains_bintime_binspace':
             datasets[datatype] = _time_and_space_binned_sptrains_X(
                 datasets['positions'], datasets['sptrains_bintime'],
-                circuit.ana_dict['space_bins'],
+                space_bins,
                 dtype=np.uint16)
 
         # neuron count in each spatial bin
         elif datatype == 'neuron_count_binspace':
             datasets[datatype] = _neuron_count_per_spatial_bin_X(
-                datasets['positions'], circuit.ana_dict['space_bins'])
+                datasets['positions'], space_bins)
             is_sparse = False
             dataset_dtype = int
 

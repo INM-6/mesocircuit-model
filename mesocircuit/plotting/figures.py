@@ -5,6 +5,7 @@ Definition of figures plotted with Plotting class in plotting.py.
 """
 
 import mesocircuit.plotting.plotting as plot
+from mesocircuit.parameterization import helpers_analysis as helpana
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
@@ -365,6 +366,10 @@ def spatial_snapshots(circuit, all_inst_rates_bintime_binspace):
     else:
         pops = circuit.ana_dict['Y']
 
+    # spatial bins
+    space_bins = helpana.get_space_bins(
+        circuit.net_dict['extent'], circuit.ana_dict['binsize_space'])
+
     for start_time in circuit.plot_dict['snapshots_start_times']:
         fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 3.))
         gs = gridspec.GridSpec(1, 1)
@@ -374,7 +379,7 @@ def spatial_snapshots(circuit, all_inst_rates_bintime_binspace):
             pops,
             all_inst_rates_bintime_binspace,
             circuit.ana_dict['binsize_time'],
-            circuit.ana_dict['space_bins'],
+            space_bins,
             circuit.plot_dict['pop_labels'],
             circuit.plot_dict['snapshots_max_rate'],
             orientation='horizontal',
@@ -432,7 +437,8 @@ def theory_overview(circuit, working_point, frequencies, power, sensitivity):
     gs = gridspec.GridSpec(1, 1)
     gs.update(left=0.1, right=0.98, bottom=0.05, top=0.98)
     axes = plot.plot_theory_overview(
-        gs[0], working_point, frequencies, power, sensitivity, circuit.ana_dict['Y'], circuit.plot_dict)
+        gs[0], working_point, frequencies, power, sensitivity,
+        circuit.ana_dict['Y'], circuit.plot_dict)
     labels = ['A', 'B', 'C', 'D', 'E']
     for i, label in enumerate(labels):
         plot.add_label(axes[i], label)
