@@ -5,6 +5,7 @@ Functions to preprocess spike activity and compute statistics.
 
 """
 from mesocircuit.parameterization import helpers_analysis as helpana
+from mesocircuit.helpers import helpers
 from mesocircuit.helpers import parallelism_time as pt
 from mesocircuit.helpers.io import load_h5_to_sparse_X, write_dataset_to_h5_X
 from mesocircuit.analysis import stats
@@ -15,6 +16,8 @@ import h5py
 import numpy as np
 import scipy.sparse as sp
 import scipy.spatial as spatial
+import pickle
+import json
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
@@ -88,6 +91,18 @@ def preprocess_data(circuit):
                   f'{N_X_1mm2}')
 
         circuit.ana_dict['N_X'] = N_X_1mm2.astype(int)
+
+        # overwrite N_X in ana_dict written to file
+        fname = os.path.join(circuit.data_dir_circuit,
+                             'parameters', 'ana_dict')
+        # pickle for machine readability
+        with open(fname + '.pkl', 'wb') as f:
+            pickle.dump(circuit.ana_dict, f)
+        # text for human readability
+        with open(fname + '.txt', 'w') as f:
+            json_dump = json.dumps(
+                circuit.ana_dict, cls=helpers.NumpyEncoder, indent=2, sort_keys=True)
+            f.write(json_dump)
 
     # minimal analysis as sanity check
     _first_glance_at_data(circuit, num_neurons, num_spikes)
