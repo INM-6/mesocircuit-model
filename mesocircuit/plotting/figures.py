@@ -4,6 +4,8 @@
 Definition of figures plotted with Plotting class in plotting.py.
 """
 
+import mesocircuit.plotting.plotting as plot
+from mesocircuit.parameterization import helpers_analysis as helpana
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,115 +14,132 @@ import matplotlib
 matplotlib.use('Agg')
 
 
-def parameters(plot):
+def parameters(circuit):
     """
     Creates a figure with important parameter matrices and vectors.
+
+    Parameters
+    ----------
+    circuit
+        A mesocircuit.Mesocircuit object with loaded parameters.
     """
     orig_fontsize = plt.rcParams['font.size']
     plt.rcParams.update({'font.size': orig_fontsize * 0.5})
 
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 9))
+    fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 9))
     gs = gridspec.GridSpec(4, 3)
     gs.update(left=0.06, right=0.92, bottom=0.05, top=0.95,
               wspace=0.6, hspace=0.5)
 
     axes = []
-    if 'full_num_synapses' in plot.net_dict:
+    if 'full_num_synapses' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_matrix(
             axes[-1],
-            data=plot.net_dict['full_num_synapses'],
+            data=circuit.net_dict['full_num_synapses'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='number of synapses',
             show_num=False,
             set_bad=[0])
 
-    if 'full_indegrees' in plot.net_dict:
+    if 'full_indegrees' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_matrix(
             axes[-1],
-            data=plot.net_dict['full_indegrees'],
+            data=circuit.net_dict['full_indegrees'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='in-degree',
             show_num='all',
             set_bad=[0])
 
-    if 'beta' in plot.net_dict:
+    if 'beta' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_matrix(
             axes[-1],
-            data=plot.net_dict['beta'],
+            data=circuit.net_dict['beta'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='beta (mm)',
             num_format='{:.3f}')
 
-    if 'K_area_scaling' in plot.net_dict:
+    if 'K_area_scaling' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_matrix(
             axes[-1],
-            data=plot.net_dict['K_area_scaling'],
+            data=circuit.net_dict['K_area_scaling'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='in-degree scaling',
             num_format='{:.3f}')
 
-    if 'delay_offset_matrix' in plot.net_dict:
+    if 'delay_offset_matrix' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_matrix(
             axes[-1],
-            data=plot.net_dict['delay_offset_matrix'],
+            data=circuit.net_dict['delay_offset_matrix'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='delay offset (ms)',
             num_format='{:.2f}')
 
-    if 'prop_speed_matrix' in plot.net_dict:
+    if 'prop_speed_matrix' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_matrix(
             axes[-1],
-            data=plot.net_dict['prop_speed_matrix'],
+            data=circuit.net_dict['prop_speed_matrix'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='propagation speed (mm/ms)',
             num_format='{:.2f}')
 
-    if 'delay_lin_eff_mean' in plot.net_dict:
+    if 'delay_lin_eff_mean' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_matrix(
             axes[-1],
-            data=plot.net_dict['delay_lin_eff_mean'],
+            data=circuit.net_dict['delay_lin_eff_mean'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='delay lin eff mean (ms)',
             num_format='{:.2f}')
 
-    if 'delay_lin_eff_std' in plot.net_dict:
+    if 'delay_lin_eff_std' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_matrix(
             axes[-1],
-            data=plot.net_dict['delay_lin_eff_std'],
+            data=circuit.net_dict['delay_lin_eff_std'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='delay lin eff std (ms)',
             num_format='{:.2f}')
 
-    if 'full_weight_matrix_mean' in plot.net_dict:
+    if 'full_weight_matrix_mean' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_matrix(
             axes[-1],
-            data=plot.net_dict['full_weight_matrix_mean'],
+            data=circuit.net_dict['full_weight_matrix_mean'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='mean weight (pA)',
             num_format='{:.0f}')
 
-    if 'p0_raw' in plot.net_dict:
+    if 'p0_raw' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_matrix(
             axes[-1],
-            data=plot.net_dict['p0_raw'],
+            data=circuit.net_dict['p0_raw'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='not full p0_raw',
             show_num='all', num_format='{:.2f}',
             set_bad=[0])
 
-    if 'full_num_neurons' in plot.net_dict:
+    if 'full_num_neurons' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_vector(
             axes[-1],
-            data=plot.net_dict['full_num_neurons'],
+            data=circuit.net_dict['full_num_neurons'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='number of neurons',
             show_num=False)
 
-    if 'full_ext_indegrees' in plot.net_dict:
+    if 'full_ext_indegrees' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
         plot.plot_parameters_vector(
             axes[-1],
-            data=plot.net_dict['full_ext_indegrees'],
+            data=circuit.net_dict['full_ext_indegrees'],
+            pop_labels=circuit.plot_dict['pop_labels'],
             title='external in-degree',
             show_num='all')
 
@@ -129,44 +148,46 @@ def parameters(plot):
     for i, ax in enumerate(axes):
         plot.add_label(ax, labels[i])
 
-    plot.savefig('parameters')
+    plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+                 'parameters')
 
     plt.rcParams.update({'font.size': orig_fontsize})
     return
 
 
-def raster(plot, all_sptrains, all_pos_sorting_arrays):
+def raster(circuit, all_sptrains, all_pos_sorting_arrays):
     """
     Creates a figure with a raster plot.
 
     Parameters
     ----------
-    plot
+    circuit
+        A mesocircuit.Mesocircuit object with loaded parameters.
     all_sptrains
     all_pos_sorting_arrays
     """
 
     # population sizes
-    N_X = [all_pos_sorting_arrays[X].size for X in plot.X]
+    N_X = [all_pos_sorting_arrays[X].size for X in circuit.ana_dict['X']]
 
-    if plot.net_dict['thalamic_input']:
-        pops = plot.X
+    if circuit.net_dict['thalamic_input']:
+        pops = circuit.ana_dict['X']
         num_neurons = N_X
     else:
-        pops = plot.Y
+        pops = circuit.ana_dict['Y']
         num_neurons = N_X[:-1]
 
-    for time_interval in plot.plot_dict['raster_time_intervals']:
+    for time_interval in circuit.plot_dict['raster_time_intervals']:
         # full simulation duration
         if time_interval == 'all':
             time_interval = [
-                0., plot.sim_dict['t_presim'] + plot.sim_dict['t_sim']]
-            fig_width = plot.plot_dict['fig_width_2col']
+                0., circuit.sim_dict['t_presim'] + circuit.sim_dict['t_sim']]
+            fig_width = circuit.plot_dict['fig_width_2col']
             target_num_dots = 80000
             left = 0.09
             right = 0.98
         else:
-            fig_width = plot.plot_dict['fig_width_1col']
+            fig_width = circuit.plot_dict['fig_width_1col']
             target_num_dots = 40000
             left = 0.17
             right = 0.92
@@ -174,7 +195,7 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays):
         print(f'Plotting spike raster for interval: {time_interval} ms')
 
         # automatically compute a sample step for this figure
-        if plot.plot_dict['raster_sample_step'] == 'auto':
+        if circuit.plot_dict['raster_sample_step'] == 'auto':
             # assume an average firing rate of 4 Hz to estimate the number of
             # dots if all neurons were shown
             rate_estim = 4.
@@ -194,22 +215,79 @@ def raster(plot, all_sptrains, all_pos_sorting_arrays):
             pops,
             all_sptrains,
             all_pos_sorting_arrays,
-            plot.sim_dict['sim_resolution'],
+            circuit.plot_dict['pop_colors'],
+            circuit.plot_dict['pop_labels'],
+            circuit.sim_dict['sim_resolution'],
             time_interval,
             raster_sample_step)
 
-        plot.savefig(f'raster_{int(time_interval[0])}-{int(time_interval[1])}ms',
+        plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+                     f'raster_{int(time_interval[0])}-{int(time_interval[1])}ms',
                      eps_conv=True)
     return
 
 
-def statistics_overview(plot, all_FRs, all_LVs, all_CCs_distances, all_PSDs):
+def instantaneous_firing_rates(circuit, all_sptrains_bintime):
+    """
+    Creates a figure with histograms of instantaneous firing rates.
+
+    Parameters
+    ----------    
+    circuit
+        A mesocircuit.Mesocircuit object with loaded parameters.
+    all_sptrains_bintime
+    """
+
+    if circuit.net_dict['thalamic_input']:
+        pops = circuit.ana_dict['X']
+    else:
+        pops = circuit.ana_dict['Y']
+
+    for time_interval in circuit.plot_dict['raster_time_intervals']:
+        # full simulation duration
+        if time_interval == 'all':
+            time_interval = [
+                0., circuit.sim_dict['t_presim'] + circuit.sim_dict['t_sim']]
+            fig_width = circuit.plot_dict['fig_width_2col']
+            left = 0.09
+            right = 0.98
+        else:
+            fig_width = circuit.plot_dict['fig_width_1col']
+            left = 0.17
+            right = 0.92
+
+        print(
+            f'Plotting instantaneous firing rates for interval: {time_interval} ms')
+
+        fig = plt.figure(figsize=(fig_width, 5.))
+        gs = gridspec.GridSpec(1, 1)
+        gs.update(top=0.95, bottom=0.1, left=left, right=right)
+        ax = plot.plot_population_panels(
+            gs[0, 0],
+            plotfunc=plot.plotfunc_instantaneous_rates,
+            populations=pops,
+            xlabel='time (ms)',
+            ylabel=r'$FR$ (spikes/s)',
+            sptrains=all_sptrains_bintime,
+            num_neurons=circuit.net_dict['num_neurons'],
+            pop_colors=circuit.plot_dict['pop_colors'],
+            time_step=circuit.ana_dict['binsize_time'],
+            time_interval=time_interval)
+
+        plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+                     f'instantaneous_rates_{int(time_interval[0])}-{int(time_interval[1])}ms')
+    return
+
+
+def statistics_overview(circuit, all_FRs, all_LVs, all_CCs_distances, all_PSDs):
     """
     Creates a figure with boxplots and distributions of rates, LVs and CCs, and
     plots PSDs.
 
     Parameters
     ----------
+    circuit
+        A mesocircuit.Mesocircuit object with loaded parameters.
     plot
     all_FRs
     all_LVs
@@ -226,87 +304,107 @@ def statistics_overview(plot, all_FRs, all_LVs, all_CCs_distances, all_PSDs):
         else:
             all_CCs[X] = np.array([])
 
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 4))
+    fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 4))
     gs = gridspec.GridSpec(1, 1)
     gs.update(left=0.1, right=0.98, bottom=0.15, top=0.95)
     axes = plot.plot_statistics_overview(
-        gs[0], all_FRs, all_LVs, all_CCs, all_PSDs)
+        gs[0], all_FRs, all_LVs, all_CCs, all_PSDs, circuit.ana_dict['Y'], circuit.plot_dict)
     labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
     for i, label in enumerate(labels):
         plot.add_label(axes[i], label)
 
-    plot.savefig('statistics_overview')
+    plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+                 'statistics_overview')
     return
 
 
-def corrcoef_distance(plot, all_CCs_distances):
+def corrcoef_distance(circuit, all_CCs_distances):
     """
     Creates a figure of Pearson correlation coefficients vs. distance.
 
     Parameters
     ----------
-    plot
+    circuit
+        A mesocircuit.Mesocircuit object with loaded parameters.
     all_CCs_distances
     """
     print('Plotting correlation coefficients vs. distance.')
 
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 5.))
+    fig = plt.figure(figsize=(circuit.plot_dict['fig_width_1col'], 5.))
     gs = gridspec.GridSpec(1, 1)
     gs.update(top=0.98, bottom=0.09, left=0.17, right=0.98)
     ax = plot.plot_layer_panels(
         gs[0, 0],
         plotfunc=plot.plotfunc_CCs_distance,
+        populations=circuit.ana_dict['Y'],
+        layer_labels=circuit.plot_dict['layer_labels'],
+        pop_colors=circuit.plot_dict['pop_colors'],
         data=all_CCs_distances,
         xlabel='distance (mm)',
-        ylabel='CC')
+        ylabel=r'$CC$')
 
-    plot.savefig('corrcoef_distance')
+    plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+                 'corrcoef_distance')
     return
 
 
-def spatial_snapshots(plot, all_inst_rates_bintime_binspace):
+def spatial_snapshots(circuit, all_inst_rates_bintime_binspace):
     """
     Creates a figure with consecutive snapshots.
 
     Parameters
     ----------
-    plot
+    circuit
+        A mesocircuit.Mesocircuit object with loaded parameters.
+
     all_inst_rates_bintime_binspace
     """
     print('Plotting spatial snapshots.')
 
-    if plot.net_dict['thalamic_input']:
-        pops = plot.X
+    if circuit.net_dict['thalamic_input']:
+        pops = circuit.ana_dict['X']
     else:
-        pops = plot.Y
+        pops = circuit.ana_dict['Y']
 
-    for start_time in plot.plot_dict['snapshots_start_times']:
-        fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 3.))
+    # spatial bins
+    space_bins = helpana.get_space_bins(
+        circuit.net_dict['extent'], circuit.ana_dict['binsize_space'])
+
+    for start_time in circuit.plot_dict['snapshots_start_times']:
+        fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 3.))
         gs = gridspec.GridSpec(1, 1)
-        gs.update(left=0.09, right=0.97, top=1, bottom=0)
+        gs.update(left=0.09, right=0.97, top=1, bottom=0.1)
         ax = plot.plot_spatial_snapshots(
             gs[0, 0],
             pops,
             all_inst_rates_bintime_binspace,
-            plot.ana_dict['binsize_time'],
+            circuit.ana_dict['binsize_time'],
+            space_bins,
+            circuit.plot_dict['pop_labels'],
+            circuit.plot_dict['snapshots_max_rate'],
             orientation='horizontal',
-            start_time=start_time)
-        plot.savefig(f'spatial_snapshots_{int(start_time)}ms')
+            start_time=start_time,
+            cbar_pad=0.5)
+
+        plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+                     f'spatial_snapshots_{int(start_time)}ms')
     return
 
 
-def crosscorrelation_funcs_thalamic_pulses(plot, all_CCfuncs_thalamic_pulses):
+def crosscorrelation_funcs_thalamic_pulses(circuit, all_CCfuncs_thalamic_pulses):
     """
     Creates a figure with distance-dependent cross-correlation functions for
     thalamic pulses if the data exists.
 
     Parameters
     ----------
+    circuit
+        A mesocircuit.Mesocircuit object with loaded parameters.
     plot
     all_CCfuncs_thalamus_center
     """
     # only call plot function if data is not empty
-    if 'cc_funcs' not in all_CCfuncs_thalamic_pulses[plot.Y[0]]:
+    if 'cc_funcs' not in all_CCfuncs_thalamic_pulses[circuit.ana_dict['Y'][0]]:
         print(
             'Not plotting cross-correlation functions with thalamic pulses ' +
             'because all_CCfuncs_thalamic_pulses is empty.')
@@ -314,75 +412,37 @@ def crosscorrelation_funcs_thalamic_pulses(plot, all_CCfuncs_thalamic_pulses):
 
     print('Plotting cross-correlation functions with thalamic pulses.')
 
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_1col'], 4.))
+    fig = plt.figure(figsize=(circuit.plot_dict['fig_width_1col'], 4.5))
     gs = gridspec.GridSpec(1, 1)
-    gs.update(left=0.22, right=0.97, top=0.95, bottom=0.22)
+    gs.update(left=0.22, right=0.95, top=0.93, bottom=0.22)
     ax = plot.plot_crosscorrelation_funcs_thalamic_pulses(
         gs[0, 0],
-        plot.Y,
-        all_CCfuncs_thalamic_pulses)
-    plot.savefig('crosscorrelation_funcs_thalamic_pulses')
+        all_CCfuncs_thalamic_pulses,
+        circuit.ana_dict['Y'],
+        circuit.net_dict['extent'],
+        circuit.net_dict['th_radius'],
+        circuit.plot_dict['layer_labels'])
+
+    plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+                 'crosscorrelation_funcs_thalamic_pulses')
     return
 
 
-def instantaneous_firing_rates(plot, all_sptrains_bintime):
-    """
-    Creates a figure with histograms of instantaneous firing rates.
-    """
-
-    if plot.net_dict['thalamic_input']:
-        pops = plot.X
-    else:
-        pops = plot.Y
-
-    for time_interval in plot.plot_dict['raster_time_intervals']:
-        # full simulation duration
-        if time_interval == 'all':
-            time_interval = [
-                0., plot.sim_dict['t_presim'] + plot.sim_dict['t_sim']]
-            fig_width = plot.plot_dict['fig_width_2col']
-            left = 0.09
-            right = 0.98
-        else:
-            fig_width = plot.plot_dict['fig_width_1col']
-            left = 0.17
-            right = 0.92
-
-        print(
-            f'Plotting instantaneous firing rates for interval: {time_interval} ms')
-
-        fig = plt.figure(figsize=(fig_width, 5.))
-        gs = gridspec.GridSpec(1, 1)
-        gs.update(top=0.98, bottom=0.1, left=left, right=right)
-        ax = plot.plot_population_panels(
-            gs[0, 0],
-            plotfunc=plot.plotfunc_instantaneous_rates,
-            populations=pops,
-            xlabel='time (ms)',
-            ylabel=r'$\nu (s^{-1})$',
-            sptrains=all_sptrains_bintime,
-            time_step=plot.ana_dict['binsize_time'],
-            time_interval=time_interval)
-
-        plot.savefig(
-            f'instantaneous_rates_{int(time_interval[0])}-{int(time_interval[1])}ms')
-    return
-
-
-def theory_overview(
-        plot, working_point, frequencies, power, sensitivity):
+def theory_overview(circuit, working_point, frequencies, power, sensitivity):
     """
     """
     print('Plotting theory overview.')
 
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 10))
+    fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 10))
     gs = gridspec.GridSpec(1, 1)
     gs.update(left=0.1, right=0.98, bottom=0.05, top=0.98)
     axes = plot.plot_theory_overview(
-        gs[0], working_point, frequencies, power, sensitivity)
+        gs[0], working_point, frequencies, power, sensitivity,
+        circuit.ana_dict['Y'], circuit.plot_dict)
     labels = ['A', 'B', 'C', 'D', 'E']
     for i, label in enumerate(labels):
         plot.add_label(axes[i], label)
 
-    plot.savefig('theory_overview')
+    plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+                 'theory_overview')
     return

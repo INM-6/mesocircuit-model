@@ -8,6 +8,7 @@ import matplotlib
 import LFPy
 from mesocircuit.analysis import stats
 from mesocircuit.parameterization.base_plotting_params import plot_dict
+from mesocircuit.parameterization.base_plotting_params import rcParams
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
@@ -20,7 +21,7 @@ if 'DISPLAY' not in os.environ:
 
 
 # Set some matplotlib defaults
-matplotlib.rcParams.update(plot_dict['rcParams'])
+matplotlib.rcParams.update(rcParams)
 
 
 pop_colors = plot_dict['pop_colors']
@@ -938,7 +939,7 @@ def get_data_coherence(data_x, data_y,
                     if phase_coherence:
                         c[i, j, ] = np.divide(Pxy, np.abs(Pxy))
                     else:
-                        c[i, j, ] = np.divide(np.absolute(Pxy)**2, 
+                        c[i, j, ] = np.divide(np.absolute(Pxy)**2,
                                               Pxx * Pyy)
     elif method == 'scipy':
         for i in range(x.size):
@@ -957,7 +958,7 @@ def get_data_coherence(data_x, data_y,
                     if phase_coherence:
                         raise NotImplementedError
                     else:
-                        c[i, j, ] = np.divide(np.absolute(Pxy)**2, 
+                        c[i, j, ] = np.divide(np.absolute(Pxy)**2,
                                               Pxx * Pyy)
 
     # mask lower triangle of correlation/covariance matrices, mask
@@ -1229,30 +1230,3 @@ def plot_coherence_vs_distance_vs_frequency(
     cax = fig.add_axes(rect)
     cbar = plt.colorbar(im, cax=cax)
     cbar.set_label('coherence', labelpad=0)
-
-
-def add_label(ax, label, offset=[0, 0],
-              weight='bold', fontsize_scale=1.2):
-    """
-    Adds label to axis with given offset.
-
-    Parameters
-    ----------
-    ax
-        Axis to add label to.
-    label
-        Label should be a letter.
-    offset
-        x-,y-Offset.
-    weight
-        Weight of font.
-    fontsize_scale
-        Scaling factor for font size.
-    """
-    label_pos = [0. + offset[0], 1. + offset[1]]
-    ax.text(label_pos[0], label_pos[1], label,
-            ha='left', va='bottom',
-            transform=ax.transAxes,
-            weight=weight,
-            fontsize=matplotlib.rcParams['font.size'] * fontsize_scale)
-    return

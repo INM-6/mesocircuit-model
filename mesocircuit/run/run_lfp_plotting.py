@@ -6,7 +6,8 @@ import sys
 import h5py
 import pandas as pd
 import mesocircuit.mesocircuit_framework as mesoframe
-from mesocircuit.plotting.plotting import Plotting
+import mesocircuit.plotting.plotting as plot
+from mesocircuit.parameterization.base_plotting_params import rcParams
 from mesocircuit.lfp.compute_mua import write_mua_file
 import mesocircuit.lfp.plotting as lfpplt
 from mesocircuit.lfp.lfp_parameters import get_parameters
@@ -38,7 +39,7 @@ ana_dict = circuit.ana_dict
 plot_dict = circuit.plot_dict
 
 # Set some matplotlib defaults
-matplotlib.rcParams.update(plot_dict['rcParams'])
+matplotlib.rcParams.update(rcParams)
 
 ##########################################################################
 # LFP output directory
@@ -232,7 +233,7 @@ for i, (ax, fname, ylabel, title) in enumerate(zip(axes[4:], fnames,
         ax.set_xlabel('frequency (Hz)')
 
 for i, ax in enumerate(axes):
-    lfpplt.add_label(ax, 'ABCDEFG'[i])
+    plot.add_label(ax, 'ABCDEFG'[i])
 
 fig.savefig(os.path.join(path_fig_files, 'figure_07.pdf'))
 
@@ -317,8 +318,8 @@ for ax, fname, unit, title in zip(axes, fnames, units, titles):
     ax.set_prop_cycle('color', [plt.cm.gray(i)
                                 for i in np.linspace(0, 200, 10).astype(int)])
     lfpplt.plot_signal_sum(
-        ax, PS, fname, unit, 
-        T=[sim_dict['t_presim'], sim_dict['t_presim'] + 100], 
+        ax, PS, fname, unit,
+        T=[sim_dict['t_presim'], sim_dict['t_presim'] + 100],
         color=None)
     ax.set_title(title)
 
@@ -327,7 +328,7 @@ fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_II.pdf'))
 
 # Laminar LFP and Currend tiole moment
 fig, axes = plt.subplots(1, 2, figsize=(plot_dict['fig_width_2col'],
-                                      plot_dict['fig_width_2col']),
+                                        plot_dict['fig_width_2col']),
                          sharex=True, sharey=False)
 fnames = [os.path.join(path_lfp_data, PS.laminarProbeFile),
           os.path.join(path_lfp_data, PS.CurrentDipoleMomentFile)]
@@ -337,7 +338,7 @@ for ax, fname, unit, title in zip(axes, fnames, units, titles):
     lfpplt.plot_signal_sum(
         ax, PS, fname, unit, T=[
             sim_dict['t_presim'], sim_dict['t_presim'] + 500],
-            color='k', skipyticks=1)
+        color='k', skipyticks=1)
     ax.set_title(title)
     ax.axis(ax.axis('tight'))
 
@@ -370,13 +371,12 @@ plt.setp(axd.get_yticklabels(), visible=False)
 
 # file with precomputed pairwise correlations
 fname = os.path.join(
-    circuit.data_dir_circuit, 
-    'processed_data', 
+    circuit.data_dir_circuit,
+    'processed_data',
     'all_CCs_distances.h5')
 with h5py.File(fname, 'r') as f:
-    p = Plotting(circuit)
     for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [40, 10])):
-        p.plotfunc_CCs_distance(
+        plot.plotfunc_CCs_distance(
             ax=ax, X=X, i=i, data=f,
             max_num_pairs=n_pairs,
             markersize_scale=0.4,
@@ -421,7 +421,7 @@ for i, (ax, data, fit_exp, title) in enumerate(
 
 for i, ax in enumerate(axes):
     ax.axis(ax.axis('tight'))
-    lfpplt.add_label(ax, 'ABCD'[i])
+    plot.add_label(ax, 'ABCD'[i])
     if i % 2 > 0:
         ax.set_ylabel('')
     if i < 2:
@@ -538,7 +538,7 @@ for i, (ax, fname, title) in enumerate(zip(axes[1, :], fnames, titles)):
         ax.set_ylabel('')
 
 for i, ax in enumerate(axes.flatten()):
-    lfpplt.add_label(ax, 'ABCDEF'[i])
+    plot.add_label(ax, 'ABCDEF'[i])
 
 fig.savefig(os.path.join(path_fig_files, 'figure_09.pdf'))
 

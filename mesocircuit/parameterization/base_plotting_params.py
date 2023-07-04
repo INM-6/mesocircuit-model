@@ -9,28 +9,27 @@ import numpy as np
 # conversion factor from cm to inch
 cm2inch = 1. / 2.54
 
+# used by plotting.py
+rcParams = {
+    # dpi for typical journal printing
+    'figure.dpi': 300,
+    # line width
+    'lines.linewidth': 1.,
+    # label pads
+    'axes.labelpad': 0.1,
+    'xtick.major.pad': 0.2,
+    'ytick.major.pad': 0.2,
+    # handling of .svg fonts:
+    # 'path' (embed characters as paths) or 'none'
+    'svg.fonttype': 'none',
+    # font sizes
+    'font.size': 7,
+    # margin around lines
+    'axes.xmargin': 0.0,
+    'axes.ymargin': 0.0,
+}
+
 plot_dict = {
-
-    # rcParams to overwrite the default ones
-    'rcParams': {
-        # dpi for typical journal printing
-        'figure.dpi': 300,
-        # line width
-        'lines.linewidth': 1.,
-        # label pads
-        'axes.labelpad': 0.1,
-        'xtick.major.pad': 0.2,
-        'ytick.major.pad': 0.2,
-        # handling of .svg fonts:
-        # 'path' (embed characters as paths) or 'none'
-        'svg.fonttype': 'none',
-        # font sizes
-        'font.size': 7,
-        # margin around lines
-        'axes.xmargin': 0.0,
-        'axes.ymargin': 0.0,
-
-    },
 
     # plot format (use '.eps' for final figures)
     # TODO: inkscape etc. for eps conversion not available on JURECA
