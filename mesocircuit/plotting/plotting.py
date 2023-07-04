@@ -8,7 +8,6 @@ figures.py.
 from re import I
 import matplotlib.patheffects as PathEffects
 from matplotlib.patches import Rectangle
-from mesocircuit.helpers import base_class
 from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
