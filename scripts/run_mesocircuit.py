@@ -3,7 +3,7 @@
 
 Main example script to run a simulation of the mesocircuit with NEST and 
 subsequently analyze and plot the results.
-The simulation of the spiking neural network can be followed by an LFP
+The simulation of the spiking neuronal network can be followed by an LFP
 simulation and the corresponding postprocessing and plotting.
 """
 
@@ -61,15 +61,15 @@ print(meso_exp.circuits)
 # submitting batch scripts via slurm; for a local test run `machine='local'`
 # should be selected.
 
-for circuit in meso_exp.circuits:
-    circuit.run_jobs(
-        jobs=[
-            'network',
-            'analysis_and_plotting',
-            # 'lfp_simulation',
-            # 'lfp_postprocess',
-            # 'lfp_plotting',
-        ],
-        machine='hpc',
-        # machine='local'
-    )
+circuit = meso_exp.circuits[0]
+circuit.run_jobs(
+    jobs=[
+        'network',
+        'analysis_and_plotting',
+        # 'lfp_simulation',
+        # 'lfp_postprocess',
+        # 'lfp_plotting',
+    ],
+    machine='hpc',
+    # machine='local'
+)
