@@ -1,4 +1,5 @@
-import mesocircuit.plotting.plotting as plotting
+import mesocircuit.plotting.plotting as plot
+from mesocircuit.parameterization import helpers_analysis as helpana
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,11 +12,9 @@ matplotlib.use('Agg')
 def parameters(output_dir, ref_circuit, ups_circuit):
     """
     """
-    # instantiate plotting object with referene circuit
-    plot = plotting.Plotting(ref_circuit)
 
     print('Plotting parameters.')
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 7))
+    fig = plt.figure(figsize=(ref_circuit.plot_dict['fig_width_2col'], 7))
     gs = gridspec.GridSpec(2, 7)
     gs.update(left=0.08, right=0.95, bottom=0.06,
               top=0.9, hspace=0.5, wspace=0)
@@ -40,6 +39,7 @@ def parameters(output_dir, ref_circuit, ups_circuit):
         plot.plot_parameters_vector(
             ax,
             data=circuit.net_dict[q],
+            pop_labels=circuit.plot_dict['pop_labels'],
             show_num='all',
             num_fontsize_scale=1)
         ax.set_title('number of neurons', pad=pad)
@@ -51,6 +51,7 @@ def parameters(output_dir, ref_circuit, ups_circuit):
         plot.plot_parameters_matrix(
             ax,
             data=circuit.net_dict[q],
+            pop_labels=circuit.plot_dict['pop_labels'],
             show_num='all',
             set_bad=[0],
             vmin=lims[q]['vmin'],
@@ -69,6 +70,7 @@ def parameters(output_dir, ref_circuit, ups_circuit):
         plot.plot_parameters_vector(
             ax,
             data=circuit.net_dict[q],
+            pop_labels=circuit.plot_dict['pop_labels'],
             show_num='all',
             vmin=lims[q]['vmin'],
             vmax=lims[q]['vmax'],
@@ -77,7 +79,6 @@ def parameters(output_dir, ref_circuit, ups_circuit):
         plot.add_label(ax, labels[lcnt], offset=offset)
         lcnt += 1
 
-    # TODO modify and use savefig
     plt.savefig(os.path.join(output_dir, 'parameters.pdf'))
 
     return
@@ -86,6 +87,8 @@ def parameters(output_dir, ref_circuit, ups_circuit):
 def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
                           plot_rasters=True, plot_statistics=True):
     """
+    Use ref_circuit when accessing parameters that are the same for both
+    circuits.
     """
     d = {}
     for i, circuit in enumerate([ref_circuit, ups_circuit]):
@@ -106,13 +109,10 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
             data = h5py.File(fn, 'r')
             d.update({prefix + '_' + all_datatype: data})
 
-    # instantiate plotting object with referene circuit
-    plot = plotting.Plotting(ref_circuit)
-
     #####
     if plot_rasters:
         print('Plotting rasters and instantaneous firing rates.')
-        fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 4.))
+        fig = plt.figure(figsize=(ref_circuit.plot_dict['fig_width_2col'], 4.))
         gs = gridspec.GridSpec(1, 4)
         gs.update(left=0.05, right=0.98, bottom=0.08, top=0.9, wspace=0.3)
 
@@ -124,14 +124,16 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
         for i, prefix in enumerate(['ref', 'ups']):
             ax = plot.plot_raster(
                 gs[0, i],
-                populations=plot.Y,
+                populations=ref_circuit.ana_dict['Y'],
                 all_sptrains=d[prefix + '_all_sptrains'],
                 all_pos_sorting_arrays=d[prefix + '_all_pos_sorting_arrays'],
-                time_step=plot.sim_dict['sim_resolution'],
+                pop_colors=ref_circuit.plot_dict['pop_colors'],
+                pop_labels=ref_circuit.plot_dict['pop_labels'],
+                time_step=ref_circuit.sim_dict['sim_resolution'],
                 time_interval=[1050, 1100],
                 sample_step=1,
-                randomize_neuronids=True,
-            )
+                randomize_neuronids=True)
+
             plot.add_label(ax, labels[i])
             ax.set_title(titles[i])
             if i == 1:
@@ -142,11 +144,13 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
             ax = plot.plot_population_panels(
                 gs[0, i+2],
                 plotfunc=plot.plotfunc_instantaneous_rates,
-                populations=plot.Y,
+                populations=ref_circuit.ana_dict['Y'],
                 xlabel='time (ms)',
                 ylabel=r'$FR$ (spikes/s)' if i == 0 else '',
                 sptrains=d[prefix + '_all_sptrains_bintime'],
-                time_step=plot.ana_dict['binsize_time'],
+                num_neurons=ref_circuit.net_dict['num_neurons'],
+                pop_colors=ref_circuit.plot_dict['pop_colors'],
+                time_step=ref_circuit.ana_dict['binsize_time'],
                 # one additional time step for label
                 time_interval=[1050, 1100+1],
                 ylim_top=11,
@@ -155,14 +159,13 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
             plot.add_label(ax, labels[i+2])
             ax.set_title(titles[i])
 
-        # TODO modify and use savefig
         plt.savefig(os.path.join(output_dir, 'ref_vs_ups_rasters.pdf'))
 
     #####
 
     if plot_statistics:
         print('Plotting statistics.')
-        fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 6))
+        fig = plt.figure(figsize=(ref_circuit.plot_dict['fig_width_2col'], 6))
         gs = gridspec.GridSpec(2, 1)
         gs.update(left=0.08, right=0.99, bottom=0.08, top=0.93, hspace=0.5)
 
@@ -187,6 +190,8 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
                 d[prefix + '_all_LVs'],
                 all_CCs,
                 d[prefix + '_all_PSDs'],
+                ref_circuit.ana_dict['Y'],
+                ref_circuit.plot_dict,
                 ylims_boxcharts_FRs=[0., 11.],
                 ylims_boxcharts_LVs=[0., 2.],
                 ylims_boxcharts_CCs=[-0.01, 0.01],
@@ -195,7 +200,6 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
                 plot.add_label(axes[l], label)
             axes[4].set_title(titles[i], pad=15)
 
-        # TODO modify and use savefig
         plt.savefig(os.path.join(output_dir, 'rev_vs_ups_statistics.pdf'))
     return
 
@@ -217,37 +221,42 @@ def evoked_activity(output_dir, circuit):
         data = h5py.File(fn, 'r')
         d.update({all_datatype: data})
 
-    # instantiate plotting
-    plot = plotting.Plotting(circuit)
-
-    fig = plt.figure(figsize=(plot.plot_dict['fig_width_2col'], 7.))
+    fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 7.))
     gs = gridspec.GridSpec(3, 3)
     gs.update(left=0.06, right=0.91, bottom=0.05,
               top=0.96, wspace=0.35, hspace=0.3)
 
     labels = ['A', 'B', 'C', 'D']
 
+    # spatial bins
+    space_bins = helpana.get_space_bins(
+        circuit.net_dict['extent'], circuit.ana_dict['binsize_space'])
+
     # spatial snapshots
     ax = plot.plot_spatial_snapshots(
         gs[0, :],
-        plot.X,
+        circuit.ana_dict['X'],
         d['all_inst_rates_bintime_binspace'],
-        plot.ana_dict['binsize_time'],
+        circuit.ana_dict['binsize_time'],
+        space_bins,
+        circuit.plot_dict['pop_labels'],
+        circuit.plot_dict['snapshots_max_rate'],
         orientation='horizontal',
         start_time=1100.,  # ms
         cbar_orientation='vertical',
         cbar_size='2%',
-        cbar_pad=0.1,
-    )
+        cbar_pad=0.1)
     plot.add_label(ax, labels[0])
 
     # raster
     ax = plot.plot_raster(
         gs[1:, 0],
-        plot.Y,
+        circuit.ana_dict['Y'],
         d['all_sptrains'],
         d['all_pos_sorting_arrays'],
-        plot.sim_dict['sim_resolution'],
+        circuit.plot_dict['pop_colors'],
+        circuit.plot_dict['pop_labels'],
+        circuit.sim_dict['sim_resolution'],
         time_interval=[1050, 1150],
         sample_step=25,
         axvline=1100)
@@ -258,25 +267,29 @@ def evoked_activity(output_dir, circuit):
     ax = plot.plot_population_panels(
         gs[1:, 1],
         plotfunc=plot.plotfunc_instantaneous_rates,
-        populations=plot.X,
+        populations=circuit.ana_dict['X'],
         xlabel='time (ms)',
         ylabel=r'$FR$ (spikes/s)',
         sptrains=d['all_sptrains_bintime'],
-        time_step=plot.ana_dict['binsize_time'],
-        # time_interval=plot.plot_dict['raster_time_interval_short']
+        num_neurons=circuit.net_dict['num_neurons'],
+        pop_colors=circuit.plot_dict['pop_colors'],
+        time_step=circuit.ana_dict['binsize_time'],
         time_interval=[1050, 1150])
     plot.add_label(ax, labels[2])
 
     # cross-correlation functions for thalamic pulses
     ax = plot.plot_crosscorrelation_funcs_thalamic_pulses(
         gs[1:, 2],
-        plot.Y,
+        circuit.ana_dict['Y'],
         d['all_CCfuncs_thalamic_pulses'],
+        circuit.ana_dict['Y'],
+        circuit.net_dict['extent'],
+        circuit.net_dict['th_radius'],
+        circuit.plot_dict['layer_labels'],
         cbar_orientation='vertical',
         cbar_left=0.11,
         cbar_width=0.01,
-        fit_speed=True
-    )
+        fit_speed=True)
     plot.add_label(ax, labels[3])
 
     plt.savefig(os.path.join(output_dir, 'evoked_activity.pdf'))

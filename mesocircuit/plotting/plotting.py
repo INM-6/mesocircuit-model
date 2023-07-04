@@ -1,5 +1,5 @@
 """PyNEST Mesocircuit: Plotting
--------------------------------------
+-------------------------------
 
 Functions starting with 'plot_' plot to a gridspec cell and are used in
 figures.py.
