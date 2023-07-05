@@ -1,3 +1,9 @@
+"""Parameter space overview figures
+-----------------------------------
+
+Combines individual figures to parameter space overview figures using latex.
+"""
+
 import os
 import matplotlib.pyplot as plt
 import subprocess

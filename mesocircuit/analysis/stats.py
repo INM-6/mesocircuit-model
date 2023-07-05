@@ -1,5 +1,8 @@
-#!/usr/bin/env python
-"""Generic statistics module"""
+"""Generic statistics
+---------------------
+
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 

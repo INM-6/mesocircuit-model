@@ -1,3 +1,9 @@
+"""Manuscript figures
+---------------------
+
+Figures showing parameters and network activity of the spiking network models.
+"""
+
 import mesocircuit.plotting.plotting as plot
 from mesocircuit.parameterization import helpers_analysis as helpana
 import matplotlib.gridspec as gridspec
@@ -11,6 +17,16 @@ matplotlib.use('Agg')
 
 def parameters(output_dir, ref_circuit, ups_circuit):
     """
+    Figure comparing selected parameters of the reference and upscaled models.
+
+    Parameters
+    ----------
+    output_dir
+        Output directory.
+    ref_circuit
+        Mesocircuit instance for the reference model.
+    ups_cicruit
+        Mesocircuit instance for the upscaled model.
     """
 
     print('Plotting parameters.')
@@ -87,6 +103,21 @@ def parameters(output_dir, ref_circuit, ups_circuit):
 def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
                           plot_rasters=True, plot_statistics=True):
     """
+    Figures comparing the reference and the upscaled models.
+
+    Parameters
+    ----------
+    output_dir
+        Output directory.
+    ref_circuit
+        Mesocircuit instance for the reference model.
+    ups_cicruit
+        Mesocircuit instance for the upscaled model.
+    plot_rasters
+        Whether to plot rasters and instantaneous firing rates.
+    plot_statistics
+        Whether to plot the statistics overview.
+
     Use ref_circuit when accessing parameters that are the same for both
     circuits.
     """
@@ -124,9 +155,9 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
         for i, prefix in enumerate(['ref', 'ups']):
             ax = plot.plot_raster(
                 gs[0, i],
-                populations=ref_circuit.ana_dict['Y'],
                 all_sptrains=d[prefix + '_all_sptrains'],
                 all_pos_sorting_arrays=d[prefix + '_all_pos_sorting_arrays'],
+                populations=ref_circuit.ana_dict['Y'],
                 pop_colors=ref_circuit.plot_dict['pop_colors'],
                 pop_labels=ref_circuit.plot_dict['pop_labels'],
                 time_step=ref_circuit.sim_dict['sim_resolution'],
@@ -206,6 +237,14 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
 
 def evoked_activity(output_dir, circuit):
     """
+    Figure showing evoked activity following a thalamocortical stimulation.
+
+    Parameters
+    ----------
+    output_dir
+        Output directory.
+    circuit
+        Mesocircuit instance.
     """
     print('Plotting evoked activity')
 
@@ -235,8 +274,8 @@ def evoked_activity(output_dir, circuit):
     # spatial snapshots
     ax = plot.plot_spatial_snapshots(
         gs[0, :],
-        circuit.ana_dict['X'],
         d['all_inst_rates_bintime_binspace'],
+        circuit.ana_dict['X'],
         circuit.ana_dict['binsize_time'],
         space_bins,
         circuit.plot_dict['pop_labels'],
@@ -251,9 +290,9 @@ def evoked_activity(output_dir, circuit):
     # raster
     ax = plot.plot_raster(
         gs[1:, 0],
-        circuit.ana_dict['Y'],
         d['all_sptrains'],
         d['all_pos_sorting_arrays'],
+        circuit.ana_dict['Y'],
         circuit.plot_dict['pop_colors'],
         circuit.plot_dict['pop_labels'],
         circuit.sim_dict['sim_resolution'],

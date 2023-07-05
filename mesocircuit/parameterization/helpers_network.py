@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Helper Functions Network Stimulus
---------------------------------------------------------
+"""Helper Functions Network
+---------------------------
 
 Helper functions for deriving dependent network and stimulus parameters from
 base parameter dictionaries.

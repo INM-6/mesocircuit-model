@@ -22,15 +22,10 @@
 # -- Project information -----------------------------------------------------
 
 project = 'Mesocircuit Model'
-copyright = '2022, Johanna Senk, Espen Hagen'
+copyright = '2023, Johanna Senk, Espen Hagen'
 author = 'Johanna Senk, Espen Hagen'
 
 # The full version, including alpha/beta/rc tags
-
-# TODO automatically reading version does not work
-# VERSION = {}  # type: ignore
-#release = exec(open('../../version.py').read(), VERSION)
-
 release = '0.1.0'
 
 
@@ -40,25 +35,43 @@ release = '0.1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    # 'sphinx.ext.autodoc',
-    # 'sphinx.ext.autosummary',
-    # 'sphinx.ext.doctest',
-    # 'sphinx.ext.intersphinx',
-    # 'sphinx.ext.todo',
-    # 'sphinx.ext.imgmath',
-    # 'sphinx.ext.viewcode',
-    # 'sphinx.ext.mathjax',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.imgmath',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.mathjax',
+    'sphinx_gallery.gen_gallery',
+    # 'sphinx.ext.napoleon',
     'sphinxcontrib.bibtex',
     # 'numpydoc',
-    # 'sphinx_tabs.tabs',
+    'sphinx_tabs.tabs',
 ]
+#
+# autoapi_dirs = ['../../mesocircuit-model']
+# autoapi_type = 'python'
+# autoapi_options  = [
+#     'members',
+#     'undoc-members']
+
+#
+# napoleon_google_docstring = False
+# napoleon_numpy_docstring = True
+# napoleon_use_admonition_for_notes = True
+# napoleon_use_param = False
 
 sphinx_gallery_conf = {
-    'examples_dirs': '../../examples',  # path to your example scripts
+    # path to your example scripts
+    'examples_dirs': '../../scripts',
+    # path to where to save gallery generated output
+    'gallery_dirs': 'auto_examples',
+    'plot_gallery': 'False'
 }
 
 # Add any paths that contain templates here, relative to this directory.
-# templates_path = ['_templates']
+templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -75,7 +88,7 @@ exclude_patterns = []
 
 # Required to automatically create a summary page for each function listed in
 # the autosummary fields of each module.
-autosummary_generate = True
+autosummary_generate = False  # True
 
 # Set to False to not overwrite the custom _toctree/*.rst
 autosummary_generate_overwrite = True
@@ -94,15 +107,27 @@ bibtex_reference_style = 'author_year'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-#html_theme = 'alabaster'
-html_theme = 'sphinx_rtd_theme'
-#
+html_theme = 'alabaster'
+
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'relations.html',
+        'searchbox.html',
+        'donate.html',
+    ]
+}
+
+html_static_path = ['_static']
+
 html_theme_options = {
-    # 'font_family': 'Arial',
-    # 'page_width': '940px',  # default is 940
-    # 'description': 'Mesocircuit Model',
+    'logo': 'images/network_model_sketch_upscaled.png',  # does not work
+    'font_family': 'Palatino',
+    'page_width': '1120px',  # default is 940
+    'description': '',
     'body_max_width': '900px',
-    # 'sidebar_width': '220px',  # default is 220
+    'sidebar_width': '220px',  # default is 220
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -119,7 +144,7 @@ html_theme_options = {
 # html_show_sourcelink = False
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
-html_show_sphinx = True
+html_show_sphinx = False
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
 html_show_copyright = True
@@ -136,7 +161,6 @@ numpydoc_show_class_members = False
 # A fix for Alabaster theme for no space between a citation reference
 # and citation text
 # https://github.com/sphinx-doc/sphinx/issues/6705#issuecomment-536197438
-# Set to True if Alabaster theme is used
 html4_writer = False
 
 #

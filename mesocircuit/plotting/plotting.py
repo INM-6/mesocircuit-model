@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Plotting
--------------------------------
+"""Plotting
+-----------
 
 Functions starting with 'plot_' plot to a gridspec cell and are used in
 figures.py.
@@ -32,9 +32,9 @@ RANK = COMM.Get_rank()
 
 def plot_raster(
         gs,
-        populations,
         all_sptrains,
         all_pos_sorting_arrays,
+        populations,
         pop_colors,
         pop_labels,
         time_step,
@@ -58,12 +58,16 @@ def plot_raster(
     ----------
     gs
         A gridspec cell to plot into.
-    populations
-        List of population names.
     all_sptrains
         Open h5 file with all spike trains.
     all_pos_sorting_arrays
         Open h5 file with position sorting arrays.
+    populations
+        List of population names.
+    pop_colors
+        Population colors.
+    pop_labels
+        Population labels.
     time_step
         Time step corresponding to spike trains.
     time_interval
@@ -170,7 +174,38 @@ def plot_statistics_overview(
         ylims_boxcharts_CCs=False,
         ylims_PSDs=False):
     """
-    TODO
+    Plots statisctis overview for firing rates, local coefficients of variation,
+    correlation coefficients, and power spectral densities.
+
+    Parameters
+    ----------
+    gs
+        A gridspec cell to plot into.
+    all_FRs
+        Open h5 file with firing rates.
+    all_LVs
+        Open h5 file with local coefficients of variation.
+    all_CCs
+        Open h5 file with correlation coefficients.
+    all_PSDs
+        Open h5 file with power spectral densities.
+    populations
+        List of population names.
+    plot_dict
+        Dictionary with plotting parameters.
+    ylims_boxcharts_FRs
+        Y-limits for boxcharts showing firing rates.
+    ylims_boxcharts_LVs
+        Y-limits for boxcharts showing local coefficients of variation.
+    ylims_boxcharts_CCs
+        Y-limits for boxcharts showing correlation coefficients.
+    ylims_PSDs
+        Y-limits for boxcharts showing power spectral densities.
+
+    Returns
+    -------
+        axes
+            Axes to put labels to.
     """
     axes = [0] * 7
     gs_cols = gridspec.GridSpecFromSubplotSpec(1, 12, subplot_spec=gs,
@@ -273,8 +308,8 @@ def plot_statistics_overview(
 
 def plot_spatial_snapshots(
         gs,
-        populations,
         all_inst_rates_bintime_binspace,
+        populations,
         binsize_time,
         space_bins,
         pop_labels,
@@ -289,19 +324,21 @@ def plot_spatial_snapshots(
         cbar_size='5%',
         cbar_pad=0.4):
     """
-    Plot a sequence of snapshots of spatiotemporally binned firing rates.
+    Plots a sequence of snapshots of spatiotemporally binned firing rates.
 
     Parameters
     ----------
     gs
         A gridspec cell to plot into.
-    populations
-        List of population names.
     all_inst_rates_bintime_binspace
         Open h5 file with all instantaneous firing rates binned in time and
         space.
+    populations
+        List of population names.
     binsize_time
         Temporal bin size in ms.
+    space_bins
+        Spatial bins.
     orientation
         Vertical or horizontal plot.
     start_time
@@ -436,6 +473,42 @@ def plot_crosscorrelation_funcs_thalamic_pulses(
         cbar_height=0.02,  # horizontal
         fit_speed=False):
     """
+    Plots cross-correlation functions with respect to thalamic pulses.
+
+    Parameters
+    ----------
+    gs
+        A gridspec cell to plot into.
+    all_CCfuncs_thalamic_pulses
+    populations
+        List of population names.
+    extent
+        Network extent (in mm).
+    th_radius
+        Radius of thalamic input (in mm).
+    layer_labels
+        Layer labels.
+    wspace
+        Width space of gridspec.
+    cbar
+        Whether to show a color bar.
+    cbar_orientation
+        Orientation of the color bar.
+    cbar_left
+        Color bar argument for vertical orientation.
+    cbar_width
+        Color bar argument for vertical orientation.
+    cbar_bottom
+        Color bar argument for horizontal orientation.
+    cbar_height
+        Color bar argument for horizontal orientation.
+    fit_speed
+        Whether to fit the propogation speed.
+
+    Returns
+    -------
+    ax_return
+        Axis to put a label to.
     """
     ncols = int(np.floor(np.sqrt(len(populations))))
     nrows = len(populations) // ncols
@@ -574,6 +647,29 @@ def plot_theory_overview(
         gs, working_point, frequencies, power, sensitivity,
         populations, plot_dict):
     """
+    Overview of results from mean-field prediction using NNMT.
+
+    Parameters
+    ----------
+    gs
+        A gridspec cell to plot into.
+    working_point
+        Working point computed by NNMT.
+    frequencies
+        Frequencies for power spectra.
+    power
+        Power corresponding to frequencies.
+    sensitivity
+        Sensitivity measure from Bos et al. (2016).
+    populations
+        List of population names.
+    plot_dict
+        Dictionary with plotting parameters.
+
+    Returns
+    -------
+    axes
+        Axes to put labels to.    
     """
     axes = [0] * 5
     gs_cols = gridspec.GridSpecFromSubplotSpec(3, 12, subplot_spec=gs,
@@ -669,7 +765,7 @@ def plot_boxcharts(
     gs, data, populations, pop_labels, pop_colors, xlabel='', ylabel='',
         xticklabels=True, ylims=False):
     """
-    TODO
+    Plots boxcharts of generic data.
     """
     ax = plt.subplot(gs)
     for loc in ['top', 'right']:
@@ -716,7 +812,7 @@ def plot_barcharts(
     gs, data, populations, pop_labels, pop_colors, xlabel='', ylabel='',
         xticklabels=True, ylims=False):
     """
-    TODO
+    Plots barcharts of generic data.
     """
     ax = plt.subplot(gs)
     for loc in ['top', 'right']:
@@ -750,8 +846,6 @@ def plot_layer_panels(
     """
     Generic function to plot four vertically arranged panels, one for each
     layer, iterating over populations.
-
-    TODO
     """
     gs_c = gridspec.GridSpecFromSubplotSpec(
         4, 1, subplot_spec=gs)  # , hspace=0.5)
@@ -812,8 +906,6 @@ def plot_population_panels(
     """
     Generic function to plot four vertically arranged panels, one for each
     population.
-
-    TODO
     """
     num_pops = len(populations)
 
@@ -872,7 +964,7 @@ def plot_parameters_matrix(
         show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.6,
         cmap='viridis', set_bad=[], cbar=True, vmin=None, vmax=None):
     """
-    TODO
+    Plots matrix for network parameters.
 
     Parameters
     ----------
@@ -979,7 +1071,8 @@ def plot_parameters_vector(
         show_num='unique', num_format='{:.0f}', num_fontsize_scale=0.6,
         cmap='viridis', set_bad=[], cbar=True, cbar_size='25%', vmin=None, vmax=None):
     """
-    TODO
+    Plots vector for network parameters.
+
     Parameters
     ----------
     show_num
@@ -1044,6 +1137,7 @@ def plot_parameters_vector(
 def _plot_parameters_show_numbers(
         ax, data, show_num, num_format, num_fontsize_scale):
     """
+    Adds numbers to parameters plot.
     """
     if show_num == 'unique':
         values, flat_indices = np.unique(data, return_index=True)
@@ -1071,7 +1165,7 @@ def _plot_parameters_show_numbers(
 def plotfunc_distributions(
         ax, X, i, bins, data, pop_colors, MaxNLocatorNBins):
     """
-    TODO
+    Inner plot function for distributions.
     """
     ax.hist(
         data[X],
@@ -1090,7 +1184,7 @@ def plotfunc_distributions(
 def plotfunc_PSDs(
         ax, X, i, data, pop_colors, psd_max_freq):
     """
-    TODO ax limits and ticklabels
+    Inner plot function for power spectral densities.
     """
     # return if no data
     if isinstance(data[X], h5py._hl.dataset.Dataset) and data[X].size == 0:
@@ -1121,6 +1215,7 @@ def plotfunc_CCs_distance(
         markersize_scale=0.4,
         nblocks=3):
     """
+    Inner plot function for cross-correlation coefficients with distance.
     """
     # return if no data
     if isinstance(data[X], h5py._hl.dataset.Dataset) and data[X].size == 0:
@@ -1159,7 +1254,7 @@ def plotfunc_instantaneous_rates(
         time_step,
         time_interval):
     """
-    TODO
+    Inner plot function for instantaneous firing rates.
     """
     data = load_h5_to_sparse_X(X, sptrains)
 
@@ -1186,7 +1281,7 @@ def plotfunc_instantaneous_rates(
 
 def plotfunc_theory_power_spectra(ax, X, i, data, pop_colors):
     """
-    TODO
+    Inner plot function for power spectra calculated from theory.
     """
     frequencies = data[0]
     power = data[1]
@@ -1211,7 +1306,7 @@ def colorbar(
         powerlimits=False,
         **kwargs):
     """
-    TODO
+    Custom color bar.
     """
     divider = make_axes_locatable(ax)
     cax = divider.append_axes(axis, size=size, pad=pad)
@@ -1256,7 +1351,7 @@ def savefig(
     """
     Saves the current figure to format given in the plotting parameters.
 
-    TODO: note that inkscape etc. for conversion are not available on JURECA
+    Note that inkscape etc. for conversion are not available on JURECA.
 
     Parameters
     ----------

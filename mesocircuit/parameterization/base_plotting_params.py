@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Plotting Parameters
-------------------------------------------
+"""Plotting parameters
+----------------------
 
 A dictionary with parameters defining the plotting.
 

@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: System Parameters
-----------------------------------------
+"""System parameters
+--------------------
 
 A dictionary with parameters defining machine configurations.
 

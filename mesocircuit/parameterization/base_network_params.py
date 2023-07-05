@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Network Parameters
------------------------------------------
+"""Network parameters
+---------------------
 
 A dictionary with base network and neuron parameters is enhanced with derived
 parameters.

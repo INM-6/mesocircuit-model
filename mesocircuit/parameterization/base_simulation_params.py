@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Simulation Parameters
---------------------------------------------
+"""Simulation parameters
+------------------------
 
 A dictionary with parameters defining the simulation.
 

@@ -1,5 +1,7 @@
-"""Run simulation of mesocircuit with evoked activity for live paper
---------------------------------------------------------------------
+"""PyNEST Mesocircuit: Run Live Paper Simulation
+------------------------------------------------
+
+Mesocircuit with evoked activity for live paper.
 
 This script needs to be executed before `live_paper_plotting.ipnb`.
 """

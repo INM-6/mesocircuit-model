@@ -1,8 +1,9 @@
-"""PyNEST Mesocircuit: Mesocircuit Framework
---------------------------------------------
+"""Mesocircuit framework
+------------------------
 
-Parameterspace evaluation and job execution.
+Parameterspace evaluation and handling of job execution.
 
+Definition of the main classes MesocircuitExperiment and Mesocircuit.
 """
 
 import mesocircuit
@@ -35,7 +36,7 @@ class MesocircuitExperiment():
 
     Parameters
     ----------
-    name : str
+    name_exp : str
         Name of the experiment. All corresponding data and scripts will be
         written to a folder with this name.
     custom_params : dict, optional
@@ -84,7 +85,12 @@ class MesocircuitExperiment():
 
     def _auto_data_directory(self, dirname='mesocircuit_data'):
         """
-        Automatically determine a data directory.
+        Automatically determines a data directory.
+
+        Parameters
+        ----------
+        dirname
+            Name of data directory.
         """
         try:
             data_dir = os.path.join(os.environ['SCRATCH'],
@@ -94,7 +100,7 @@ class MesocircuitExperiment():
             data_dir = os.path.join(os.getcwd(), dirname)
         return data_dir
 
-    def _evaluate_parameters(self, custom_params):
+    def _evaluate_parameters(self, custom_params={}):
         """
         Evaluates parameters and creates a parameter view for the experiment.
 
@@ -108,6 +114,8 @@ class MesocircuitExperiment():
         -------
         parameterview
             Overview of parameter spaces and corresponding IDs.
+        circuits
+            Mesocircuit objects.
         """
         # parameterspaces built with the parameters module
         parameterspaces = ps.ParameterSpace({})
@@ -137,7 +145,6 @@ class MesocircuitExperiment():
                         self._custom_params_for_parameterview(
                             parameterview['custom_params'], dic, param, value)
 
-        # TODO DOCUMENT THAT PARAMETER RANGES ARE ONLY ALLOWED FOR SIM_DICT AND NET_DICT
         # only sim_dict and net_dict are used to compute a unique id
         dicts_unique = ['sim_dict', 'net_dict']
         sub_paramspace = ps.ParameterSpace(
@@ -242,6 +249,23 @@ class MesocircuitExperiment():
 
     def _custom_params_for_parameterview(self, old_custom_params, dic, param, value):
         """
+        Handles custom parameters for parameter view by merging dictionaries.
+
+        Parameters
+        ----------
+        old_custom_params
+            Dictionary with all old custom parameters.
+        dic
+            Parameter dictionary name.
+        param
+            New parameter to be added.
+        value
+            Value of new parameter.
+
+        Returns
+        -------
+        custom_params
+            Updated dictionary with custom parameters.
         """
         def nested_dict_from_list(keylist, val):
             dic = {keylist[-1]: val}
@@ -287,6 +311,8 @@ class Mesocircuit():
     ----------
     data_dir_exp
         Absolute path to directory of corresponding MesocircuitExperiment.
+    name_exp
+        Name of the MesocircuitExperiment.
     ps_id
         Unique parameter set id.
     load_parameters : bool
@@ -296,6 +322,7 @@ class Mesocircuit():
 
     def __init__(self, data_dir='', name_exp='', ps_id='', load_parameters=False):
         """
+        Instantiating.
         """
         self.data_dir = data_dir
         self.name_exp = name_exp
@@ -318,6 +345,10 @@ class Mesocircuit():
         ----------
         paramset
             Parameter set corresponding to ps_id.
+
+        Returns
+        -------
+            Updated parameter set.
         """
         print(f'Evaluating parameters for ps_id: {self.ps_id}')
         # set paths and create directories for parameters, jobscripts and
@@ -687,7 +718,7 @@ unset DISPLAY
 
     def run_jobs(self, jobs=['network', 'analysis_and_plotting'], machine='hpc'):
         """
-        Runs jobs of a single parameterset.
+        Runs jobs of a single parameter set.
 
         Parameters
         ----------

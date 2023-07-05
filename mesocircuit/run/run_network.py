@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Run Simulation
--------------------------------------
+"""Run simulation
+-----------------
 
 Run a simulation of the mesocircuit model.
 """

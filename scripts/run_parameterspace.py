@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Run Parameterspace
------------------------------------------
+"""Run parameter space
+---------------------
 
 This example script shows how to iterate over parameter ranges and generate
 comparison plots.
@@ -17,6 +17,8 @@ import parameters as ps
 ###############################################################################
 # Define a 2x3 parameter space for the downscaled Potjans-Diesmann microcircuit
 # varying the relative inhibition and the Poisson background rate.
+# Parameter ranges are only allowed for net_dict and sim_dict since only these
+# two dictionaries are used to create a unique hash.
 
 name = 'local_microcircuit_PD_g_vs_bg_rate'
 params_key = 'local_microcircuit_PD'

@@ -1,5 +1,6 @@
-'''misc input/output file functions'''
-
+"""Input-output functions
+-------------------------
+"""
 import numpy as np
 import scipy.sparse as sp
 import os

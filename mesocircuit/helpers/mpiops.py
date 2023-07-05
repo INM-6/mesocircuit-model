@@ -1,3 +1,10 @@
+"""MPI operations
+-----------------
+
+Gatherv implementation.
+
+"""
+
 import numpy as np
 from mpi4py import MPI
 
@@ -7,7 +14,7 @@ RANK = COMM.Get_rank()
 
 def GathervRecordArray(data, op=MPI.COMM_WORLD.Gatherv, root=0):
     """
-    simplify `MPI:Gatherv` for structured/record ndarrays with mixed data types
+    Simplifies `MPI:Gatherv` for structured/record ndarrays with mixed data types
     (int/float types as supported by `MPI:Gatherv`)
 
     Parameters
