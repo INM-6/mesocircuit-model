@@ -28,7 +28,7 @@ def ztransform(x):
     return ztrans
 
 
-def pdist_pbc(self, X, extent=(1, 1), edge_wrap=False):
+def pdist_pbc(X, extent=(1, 1), edge_wrap=False):
     '''Sort of clone of `scipy.spatial.distance.pdist(xy, metric='euclidean')`
     that supports periodic boundary conditions
 
