@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Run Mean-field Theory
---------------------------------------------
+"""Run mean-field theory
+------------------------
 
 This example script shows a mean-field theoretical analysis using for network
 parameters using

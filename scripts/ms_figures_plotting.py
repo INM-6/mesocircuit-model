@@ -1,5 +1,5 @@
-"""Plot  manuscript figures
----------------------------
+"""Plotting for manuscript figures
+----------------------------------
 
 This script needs to be executed after `ms_figures_simulations.py`.
 """

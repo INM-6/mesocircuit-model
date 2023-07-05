@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Run Mesocircuit
---------------------------------------
+"""Run mesocircuit
+------------------
 
 Main example script to run a simulation of the mesocircuit with NEST and 
 subsequently analyze and plot the results.

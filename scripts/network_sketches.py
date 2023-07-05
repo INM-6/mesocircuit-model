@@ -1,3 +1,7 @@
+""" Network sketches
+--------------------
+"""
+
 import mesocircuit
 from mesocircuit.parameterization.base_network_params import net_dict
 from mesocircuit.parameterization.base_plotting_params import plot_dict
@@ -16,9 +20,16 @@ matplotlib.rcParams.update(rcParams)
 
 
 def figure_network_model_sketches(output_dir):
-    '''
+    """
     Network sketches for manuscript.
-    '''
+
+    Reference model and upscaled model.
+
+    Parameters
+    ----------
+    output_dir
+        Output directory.
+    """
     fig = plt.figure(figsize=(plot_dict['fig_width_2col'], 4))
     gs = gridspec.GridSpec(1, 2)
     gs.update(left=-0.05, right=1.05, bottom=0, top=1, hspace=0, wspace=0)
@@ -52,6 +63,14 @@ def figure_network_model_sketches(output_dir):
 
 def figure_network_model_sketch(output_dir, model='upscaled'):
     """
+    Figure with a single network sketch of a given model name.
+
+    Parameters
+    ----------
+    output_dir
+        Output directory.
+    model
+        Model name. Options are 'reference' or 'upscaled'.
     """
     fig = plt.figure(figsize=(plot_dict['fig_width_1col'], 4))
     gs = gridspec.GridSpec(1, 1)
@@ -66,6 +85,12 @@ def figure_network_model_sketch(output_dir, model='upscaled'):
 
 def figure_mesocircuit_icon(output_dir):
     """
+    Figure with a mesocircuit icon.
+
+    Parameters
+    ----------
+    output_dir
+        Output directory.
     """
     fig = plt.figure(figsize=(1.5, 1))
     gs = gridspec.GridSpec(1, 1)
@@ -164,7 +189,7 @@ def plot_network_model_sketch(gs, model='upscaled'):
     gs
         A gridspec cell to plot into.
     model
-        'reference' or 'upscaled'
+        Model name. Options are 'reference' or 'upscaled'.
     """
     np.random.seed(1234)
 
@@ -492,9 +517,17 @@ def plot_network_model_sketch(gs, model='upscaled'):
 
 
 def choose_connections_to_draw(output_dir, threshold=300):
-    '''
+    """
+    Helps to decide where to put the in-degree threshold for network sketch.
+
     Data from reference model.
-    '''
+
+    Parameters
+    ----------
+    threshold
+        Maximum in-degree to be shown.
+    """
+
     matrix = net_dict['indegrees_1mm2_SvA2018']
     matrix_int = np.round(net_dict['indegrees_1mm2_SvA2018']).astype(int)
 
@@ -541,9 +574,15 @@ def choose_connections_to_draw(output_dir, threshold=300):
 
 
 class Arrow3D(FancyArrowPatch):
-    '''
-    from https://gist.github.com/WetHat/1d6cd0f7309535311a539b42cccca89c
-    '''
+    """
+    Arrow class for 3D sketches.
+
+    From https://gist.github.com/WetHat/1d6cd0f7309535311a539b42cccca89c
+
+    Parameters
+    ----------
+    FancyArrowPatch
+    """
 
     def __init__(self, x, y, z, dx, dy, dz, *args, **kwargs):
         super().__init__((0, 0), (0, 0), *args, **kwargs)
@@ -571,10 +610,13 @@ class Arrow3D(FancyArrowPatch):
 
 
 def _arrow3D(ax, x, y, z, dx, dy, dz, *args, **kwargs):
-    '''Add an 3d arrow to an `Axes3D` instance.'''
+    """
+    Adds a 3d arrow to an `Axes3D` instance.
+    """
 
     arrow = Arrow3D(x, y, z, dx, dy, dz, *args, **kwargs)
     ax.add_artist(arrow)
+    return
 
 
 setattr(Axes3D, 'arrow3D', _arrow3D)
@@ -583,6 +625,9 @@ setattr(Axes3D, 'arrow3D', _arrow3D)
 def draw_edge_arrow_xzplane(
         ax, x, y, z, xshift1, zshift1, xshift2, zshift2,
         color='k', mutation_scale=10, sign='exc'):
+    """
+    Draws an arrow in the x-z plane.
+    """
 
     if sign == 'exc':
         head = '-|>'
@@ -630,6 +675,9 @@ def draw_edge_arrow_xzplane(
 
 
 def inhibitory_arrowhead_front(ax, x, z, color):
+    """
+    Circular arrow head for inhibitory connections.
+    """
     head = Circle(xy=(x, z), radius=0.02,
                   facecolor=color,
                   edgecolor=None)

@@ -1,3 +1,10 @@
+"""Parameter sets
+-----------------
+
+The dictionary ps_dicts defines parameter sets for overwriting the base
+parameters.
+"""
+
 import numpy as np
 
 local_sim_dict = {
@@ -9,7 +16,7 @@ net_dict_mesocircuit_MAMV1 = {
     'base_model': 'SvA2018',
     'g': -11.,
     'neuron_params': {'tau_syn_ex': 2., 'tau_syn_in': 8.},
-    'indegree_scaling': np.array([[5,4,0.9], [3, 3, 1.8], [7, 7, 0.9], [6,7,0.75], [7, 6, 0.75]]),
+    'indegree_scaling': np.array([[5, 4, 0.9], [3, 3, 1.8], [7, 7, 0.9], [6, 7, 0.75], [7, 6, 0.75]]),
     'ext_indegree_scaling': np.array([[0, 1.1], [2, 1.08]]),
     'ext_indegree_scaling_global': 1.04,
 }

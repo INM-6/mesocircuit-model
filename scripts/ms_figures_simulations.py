@@ -1,5 +1,5 @@
-"""Run simulations for manuscript figures
------------------------------------------
+"""Simulations for manuscript figures
+-------------------------------------
 
 This script needs to be executed before `ms_figures_plotting.py`.
 """
@@ -13,9 +13,10 @@ import parametersets
 # 1: reference (1mm2 model of macaque V1)
 # 2: upscaled_1mm2 (full upscaled model simulated but only center 1mm2 analyzed)
 # 3: evoked (full upscaled model with evoked activity by thalamocortical
-#    stimulation)
+# stimulation)
 # 4: upscaled_CCs_only (full upscaled model simulated but only analysis for
-#    correlation coefficients)
+# correlation coefficients)
+
 
 model = 1
 run_jobs = True

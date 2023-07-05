@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Run Parameterspace
------------------------------------------
+"""Run parameter space
+---------------------
 
 This example script shows how to iterate over parameter ranges and generate
 comparison plots.
