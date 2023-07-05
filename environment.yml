@@ -36,10 +36,15 @@ dependencies:
   - jupyterlab
   - numba
   - pip
+  - docopt
   - sphinx
+  - numpydoc
+  - sphinx-autoapi
   - sphinxcontrib-bibtex
+  - sphinx-tabs
+  - sphinx-gallery
   - pip:
-      - sphinx_rtd_theme
+      - nnmt
       - git+https://github.com/LFPy/LFPy@v2.2.6
       - git+https://github.com/NeuralEnsemble/parameters
       - git+https://github.com/INM-6/hybridLFPy@master
