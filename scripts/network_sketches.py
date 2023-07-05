@@ -1,5 +1,7 @@
 """ Network sketches
 --------------------
+
+Diagrams for illustrating network structure and connectivity.
 """
 
 import mesocircuit
