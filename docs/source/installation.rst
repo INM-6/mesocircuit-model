@@ -17,7 +17,7 @@ Load modules and general exports
 
 ::
 
-   module load Stages/2022 StdEnv/2022 CMake GCC GSL jemalloc Boost ParaStationMPI Python SciPy-Stack mpi4py h5py libtool/.2.4.6
+   module load Stages/2023 StdEnv/2023 CMake GCC GSL jemalloc Boost ParaStationMPI Python SciPy-Stack mpi4py h5py
 
    jutil env activate -p <XXX>
    export USERNAME=<XXX>
@@ -36,11 +36,11 @@ Install NEST
    mkdir -p $REPO_DIR
    cd $REPO_DIR
    git clone https://github.com/nest/nest-simulator.git
-   git checkout tags/v3.3
+   git checkout tags/v3.4
 
    export NEST_SRC_DIR=$REPO_DIR/nest-simulator
-   export NEST_BUILD_DIR=$SOFT_DIR/nest/nest_3_3/build
-   export NEST_INSTALL_DIR=$SOFT_DIR/nest/nest_3_3/install
+   export NEST_BUILD_DIR=$SOFT_DIR/nest/nest_3_4/build
+   export NEST_INSTALL_DIR=$SOFT_DIR/nest/nest_3_4/install
 
    mkdir -p $NEST_BUILD_DIR
    cd $NEST_BUILD_DIR
