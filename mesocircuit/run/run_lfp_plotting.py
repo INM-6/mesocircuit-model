@@ -136,7 +136,6 @@ fig.subplots_adjust(left=0.08, right=1, bottom=0.0, top=1.)
 lfpplt.morphology_table(ax, PS, annotations=False)
 fig.savefig(os.path.join(path_fig_files, 'figure_06.pdf'))
 
-raise Exception
 
 # Figure 7A
 CONTACTPOS = ((600, 600), (600, 1000), (-1400, -1400))
@@ -359,7 +358,7 @@ fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_III.pdf'))
 # Figure 8: new
 fig, axes = plt.subplots(
     2, 2, figsize=(
-        plot_dict['fig_width_2col'], plot_dict['fig_width_1col']), sharex=True)
+        plot_dict['fig_width_2col'], plot_dict['fig_width_1col'] * 1.25), sharex=True)
 fig.subplots_adjust(wspace=0.15, hspace=0.3)
 axes = axes.flatten()
 
@@ -378,10 +377,23 @@ lfpplt.remove_axis_junk(axd)
 plt.setp(axd.get_yticklabels(), visible=False)
 
 # file with precomputed pairwise correlations
-fname = os.path.join(
+try:
+    # DUMB!!! - hardcode file paths to precomputed correlations
+    fname = os.path.join(
+        circuit.data_dir, 
+        'upscaled_CCs_only', 
+        '3be54d189b4f3a23c4859e0aea6b5fa8', 
+        'processed_data', 
+        'all_CCs_distances.h5')
+    assert os.path.isfile(fname)
+except AssertionError:
+    fname = os.path.join(
     circuit.data_dir_circuit, 
     'processed_data', 
     'all_CCs_distances.h5')
+    print(f'NOTE: falling back to pairwise correlations ' + 
+          'for figure_08.pdf in file {fname}')
+
 with h5py.File(fname, 'r') as f:
     p = Plotting(circuit)
     for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [40, 10])):
@@ -393,12 +405,16 @@ with h5py.File(fname, 'r') as f:
     ax.legend(loc='best', frameon=False, numpoints=3)
 
     # add entries with NaNs to mask
-    c = f[X]['ccs'][()]
-    mask = c != np.nan
+    for i, X in enumerate(['L23E', 'L23I']):
+        c = f[X]['ccs'][()]
+        mask = c != np.nan
 
-    bins = np.linspace(np.nanmin(c[mask]), np.nanmax(c[mask]), nbins)
-    axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
-             color=plot_dict['pop_colors'][i], clip_on=False)
+        # bins = np.linspace(np.nanmin(c[mask]), np.nanmax(c[mask]), nbins)
+        bins = np.linspace(c[mask].mean() - c[mask].std() * 1.5, 
+                           c[mask].mean() + c[mask].std() * 1.5, 
+                           nbins)
+        axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
+                color=plot_dict['pop_colors'][i], clip_on=False)
 
 # beautify
 axd.set_xticks([axd.axis()[1]])
@@ -416,28 +432,29 @@ paneltitles = [
     r'$CC_\mathrm{MUA}$']
 for i, (ax, data, fit_exp, title) in enumerate(
         zip(axes[1:], fnames, [True, True, True], paneltitles)):
-    axd = lfpplt.plot_signal_correlation_or_covariance(
+    ax_hist = lfpplt.plot_signal_correlation_or_covariance(
         ax=ax, PS=PS, data=data,
         extents=[net_dict['extent'] * 1E3] * 2,
         method=np.corrcoef,
         fit_exp=fit_exp)
     ax.set_title(title)
     if i == 0:
-        axd.set_xlabel('')
+        ax_hist.set_xlabel('')
         ax.set_xlabel('')
     else:
-        axd.set_title('')
+        ax_hist.set_title('')
 
 for i, ax in enumerate(axes):
-    ax.axis(ax.axis('tight'))
     lfpplt.add_label(ax, 'ABCD'[i])
     if i % 2 > 0:
         ax.set_ylabel('')
     if i < 2:
         plt.setp(ax.get_xticklabels(), visible=False)
-
+    ax.axis(ax.axis('tight'))
+    
 
 fig.savefig(os.path.join(path_fig_files, 'figure_08.pdf'))
+
 
 
 # Figure 9: LFP/CSD/MUA coherences
