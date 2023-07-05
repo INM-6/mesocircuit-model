@@ -6,18 +6,15 @@ Mesocircuit Model
    :hidden:
    :maxdepth: 2
 
-   installation
+   overview
    citing
    authors
    acknowledgments
    license
 
-.. image:: images/network_model_sketch_upscaled.png
-  :width: 300
-  :alt: Network model sketch upscaled
+A mesoscopic layered cortical network model with distance-dependent connectivity for spiking activity and local field potentials.
 
-A mesoscopic layered cortical network model for spiking activity and local field
-potentials.
+This repository provides the functionality to define, simulate, and analyze network models such as the mesocircuit model  in a self-contained framework.
 
 Source code on GitHub: https://github.com/INM-6/mesocircuit-model
 
