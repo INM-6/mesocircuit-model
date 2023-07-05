@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Spike analysis
--------------------------------------
+"""Spike analysis
+-----------------
 
 Functions to preprocess spike activity and compute statistics.
 
@@ -517,6 +517,11 @@ def _positions_X(positions):
     ----------
     positions
         Positions of population X.
+
+    Returns
+    -------
+    pos_dic
+        Returns a position dictionary.
     """
     pos_dic = {'x-position_mm': positions['x-position_mm'],
                'y-position_mm': positions['y-position_mm']}

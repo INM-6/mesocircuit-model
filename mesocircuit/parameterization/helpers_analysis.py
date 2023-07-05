@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Helper Functions Analysis
-------------------------------------------------
+"""Helper functions analysis
+----------------------------
 
 Helper function for deriving dependent analysis parameters from base parameter
 dictionaries.

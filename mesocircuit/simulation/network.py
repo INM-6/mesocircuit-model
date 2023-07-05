@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Network Class
-------------------------------------
+"""Network class
+----------------
 
 Main file of the mesocircuit defining the ``Network`` class with functions to
 build and simulate the network.

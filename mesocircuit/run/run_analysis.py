@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Run Analysis
------------------------------------
+"""Run analysis
+---------------
 
 Analyze the spiking network activity of the mesocircuit.
 """

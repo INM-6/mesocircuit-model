@@ -1,7 +1,7 @@
-"""PyNEST Mesocircuit: Figures
-------------------------------
+"""Figures
+----------
 
-Definition of figures plotted with Plotting class in plotting.py.
+Definition of default figures plotted with plotting.py.
 """
 
 import mesocircuit.plotting.plotting as plot
@@ -212,9 +212,9 @@ def raster(circuit, all_sptrains, all_pos_sorting_arrays):
         gs.update(top=0.98, bottom=0.1, left=left, right=right)
         ax = plot.plot_raster(
             gs[0, 0],
-            pops,
             all_sptrains,
             all_pos_sorting_arrays,
+            pops,
             circuit.plot_dict['pop_colors'],
             circuit.plot_dict['pop_labels'],
             circuit.sim_dict['sim_resolution'],
@@ -376,8 +376,8 @@ def spatial_snapshots(circuit, all_inst_rates_bintime_binspace):
         gs.update(left=0.09, right=0.97, top=1, bottom=0.1)
         ax = plot.plot_spatial_snapshots(
             gs[0, 0],
-            pops,
             all_inst_rates_bintime_binspace,
+            pops,
             circuit.ana_dict['binsize_time'],
             space_bins,
             circuit.plot_dict['pop_labels'],
@@ -400,8 +400,7 @@ def crosscorrelation_funcs_thalamic_pulses(circuit, all_CCfuncs_thalamic_pulses)
     ----------
     circuit
         A mesocircuit.Mesocircuit object with loaded parameters.
-    plot
-    all_CCfuncs_thalamus_center
+    all_CCfuncs_thalamic pulse
     """
     # only call plot function if data is not empty
     if 'cc_funcs' not in all_CCfuncs_thalamic_pulses[circuit.ana_dict['Y'][0]]:
@@ -430,6 +429,24 @@ def crosscorrelation_funcs_thalamic_pulses(circuit, all_CCfuncs_thalamic_pulses)
 
 def theory_overview(circuit, working_point, frequencies, power, sensitivity):
     """
+    Creates an overview figure with results from mean-field prediction using NNMT.
+
+    Parameters
+    ----------
+    circuit
+        A mesocircuit.Mesocircuit object with loaded parameters.
+    working_point
+        Working point computed by NNMT.
+    frequencies
+        Frequencies for power spectra.
+    power
+        Power corresponding to frequencies.
+    sensitivity
+        Sensitivity measure from Bos et al. (2016).
+    populations
+        List of population names.
+    plot_dict
+        Dictionary with plotting parameters.
     """
     print('Plotting theory overview.')
 

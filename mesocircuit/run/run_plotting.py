@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Run Plotting
------------------------------------
+"""Run plotting
+---------------
 
 Create plots of the network activity of the mesocircuit.
 """
