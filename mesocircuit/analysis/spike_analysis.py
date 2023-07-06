@@ -15,9 +15,10 @@ import warnings
 import h5py
 import numpy as np
 import scipy.sparse as sp
-import scipy.spatial as spatial
 import pickle
 import json
+from hybridLFPy import helperfun
+
 
 # initialize MPI
 COMM = MPI.COMM_WORLD
@@ -1000,13 +1001,50 @@ def _compute_ccs_distances(X, circuit, sptrains_X, binsize_time, positions_X):
 
     # pairwise-distances between correlated neurons
     xy_pos = np.vstack((x_pos, y_pos)).T
-    distances = stats.pdist_pbc(xy_pos, 
-                                extent=[self.net_dict['extent']] * 2, 
-                                edge_wrap=True)
+    distances = _pdist_pbc(xy_pos,
+                           extent=[circuit.net_dict['extent']] * 2, 
+                           edge_wrap=True)
 
     ccs_dic = {'ccs': ccs,
                'distances_mm': distances}
     return ccs_dic
+
+
+def _pdist_pbc(xy_pos, extent=(1, 1), edge_wrap=False):
+    '''Sort of clone of `scipy.spatial.distance.pdist(xy, metric='euclidean')`
+    that supports periodic boundary conditions
+
+    Parameters
+    ----------
+    xy_pos: ndarray
+        shape (n, 2) array with x- and y-positions
+    extent: len 2 tuple of floats
+        (x, y)-extent of boundary
+    edge_wrap: bool
+        if True, assume periodic boundary conditions. 
+        If False [default], produce same output as
+        `scipy.spatial.distance.pdist(xy, metric='euclidean')` 
+
+    Returns
+    -------
+    Y: ndarray
+        Returns a condensed distance matrix Y. For each :math:`i` and :math:`j`
+        (where :math:`i<j<m`),where m is the number of original observations.
+        The metric ``dist(u=X[i], v=X[j])`` is computed and stored in entry ``m
+        * i + j - ((i + 2) * (i + 1)) // 2``.
+    '''
+    d_h = np.array([])
+    for i in range(xy_pos.shape[0]):
+        d_ = helperfun._calc_radial_dist_to_cell(
+            x=xy_pos[i, 0],
+            y=xy_pos[i, 1],
+            Xpos=xy_pos[i+1:],
+            xextent=extent[0],
+            yextent=extent[1],
+            edge_wrap=edge_wrap
+        )
+        d_h = np.r_[d_h, d_]
+    return d_h
 
 
 def _compute_psds(sptrains_X, binsize_time, NFFT):
