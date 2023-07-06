@@ -1,3 +1,7 @@
+"""Helpers
+----------
+"""
+
 import numpy as np
 import json
 import operator

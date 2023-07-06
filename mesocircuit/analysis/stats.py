@@ -1,6 +1,10 @@
-#!/usr/bin/env python
-"""Generic statistics module"""
+"""Generic statistics
+---------------------
+
+"""
+
 import numpy as np
+import matplotlib.pyplot as plt
 from hybridLFPy import helperfun
 
 
@@ -26,6 +30,29 @@ def ztransform(x):
     else:
         ztrans = (x - x.mean()) / x.std()
     return ztrans
+
+
+def compute_psd(x, Fs, NFFT, detrend='mean', overlap=3 / 4):
+    """
+    Compute power sprectrum `Pxx` of signal `x` using
+    matplotlib.mlab.psd function
+
+    Parameters
+    ----------
+    x: ndarray
+        1-D array or sequence.
+    Fs: float
+        Sampling frequency.
+    NFFT: int
+        Number of data points used in each block for the FFT
+    detrend: {'none', 'mean', 'linear'} or callable, default 'mean'
+        Detrend data before fft-ing.
+    overlap: float
+        Traction of NFFT points of overlap between segments.
+    """
+    noverlap = int(overlap * NFFT)
+    return plt.mlab.psd(x, NFFT=NFFT, Fs=Fs,
+                        detrend=detrend, noverlap=noverlap)
 
 
 def pdist_pbc(X, extent=(1, 1), edge_wrap=False):

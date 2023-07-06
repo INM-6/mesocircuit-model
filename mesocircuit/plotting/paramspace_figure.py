@@ -1,3 +1,9 @@
+"""Parameter space overview figures
+-----------------------------------
+
+Combines individual figures to parameter space overview figures using latex.
+"""
+
 import os
 import matplotlib.pyplot as plt
 import subprocess
@@ -10,8 +16,6 @@ matplotlib.use('Agg')
 
 def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
     """
-    TODO use auto data dir when mesocircuit_framework is revised
-
     Creates overview figures to compare single parameter set figures across
     parameter space.
 
@@ -131,7 +135,7 @@ def parameterspace_overviews(paramspace_key, data_dir, hspace=0.7, wspace=0.5):
             label = '[align=left]' + h
             for i, r in enumerate(ranges):
                 label += r"\\ "
-                val = psview[paramspace_key]['paramsets'][h][r[0]][r[1]]
+                val = psview['paramsets'][h][r[0]][r[1]]
                 label += f'{__strfmt(r[0])}[{__strfmt(r[1])}] = {__strfmt(val)}'
 
             # position

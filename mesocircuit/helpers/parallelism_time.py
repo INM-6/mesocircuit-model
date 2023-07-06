@@ -1,3 +1,7 @@
+"""Parallelization and time recording
+-------------------------------------
+"""
+
 import time
 import numpy as np
 

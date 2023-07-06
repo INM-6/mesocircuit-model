@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Run Plotting
------------------------------------
+"""Run plotting
+---------------
 
 Create plots of the network activity of the mesocircuit.
 """
@@ -27,10 +27,7 @@ circuit = mesoframe.Mesocircuit(
     load_parameters=True)
 
 ##########################################################################
-# Instantiate a Plotting object.
 # Load preprocessed data and pre-computed statistics.
-
-pl = plotting.Plotting(circuit)
 
 d = {}
 for datatype in np.append(circuit.ana_dict['datatypes_preprocess'],
@@ -47,25 +44,25 @@ for datatype in np.append(circuit.ana_dict['datatypes_preprocess'],
 
 functions = [
     [figures.parameters,
-     [pl]],
+     [circuit]],
 
     [figures.raster,
-     [pl, d['all_sptrains'], d['all_pos_sorting_arrays']]],
+     [circuit, d['all_sptrains'], d['all_pos_sorting_arrays']]],
 
     [figures.instantaneous_firing_rates,
-     [pl, d['all_sptrains_bintime']]],
+     [circuit, d['all_sptrains_bintime']]],
 
     [figures.statistics_overview,
-     [pl, d['all_FRs'], d['all_LVs'], d['all_CCs_distances'], d['all_PSDs']]],
+     [circuit, d['all_FRs'], d['all_LVs'], d['all_CCs_distances'], d['all_PSDs']]],
 
     [figures.corrcoef_distance,
-     [pl, d['all_CCs_distances']]],
+     [circuit, d['all_CCs_distances']]],
 
     [figures.spatial_snapshots,
-     [pl, d['all_inst_rates_bintime_binspace']]],
+     [circuit, d['all_inst_rates_bintime_binspace']]],
 
     [figures.crosscorrelation_funcs_thalamic_pulses,
-     [pl, d['all_CCfuncs_thalamic_pulses']]],
+     [circuit, d['all_CCfuncs_thalamic_pulses']]],
 ]
 
 pt.run_serial_functions_in_parallel(functions, os.path.basename(__file__))

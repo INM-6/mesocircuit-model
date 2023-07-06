@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Run Analysis
------------------------------------
+"""Run analysis
+---------------
 
 Analyze the spiking network activity of the mesocircuit.
 """
@@ -10,7 +10,7 @@ Analyze the spiking network activity of the mesocircuit.
 import os
 import sys
 import mesocircuit.mesocircuit_framework as mesoframe
-import mesocircuit.analysis.spike_analysis as spike_analysis
+import mesocircuit.analysis.spike_analysis as sana
 import mesocircuit.helpers.parallelism_time as pt
 
 ###############################################################################
@@ -24,16 +24,13 @@ circuit = mesoframe.Mesocircuit(
     load_parameters=True)
 
 ##########################################################################
-# Instantiate a SpikeAnalysis object, preprocess the data (spatial and temporal
-# binning), and compute statistics.
+# Preprocess the data (spatial and temporal binning), and compute statistics.
 # Time measurements are printed.
 
-sana = spike_analysis.SpikeAnalysis(circuit)
-
 functions = [
-    sana.preprocess_data,
-    sana.compute_statistics,
-    sana.merge_h5_files_populations
+    [sana.preprocess_data, [circuit]],
+    [sana.compute_statistics, [circuit]],
+    [sana.merge_h5_files_populations, [circuit]]
 ]
 
 pt.run_parallel_functions_sequentially(functions, os.path.basename(__file__))

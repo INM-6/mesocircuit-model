@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Plotting Parameters
-------------------------------------------
+"""Plotting parameters
+----------------------
 
 A dictionary with parameters defining the plotting.
 
@@ -9,28 +9,27 @@ import numpy as np
 # conversion factor from cm to inch
 cm2inch = 1. / 2.54
 
+# used by plotting.py
+rcParams = {
+    # dpi for typical journal printing
+    'figure.dpi': 300,
+    # line width
+    'lines.linewidth': 1.,
+    # label pads
+    'axes.labelpad': 0.1,
+    'xtick.major.pad': 0.2,
+    'ytick.major.pad': 0.2,
+    # handling of .svg fonts:
+    # 'path' (embed characters as paths) or 'none'
+    'svg.fonttype': 'none',
+    # font sizes
+    'font.size': 7,
+    # margin around lines
+    'axes.xmargin': 0.0,
+    'axes.ymargin': 0.0,
+}
+
 plot_dict = {
-
-    # rcParams to overwrite the default ones
-    'rcParams': {
-        # dpi for typical journal printing
-        'figure.dpi': 300,
-        # line width
-        'lines.linewidth': 1.,
-        # label pads
-        'axes.labelpad': 0.1,
-        'xtick.major.pad': 0.2,
-        'ytick.major.pad': 0.2,
-        # handling of .svg fonts:
-        # 'path' (embed characters as paths) or 'none'
-        'svg.fonttype': 'none',
-        # font sizes
-        'font.size': 7,
-        # margin around lines
-        'axes.xmargin': 0.0,
-        'axes.ymargin': 0.0,
-
-    },
 
     # plot format (use '.eps' for final figures)
     # TODO: inkscape etc. for eps conversion not available on JURECA
@@ -79,11 +78,11 @@ plot_dict = {
     # number of bins for distributions
     'distr_num_bins': 30,
     # maximum bin for rate distributions (in Hz), first is at 0
-    'distr_max_rate': 28.,
+    'distr_max_rate': 10.,
     # maximum bin for LV distributions, first is at 0
-    'distr_max_lv': 2.8,
+    'distr_max_lv': 2.,
     # maximum bin for CC distributions, symmetrically around 0)
-    'distr_max_cc': 0.08,
+    'distr_max_cc': 0.02,
 
     # maximum frequency to show for PSDs (in Hz)
     'psd_max_freq': 750,

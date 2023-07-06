@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Analysis Parameters
-------------------------------------------
+"""Analysis parameters
+----------------------
 
 A dictionary with parameters defining the network analysis.
 

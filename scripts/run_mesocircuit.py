@@ -1,5 +1,5 @@
-"""PyNEST Mesocircuit: Run Mesocircuit
---------------------------------------
+"""Run mesocircuit
+------------------
 
 Main example script to run a simulation of the mesocircuit with NEST and 
 subsequently analyze and plot the results.
@@ -30,7 +30,8 @@ import parametersets
 
 name = 'mesocircuit_MAMV1'
 # name = 'local_mesocircuit_PD'
-custom_params = parametersets.ps_dicts[name]
+params_key = name
+custom_params = parametersets.ps_dicts[params_key]
 
 ################################################################################
 # Next, we instantiate a `MesocircuitExperiment` with the custom parameters.
