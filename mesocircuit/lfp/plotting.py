@@ -161,7 +161,7 @@ def network_lfp_activity_animation(PS, net_dict, networkSim, T=(
     return fig
 
 
-def morphology_table(ax, PS):
+def morphology_table(ax, PS, annotations=True):
     '''
     plot an illustration of the different morphology files used to represent
     each cell type
@@ -169,6 +169,8 @@ def morphology_table(ax, PS):
     Arguments
     ---------
     ax: matplotlib.figure.axes
+    PS: ParameterSet
+    annotations: bool
 
     Returns
     -------
@@ -262,58 +264,95 @@ def morphology_table(ax, PS):
 
     ax.axis(ax.axis('equal'))
 
-    # plot annotations
-    i = 0
-    j = 0
-    xpos = 150
-    # prevcolor = None
-    prevpop = None
-    for layerind, morpho, depth, size, relsize, mtype in y_zip_list:
-        pop = morpho.split('_')[0]
+    if annotations:
+        # plot annotations
+        i = 0
+        j = 0
+        xpos = 150
+        # prevcolor = None
+        prevpop = None
+        for layerind, morpho, depth, size, relsize, mtype in y_zip_list:
+            pop = morpho.split('_')[0]
 
-        ax.text(xpos + 30, 300, '{:.1f}'.format(relsize),
-                ha='left',
-                clip_on=False)
-
-        if i > 0 and prevpop != pop:
-            ax.vlines(xpos, -1800, 900,
-                      clip_on=False)
-            j += 1
-
-        if j > 7:  # HACK
-            j = 7
-
-        bigsize = PS.N_Y[j]
-
-        ax.text(xpos + 30, 100, size, ha='left', clip_on=False)
-
-        ax.text(xpos + 30, 200, '{:.1f}'.format(100 * float(size) / bigsize),
-                ha='left')
-        ax.text(xpos + 30, 400, '{}'.format(totnsegs[i]))
-        ax.text(xpos + 30, 500, mtype,
-                ha='left', clip_on=False)
-        ax.text(xpos + 30, 600, layerind, ha='left', clip_on=False)
-
-        if prevpop != pop:
-            ax.text(xpos + 30, 700, bigsize, ha='left', clip_on=False)
-            ax.text(xpos + 30, 800, pop.replace('23', '2/3'),
+            ax.text(xpos + 30, 300, '{:.1f}'.format(relsize),
                     ha='left',
-                    clip_on=False
-                    )
+                    clip_on=False)
 
-        prevpop = pop
-        xpos += 300
+            if i > 0 and prevpop != pop:
+                ax.vlines(xpos, -1800, 900,
+                        clip_on=False)
+                j += 1
 
-        i += 1
+            if j > 7:  # HACK
+                j = 7
 
-    ax.text(90, 800, r'Population $Y$:', ha='right', clip_on=False)
-    ax.text(90, 700, r'Pop. size $N_Y$:', ha='right', clip_on=False)
-    ax.text(90, 600, r'Cell type $y$:', ha='right', clip_on=False)
-    ax.text(90, 500, r'Morphology $M_y$:', ha='right', clip_on=False)
-    ax.text(90, 400, r'Segments $n_\mathrm{comp}$:', ha='right', clip_on=False)
-    ax.text(90, 300, r'Occurrence $F_y$ (%):', ha='right', clip_on=False)
-    ax.text(90, 200, r'Rel. Occurr. $F_{yY}$ (%):', ha='right', clip_on=False)
-    ax.text(90, 100, r'Cell count $N_y$:', ha='right', clip_on=False)
+            bigsize = PS.N_Y[j]
+
+            ax.text(xpos + 30, 100, size, ha='left', clip_on=False)
+
+            ax.text(xpos + 30, 200, '{:.1f}'.format(100 * float(size) / bigsize),
+                    ha='left')
+            ax.text(xpos + 30, 400, '{}'.format(totnsegs[i]))
+            ax.text(xpos + 30, 500, mtype,
+                    ha='left', clip_on=False)
+            ax.text(xpos + 30, 600, layerind, ha='left', clip_on=False)
+
+            if prevpop != pop:
+                ax.text(xpos + 30, 700, bigsize, ha='left', clip_on=False)
+                ax.text(xpos + 30, 800, pop.replace('23', '2/3'),
+                        ha='left',
+                        clip_on=False
+                        )
+
+            prevpop = pop
+            xpos += 300
+
+            i += 1
+
+        ax.text(90, 800, r'Population $Y$:', ha='right', clip_on=False)
+        ax.text(90, 700, r'Pop. size $N_Y$:', ha='right', clip_on=False)
+        ax.text(90, 600, r'Cell type $y$:', ha='right', clip_on=False)
+        ax.text(90, 500, r'Morphology $M_y$:', ha='right', clip_on=False)
+        ax.text(90, 400, r'Segments $n_\mathrm{comp}$:', ha='right', clip_on=False)
+        ax.text(90, 300, r'Occurrence $F_y$ (%):', ha='right', clip_on=False)
+        ax.text(90, 200, r'Rel. Occurr. $F_{yY}$ (%):', ha='right', clip_on=False)
+        ax.text(90, 100, r'Cell count $N_y$:', ha='right', clip_on=False)
+
+    else:
+        # plot subset of annotations
+        i = 0
+        j = 0
+        xpos = 150
+        prevpop = None
+        for layerind, morpho, depth, size, relsize, mtype in y_zip_list:
+            pop = morpho.split('_')[0]
+
+            if i > 0 and prevpop != pop:
+                ax.vlines(xpos, -1800, 300,
+                        clip_on=False)
+                j += 1
+
+            if j > 7:  # HACK
+                j = 7
+
+            ax.text(xpos + 30, 100, layerind, ha='left', clip_on=False,
+                    stretch='ultra-condensed',
+                    size=matplotlib.rcParams['font.size'] * 0.8
+            )
+
+            if prevpop != pop:
+                ax.text(xpos + 30, 200, pop.replace('23', '2/3'),
+                        ha='left',
+                        clip_on=False,
+                        )
+
+            prevpop = pop
+            xpos += 300
+
+            i += 1
+
+        ax.text(90, 200, r'Population $Y$:', ha='right', clip_on=False)
+        ax.text(90, 100, r'Cell type $y$:', ha='right', clip_on=False)
 
     ax.axis(ax.axis('equal'))
 
@@ -670,7 +709,8 @@ def plot_signal_correlation_or_covariance(
     remove_axis_junk(axd)
     plt.setp(axd.get_yticklabels(), visible=False)
 
-    bins = np.linspace(np.nanmin(c), np.nanmax(c), nbins)
+    # bins = np.linspace(np.nanmin(c), np.nanmax(c), nbins)
+    bins = np.linspace(c[mask].min(), c[mask].max(), nbins)
     axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
              color='k', clip_on=False)
 

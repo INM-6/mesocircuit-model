@@ -1240,7 +1240,8 @@ def plotfunc_CCs_distance(
             markeredgecolor='none',
             linestyle='',
             zorder=zorder,
-            rasterized=True)
+            label=X if b == 0 else '_nolabel_',
+            rasterized=False)
     return
 
 
