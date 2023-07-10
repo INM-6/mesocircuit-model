@@ -46,7 +46,6 @@ import neuron  # needs to be imported before MPI
 from time import time
 import matplotlib.pyplot as plt
 import numpy as np
-import sys
 import os
 if 'DISPLAY' not in os.environ:
     import matplotlib

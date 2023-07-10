@@ -399,6 +399,7 @@ with h5py.File(fname, 'r') as f:
     for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [40, 10])):
         plot.plotfunc_CCs_distance(
             ax=ax, X=X, i=i, data=f,
+            pop_colors=plot_dict['pop_colors'],
             max_num_pairs=n_pairs,
             markersize_scale=0.4,
             nblocks=3)
@@ -445,7 +446,7 @@ for i, (ax, data, fit_exp, title) in enumerate(
         ax_hist.set_title('')
 
 for i, ax in enumerate(axes):
-    lfpplt.add_label(ax, 'ABCD'[i])
+    plot.add_label(ax, 'ABCD'[i])
     if i % 2 > 0:
         ax.set_ylabel('')
     if i < 2:
