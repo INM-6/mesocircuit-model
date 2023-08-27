@@ -689,7 +689,7 @@ def plot_signal_correlation_or_covariance(
     mask[c == np.nan] = False
 
     # highlight the average value at the different unique distances
-    unique = np.unique(r[mask])
+    unique = np.sort(np.unique(r[mask]))
     mean = []
     std = []
     for v in unique:
@@ -701,6 +701,17 @@ def plot_signal_correlation_or_covariance(
 
     ax.errorbar(unique / 1000., mean, yerr=std, xerr=None, fmt='ko-',
                 label=ylabel, markersize=2)
+
+    if True:
+        # plot individual observations
+        for v in unique:
+            y = c[mask][r[mask] == v]
+            ax.plot(np.ones(y.size) * v / 1000. + (np.random.uniform(size=y.size) - 0.5) * 0.05, 
+                    y, '.',
+                    color='gray',
+                    markersize=1, 
+                    zorder=-10,
+                    label='_nolabel_',)
 
     # set up axes stealing space from main axes
     divider = make_axes_locatable(ax)
@@ -716,10 +727,10 @@ def plot_signal_correlation_or_covariance(
 
     # beautify
     axd.set_xticks([axd.axis()[1]])
-    axd.set_title('dist.')
+    axd.set_title('hist.')
 
     ax.set_ylabel(ylabel, labelpad=0.1)
-    ax.set_xlabel('radius (mm)', labelpad=0.1)
+    ax.set_xlabel('distance (mm)', labelpad=0.1)
     axd.set_xlabel('count (-)', labelpad=0.1)
     ax.set_title(paneltitle)
 
@@ -1166,7 +1177,7 @@ def plot_coherence_vs_distance(
 
         # beautify
         ax.set_ylabel(ylabel, labelpad=0.0)
-        ax.set_xlabel('radius (mm)', labelpad=0.0)
+        ax.set_xlabel('distance (mm)', labelpad=0.0)
 
         # fit exponential to values with distance
         # cost function
@@ -1215,7 +1226,8 @@ def plot_coherence_vs_distance_vs_frequency(
         noverlap=192,
         method='mlab',
         phase_coherence=False,
-        title='LFP'
+        title='LFP',
+        show_cbar=True
 ):
 
     with h5py.File(fname, 'r') as f:
@@ -1251,12 +1263,12 @@ def plot_coherence_vs_distance_vs_frequency(
         chfreqs,
         means,
         vmin=0,
-        vmax=0.5,
+        vmax=0.25,
         cmap='viridis',
         shading='auto')
 
+    ax.set_xlabel('distance (mm)', labelpad=0)
     ax.set_ylabel('frequency (Hz)', labelpad=0)
-    ax.set_xlabel('radius (mm)', labelpad=0)
     ax.axis(ax.axis('tight'))
     ax.set_ylim(0, 500)
     ax.set_title(
@@ -1264,9 +1276,10 @@ def plot_coherence_vs_distance_vs_frequency(
         (title + r'{\:}' + title)
     )
 
-    rect = np.array(ax.get_position().bounds)
-    rect[0] += rect[2] + 0.01  # left
-    rect[2] = 0.01  # width
-    cax = fig.add_axes(rect)
-    cbar = plt.colorbar(im, cax=cax)
-    cbar.set_label('coherence', labelpad=0)
+    if show_cbar:
+        rect = np.array(ax.get_position().bounds)
+        rect[0] += rect[2] + 0.01  # left
+        rect[2] = 0.01  # width
+        cax = fig.add_axes(rect)
+        cbar = plt.colorbar(im, cax=cax)
+        cbar.set_label('coherence', labelpad=0)

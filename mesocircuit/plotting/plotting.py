@@ -1240,7 +1240,7 @@ def plotfunc_CCs_distance(
             markeredgecolor='none',
             linestyle='',
             zorder=zorder,
-            label=X if b == 0 else '_nolabel_',
+            label=X.replace('L23', 'L2/3') if b == 0 else '_nolabel_',
             rasterized=False)
     return
 

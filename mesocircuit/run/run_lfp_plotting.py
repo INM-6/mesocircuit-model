@@ -182,14 +182,15 @@ gs = GridSpec(3, 4, wspace=0.7, hspace=0.3)
 
 # Figure 7A
 CONTACTPOS = ((600, 600), (600, 1000), (-1400, -1400))
+# CONTACTPOS = ((600, 1000), (600, 600), (-1400, -1400))
 ax = fig.add_subplot(gs[:, :2])
 axes.append(ax)
 lfpplt.layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=CONTACTPOS)
 
-# Figure 7B: plot LFP in each channel
+# Figure 7B: plot LFP in each channeli
 for i in range(3):
     axes.append(fig.add_subplot(gs[i, 2]))
-T = [sim_dict['t_presim'], sim_dict['t_presim'] + 50]
+T = [sim_dict['t_presim'], sim_dict['t_presim'] + 100]
 fname = os.path.join(path_lfp_data, PS.electrodeFile)
 lfpplt.plot_single_channel_lfp_data(axes[1], PS, net_dict, ana_dict, fname,
                                     T=T, CONTACTPOS=CONTACTPOS)
@@ -224,7 +225,7 @@ fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
           os.path.join(path_lfp_data, PS.CSDFile),
           os.path.join(path_lfp_data, PS.MUAFile)]
 ylabels = [r'$(\mathrm{mV}^2/\mathrm{Hz})$',
-           r'$((\frac{\mathrm{nA}}{\mathrm{µm}^3})^2/\mathrm{Hz}})$',
+           r'$((\frac{\mathrm{nA}}{\mathrm{µm}^3})^2/\mathrm{Hz})$',
            r'$(\mathrm{s}^{-2}/\mathrm{Hz})$']
 titles = [r'$PSD_\mathrm{LFP}$', r'$PSD_\mathrm{CSD}$', r'$PSD_\mathrm{MUA}$']
 for i, (ax, fname, ylabel, title) in enumerate(zip(axes[4:], fnames,
@@ -367,7 +368,7 @@ axes = axes.flatten()
 # pairwise spike-train correlations with distance
 nbins = 51
 ylabel = 'corr. coeff.'
-paneltitle = r'$CC_{\{t_i^s\}\{t_i^s\}}}$'
+paneltitle = r'$CC_{\{t_s^i\}\{t_s^j\}}}$'
 ax = axes[0]
 
 # set up axes stealing space from main axes
@@ -419,7 +420,7 @@ with h5py.File(fname, 'r') as f:
 
 # beautify
 axd.set_xticks([axd.axis()[1]])
-axd.set_title('dist.')
+axd.set_title('hist.')
 ax.set_ylabel(ylabel, labelpad=0.1)
 ax.set_title(paneltitle)
 
@@ -457,9 +458,8 @@ for i, ax in enumerate(axes):
 fig.savefig(os.path.join(path_fig_files, 'figure_08.pdf'))
 
 
-
 # Figure 9: LFP/CSD/MUA coherences
-fig, axes = plt.subplots(1, 3, figsize=(plot_dict['fig_width_2col'],
+fig, axes = plt.subplots(3, 1, figsize=(plot_dict['fig_width_2col'],
                                         plot_dict['fig_width_1col']),
                          sharex=True, sharey=True)
 fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
@@ -558,7 +558,8 @@ for i, (ax, fname, title) in enumerate(zip(axes[1, :], fnames, titles)):
         method='mlab',
         tbin=0.5,
         TRANSIENT=sim_dict['t_presim'],
-        title=title
+        title=title,
+        show_cbar=(i == 2)
     )
     if i > 0:
         plt.setp(ax.get_yticklabels(), visible=False)
