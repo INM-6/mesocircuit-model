@@ -566,7 +566,7 @@ def plot_crosscorrelation_funcs_thalamic_pulses(
                     cax = fig.add_axes(rect)
                     cb = fig.colorbar(
                         im, cax=cax, orientation='vertical')
-                cb.set_label(r'$CC^\mathrm{FR}$', labelpad=0.1)
+                cb.set_label(r'$CC^\nu$', labelpad=0.1)
     return ax_return
 
 
