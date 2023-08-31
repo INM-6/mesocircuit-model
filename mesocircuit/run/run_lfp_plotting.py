@@ -360,8 +360,8 @@ fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_III.pdf'))
 # Figure 8: new
 fig, axes = plt.subplots(
     2, 2, figsize=(
-        plot_dict['fig_width_2col'], plot_dict['fig_width_1col'] * 1.25), sharex=True)
-fig.subplots_adjust(wspace=0.15, hspace=0.3)
+        plot_dict['fig_width_2col'], plot_dict['fig_width_1col'] * 1.5), sharex=True)
+fig.subplots_adjust(wspace=0.15, hspace=0.15)
 axes = axes.flatten()
 
 # Fig 8 A spike train correlations
@@ -416,11 +416,12 @@ with h5py.File(fname, 'r') as f:
                            c[mask].mean() + c[mask].std() * 1.5, 
                            nbins)
         axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
-                color=plot_dict['pop_colors'][i], clip_on=False)
+                color=plot_dict['pop_colors'][i], clip_on=False, density=True)
 
 # beautify
-axd.set_xticks([axd.axis()[1]])
-axd.set_title('hist.')
+# axd.set_xticks([axd.axis()[1]])
+axd.set_xticks([])
+# axd.set_xlabel('$p$ (a.u.)')
 ax.set_ylabel(ylabel, labelpad=0.1)
 ax.set_title(paneltitle)
 

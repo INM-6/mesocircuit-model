@@ -590,7 +590,8 @@ def plot_signal_correlation_or_covariance(
         method=np.cov,
         tbin=5,
         nbins=51,
-        fit_exp=True):
+        fit_exp=True,
+        density=True):
     '''
     Compute and plot covariance and correlation coefficients between pairs
     of LFP channels as function of distance
@@ -618,6 +619,8 @@ def plot_signal_correlation_or_covariance(
         or covariance matrix between pairs of channels
     fit_exp: bool
         Fit exponential curve to mean data points at each unique distance
+    density: bool
+        if True (default), show normalized histograms
 
     Returns
     -------
@@ -708,7 +711,7 @@ def plot_signal_correlation_or_covariance(
             y = c[mask][r[mask] == v]
             ax.plot(np.ones(y.size) * v / 1000. + (np.random.uniform(size=y.size) - 0.5) * 0.05, 
                     y, '.',
-                    color='gray',
+                    color=(0.7, 0.7, 0.7),
                     markersize=1, 
                     zorder=-10,
                     label='_nolabel_',)
@@ -723,15 +726,19 @@ def plot_signal_correlation_or_covariance(
     # bins = np.linspace(np.nanmin(c), np.nanmax(c), nbins)
     bins = np.linspace(c[mask].min(), c[mask].max(), nbins)
     axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
-             color='k', clip_on=False)
+             color='k', clip_on=False, density=density)
 
     # beautify
-    axd.set_xticks([axd.axis()[1]])
-    axd.set_title('hist.')
+    # axd.set_xticks([axd.axis()[1]])
+    axd.set_xticks([])
+    if density:
+        axd.set_xlabel('$p$ (a.u.)')
+    else:
+        axd.set_title('hist.')
+        axd.set_xlabel('count (-)', labelpad=0.1)
 
     ax.set_ylabel(ylabel, labelpad=0.1)
     ax.set_xlabel('distance (mm)', labelpad=0.1)
-    axd.set_xlabel('count (-)', labelpad=0.1)
     ax.set_title(paneltitle)
 
     # fit exponential to values with distance
