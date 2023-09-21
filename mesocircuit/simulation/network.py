@@ -308,7 +308,7 @@ class Network:
                     f.write('{} {}\n'.format(pop[0].global_id,
                                              pop[-1].global_id))
 
-        # Gather and write all positions to HDF5 file
+        # gather and write all positions to HDF5 file
         fn = os.path.join(self.data_dir_circuit, 'raw_data', 'positions.h5')
         if nest.Rank() == 0:
             f = h5py.File(fn, 'w')
@@ -329,13 +329,13 @@ class Network:
             names = ['nodeid', 'x-position_mm', 'y-position_mm']
             formats = ['i4', 'f8', 'f8']
 
-            # construct record arrau
+            # construct record array
             data = np.recarray((len(nodes), ), names=names, formats=formats)
             data['nodeid'] = nodes
             data['x-position_mm'] = pos[:, 0]
             data['y-position_mm'] = pos[:, 1]
 
-            # Gather to RANK 0
+            # gather to RANK 0
             DATA = GathervRecordArray(data)
 
             # write
@@ -463,8 +463,9 @@ class Network:
                    'start': self.net_dict['dc_start'],
                    'stop': (self.net_dict['dc_start'] +
                             self.net_dict['dc_dur'])}
+        # one DC generator per cortical population (thalamic population does not
+        # get DC input)
         self.dc_stim_input = nest.Create('dc_generator',
-                                         # not for thalamus
                                          n=self.net_dict['num_pops'] - 1,
                                          params=dc_dict)
         return
@@ -479,7 +480,6 @@ class Network:
             for j, source_pop in enumerate(self.pops):
                 if self.net_dict['num_synapses'][i][j] >= 0.:
 
-                    # TODO simplify these loops and conditions
                     # specify which connections exist
                     if self.net_dict['connect_method'] == 'fixedtotalnumber':
                         conn_dict_rec = {
@@ -507,7 +507,6 @@ class Network:
                                     beta=self.net_dict['beta'][i][j]),
                             'mask': {'circular': {
                                 'radius': self.net_dict['mask_radius'][i][j]}}}
-                    # TODO only temporary
                     elif self.net_dict['connect_method'] == 'distr_indegree_gauss':
                         conn_dict_rec = {
                             'rule': 'pairwise_bernoulli',
