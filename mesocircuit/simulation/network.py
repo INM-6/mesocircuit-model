@@ -136,56 +136,13 @@ class Network:
 
         return
 
-    def tar_raw_data(self,
-                     delete_files=True,
-                     filepatterns=['*.dat'],
-                     mode='w'):
-        '''
-        Create tar file of content in `raw_data/<>` and optionally
-        delete files matching given pattern.
-
-        Parameters
-        ----------
-        output_path: path
-            params.raw_nest_output_path
-        delete_files: bool
-            if True, delete files matching pattern
-        filepatterns: list of str
-            patterns of files being deleted
-        mode: String
-            tarfile.open file mode. Default: 'w'
-        '''
-        output_path = os.path.join(self.data_dir_circuit, 'raw_data')
-
-        if nest.Rank() == 0:
-            # create tarfile
-            fname = output_path + '.tar'
-            with tarfile.open(fname, mode) as t:
-                t.add(output_path,
-                      arcname=os.path.split(output_path)[-1])
-
-            # remove files from <raw_nest_output_path>
-            if delete_files:
-                for pattern in filepatterns:
-                    for p in Path(output_path).glob(pattern):
-                        while p.is_file():
-                            try:
-                                p.unlink()
-                            except OSError as e:
-                                print('Error: {} : {}'.format(p, e.strerror))
-                # remove raw directory
-                os.rmdir(output_path)
-
-        MPI.COMM_WORLD.Barrier()
-        return
-
     def __write_spikes(self, fname='spike_recorder.h5'):
         """
         Writes recorded spikes from memory to HDF5 file.
 
         Parameters
         ----------
-        fname: str
+        fname
             Output file name. Path to raw data folder will be prepended
 
         """
