@@ -494,6 +494,8 @@ class TestSuite(unittest.TestCase):
                 mean_delay_sampled = delay_offset_matrix[i, j] \
                     + mean_distance / prop_speed_matrix[i, j]
 
+                # for manually comparing the analytical and sampled delays,
+                # uncomment the following line:
                 # print(delay_lin_eff_mean_matrix[i, j], mean_delay_sampled)
                 self.assertAlmostEqual(delay_lin_eff_mean_matrix[i, j] /
                                        mean_delay_sampled,
