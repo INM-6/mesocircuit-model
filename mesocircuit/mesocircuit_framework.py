@@ -36,15 +36,15 @@ class MesocircuitExperiment():
 
     Parameters
     ----------
-    name_exp : str
+    name_exp
         Name of the experiment. All corresponding data and scripts will be
         written to a folder with this name.
     custom_params : dict, optional
         Dictionary with new parameters or parameter ranges to overwrite the
         default ones.
-    data_dir : str, optional
+    data_dir
         Absolute path to write data to.
-    load : bool , optional
+    load
         If True, parameters are not newly evaluated and the earlier saved
         parameterview and Mesocircuit(s) are loaded.
     """
@@ -63,9 +63,14 @@ class MesocircuitExperiment():
         else:
             self.data_dir = data_dir
         self.data_dir_exp = os.path.join(self.data_dir, self.name_exp)
+
+        # check if data directory exists
+        if not os.path.isdir(self.data_dir_exp):
+            raise Exception(
+                f'Data directory does not exist: {self.data_dir_exp}')
+        
         print(f'Data directory: {self.data_dir_exp}')
 
-        # TODO add check if data exists
         if not load:
             self.parameterview, self.circuits = \
                 self._evaluate_parameters(custom_params)
@@ -155,7 +160,7 @@ class MesocircuitExperiment():
         for sub_paramset in sub_paramspace.iter_inner():
             ps_id = helpers.get_unique_id(sub_paramset)
 
-            # readd ana_dict and plot_dict to get full paramset
+            # add ana_dict and plot_dict to get full paramset
             # (deep copy of sub_paramset is needed)
             paramset = {
                 **copy.deepcopy(sub_paramset),
@@ -315,7 +320,7 @@ class Mesocircuit():
         Name of the MesocircuitExperiment.
     ps_id
         Unique parameter set id.
-    load_parameters : bool
+    load_parameters
         If True, load parameters from file. Sets class attributes for each
         dictionary.
     """
@@ -571,6 +576,8 @@ unset DISPLAY
 """
 
                     if name == 'network':
+                        # the allocator jemalloc is here used for improved
+                        # performance (see Ippen et al., 2017):
                         # get path to jemalloc
                         # "which jemalloc" executed on the command line returns
                         # something like
