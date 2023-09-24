@@ -1266,7 +1266,7 @@ def plot_coherence_vs_distance_vs_frequency(
         means += [c[mask][r[mask] == d].mean(axis=0)]
     means = np.array(means).T
     im = ax.pcolormesh(
-        unique,
+        unique * 1E-3,  # [µm] -> [mm] unit conversion
         chfreqs,
         means,
         vmin=0,
