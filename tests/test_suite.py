@@ -501,3 +501,74 @@ class TestSuite(unittest.TestCase):
                                        mean_delay_sampled,
                                        1.,
                                        places=1)  # one decimal place (10%)
+
+    def test_adjust_ext_indegrees_to_preserve_mean_input(self):
+        '''Test adjusting the external in-degrees to preserve the mean input.'''
+
+        # in-degrees here rounded to 0 decimals
+        indegrees_1mm2 = np.array(
+            [[1062.,  517.,  482.,  228.,   77.,    0.,   57.,    0.],
+             [1441.,  414.,  349.,  143.,  184.,    0.,   28.,    0.],
+             [76.,   17.,  548.,  383.,   17.,    0.,  324.,    0.],
+             [718.,    9.,  876.,  458.,    7.,    0.,  781.,    0.],
+             [1042.,  182.,  558.,   16.,  204.,  227.,  143.,    0.],
+             [568.,   78.,  283.,    5.,  146.,  188.,   64.,    0.],
+             [159.,   20.,  227.,   46.,  139.,   11.,  288.,  356.],
+             [369.,    3.,   32.,    3.,   67.,    4.,  479.,  220.]])
+        full_indegrees = np.array(
+            [[1459.,  573.,  662.,  253.,  106.,    0.,   78.,    0.],
+             [1472.,  419.,  356.,  144.,  188.,    0.,   29.,    0.],
+             [105.,   19.,  753.,  425.,   23.,    0.,  445.,    0.],
+             [733.,    9.,  895.,  834.,    7.,    0.,  797.,    0.],
+             [1432.,  201.,  767.,   18.,  280.,  227.,  197.,    0.],
+             [580.,   79.,  289.,    5.,  149.,  190.,   65.,    0.],
+             [219.,   22.,  312.,   51.,  191.,   12.,  395.,  296.],
+             [377.,    3.,   33.,    3.,   69.,    4.,  367.,  201.]])
+        ext_indegrees_1mm2 = np.array(
+            [1584., 1564., 1569., 1558., 1788., 1562., 2221., 1568.])
+
+        # rates rounded to 2 decimals
+        mean_rates = np.array([0.16, 1.68, 2.41, 2.8, 3.59, 4.23, 2.22, 4.16])
+        bg_rate = 8.
+
+        # PSCs rounded to 0 decimals
+        PSC_matrix_mean = np.array(
+            [[88., -966.,  176., -966.,   88., -966.,   88., -966.],
+             [88., -966.,   88., -966.,   88., -966.,   88., -966.],
+             [88., -966.,   88., -966.,   88., -966.,   88., -966.],
+             [88., -966.,   88., -966.,   88., -966.,   88., -966.],
+             [88., -966.,   88., -966.,   88., -966.,   88., -966.],
+             [88., -966.,   88., -966.,   88., -966.,   88., -966.],
+             [88., -966.,   88., -966.,   88., -966.,   88., -966.],
+             [88., -966.,   88., -966.,   88., -966.,   88., -966.]])
+        PSC_ext = 88.
+
+        # function to be tested
+        full_ext_indegrees = helpnet.adjust_ext_indegrees_to_preserve_mean_input(
+            indegrees_1mm2,
+            full_indegrees,
+            ext_indegrees_1mm2,
+            mean_rates,
+            bg_rate,
+            PSC_matrix_mean,
+            PSC_ext)
+
+        # check that the total mean input to a neuron is equal in the 1 mm2
+        # network and the full network
+        full = np.zeros_like(mean_rates)
+        mm2 = np.zeros_like(mean_rates)
+        for i in np.arange(len(PSC_matrix_mean)):  # target
+            rec_input_full = 0.
+            rec_input_1mm2 = 0.
+            for j in np.arange(len(PSC_matrix_mean[i])):  # source
+                rec_input_full += full_indegrees[i][j] * \
+                    PSC_matrix_mean[i][j] * mean_rates[j]
+                rec_input_1mm2 += indegrees_1mm2[i][j] * \
+                    PSC_matrix_mean[i][j] * mean_rates[j]
+
+            mm2[i] = rec_input_1mm2 + \
+                ext_indegrees_1mm2[i] * PSC_ext * bg_rate
+            full[i] = rec_input_full + \
+                full_ext_indegrees[i] * PSC_ext * bg_rate
+
+            self.assertAlmostEqual(mm2[i], full[i], places=2)

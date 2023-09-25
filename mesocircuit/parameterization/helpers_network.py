@@ -129,7 +129,7 @@ def derive_dependent_parameters(base_net_dict):
     net_dict['full_num_neurons_sum'] = \
         np.round(np.sum(full_num_neurons)).astype(int)
 
-    # TODO adjust when parameters are final
+    # in-degrees from connectivity matrix of 1mm2 model
     if net_dict['base_model'] == 'PD2014':
         conn_probs_1mm2 = np.zeros(pop_shape)
         conn_probs_1mm2[:, :-1] = net_dict['conn_probs_1mm2_PD2014']
@@ -455,21 +455,6 @@ def adjust_ext_indegrees_to_preserve_mean_input(
     sum_diff_rec_inputs = np.sum(diff_rec_inputs, axis=1)
 
     full_ext_indegrees = ext_indegrees_1mm2 + sum_diff_rec_inputs
-
-    # TODO could be converted into a unit test
-    # full = np.zeros_like(mean_rates)
-    # mm2 = np.zeros_like(mean_rates)
-    # for i in np.arange(len(PSC_matrix_mean)): # target
-    #    rec_input_full = 0.
-    #    rec_input_1mm2 = 0.
-    #    for j in np.arange(len(PSC_matrix_mean[i])): # source
-    #        rec_input_full += full_indegrees[i][j] * PSC_matrix_mean[i][j] * mean_rates[j]
-    #        rec_input_1mm2 += indegrees_1mm2[i][j] * PSC_matrix_mean[i][j] * mean_rates[j]
-    #
-    #    diff_rec_input = rec_input_1mm2 - rec_input_full
-    #
-    #    full[i] = rec_input_full + full_ext_indegrees[i] * PSC_ext * bg_rate
-    #    mm2[i] = rec_input_1mm2 + ext_indegrees_1mm2[i] * PSC_ext * bg_rate
 
     return full_ext_indegrees
 
