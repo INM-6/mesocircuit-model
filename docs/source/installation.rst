@@ -86,15 +86,15 @@ issue
 ::
 
    # build local Dockerfile (obtained by cloning repo, checkout branch etc.)
-   $ docker build -t <container> - < Dockerfile
-   $ docker run -it -p 5000:5000 <container>:latest
+   $ docker build --platform=linux/amd64 -t <container> - < Dockerfile
+   $ docker run --platform=linux/amd64 -it -p 5000:5000 <container>:latest
 
 The ``--mount`` option can be used to mount a folder on the host to a
 target folder as:
 
 ::
 
-   $ docker run --mount type=bind,source="$(pwd)",target=/opt/<target> -it -p 5000:5000 <container>:latest
+   $ docker run --platform=linux/amd64 --mount type=bind,source="$(pwd)",target=/opt/<target> -it -p 5000:5000 <container>:latest
 
 which mounts the present working dirctory (``$(pwd)``) to the
 ``/opt/<target>`` directory of the container. Try mounting the
@@ -134,7 +134,7 @@ host. Then:
 ::
 
    # build image using Docker:
-   docker build -t mesocircuit - < Dockerfile
+   docker build --platform=linux/amd64 -t mesocircuit - < Dockerfile
 
    # start container mounting local file system, then open a jupyter-notebook session:
    docker run --mount type=bind,source="$(pwd)",target=/opt/data -it -p 5000:5000 mesocircuit
@@ -143,11 +143,11 @@ host. Then:
    # take note of the URL printed to the terminal, and open it in a browser on the host.
 
    # oneliner (open URL, then browse to `/opt/data/` and open notebooks):
-   docker run --mount type=bind,source="$(pwd)",target=/opt/data -it -p 5000:5000 mesocircuit jupyter-notebook --ip 0.0.0.0 --port=5000 --no-browser --allow-root
+   docker run --platform=linux/amd64 --mount type=bind,source="$(pwd)",target=/opt/data -it -p 5000:5000 mesocircuit jupyter-notebook --ip 0.0.0.0 --port=5000 --no-browser --allow-root
    # take note of the URL printed to the terminal, and open it in a browser on the host.
 
    # A working Python/MPI environment should be present in the running container. Hence scripts can be run interactively issuing:
-   docker run --mount type=bind,source="$(pwd)",target=/opt/data -it -p 5000:5000 mesocircuit
+   docker run --platform=linux/amd64 --mount type=bind,source="$(pwd)",target=/opt/data -it -p 5000:5000 mesocircuit
    /# cd /opt/data/
 
    # start an interactive Python session
@@ -164,7 +164,7 @@ Singularity
 Singularity things (see
 https://apps.fz-juelich.de/jsc/hps/jusuf/cluster/container-runtime.html):
 
-Build singularity container ``lfpykernels.sif`` using the JSC build
+Build singularity container ``mesocircuit.sif`` using the JSC build
 system:
 
 ::

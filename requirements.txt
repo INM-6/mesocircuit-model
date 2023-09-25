@@ -7,9 +7,10 @@ PrettyTable
 h5py
 pandas
 mpi4py
-MEAutility
+MEAutility=1.5.1
 neuron>=7.7.2
 nnmt
-git+https://github.com/LFPy/LFPy@v2.2.6#egg=LFPy
+git+https://github.com/LFPy/LFPykit.git@v0.5#egg=lfpykit
+git+https://github.com/LFPy/LFPy@5d241d62080f881415fd4becae06c8107571d2d1#egg=LFPy
 git+https://github.com/INM-6/hybridLFPy@master#egg=hybridLFPy
 git+https://github.com/NeuralEnsemble/parameters@master#egg=parameters
