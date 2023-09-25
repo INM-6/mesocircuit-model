@@ -521,10 +521,12 @@ for i, (ax, fname, title) in enumerate(zip(axes[0, ], fnames, titles)):
         noverlap=196,
         method='mlab',
         tbin=0.5,
-        TRANSIENT=sim_dict['t_presim'])
+        TRANSIENT=sim_dict['t_presim'],
+        show_legend=True if i == 0 else False)
     if i > 0:
         plt.setp(ax.get_yticklabels(), visible=False)
         ax.set_ylabel('')
+ax.axis('tight')
 
 # panels D-F
 for i, (ax, fname, title) in enumerate(zip(axes[1, :], fnames, titles)):

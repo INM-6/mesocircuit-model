@@ -8,6 +8,7 @@ from hybridLFPy import helperfun
 import numpy as np
 import h5py
 import LFPy
+import matplotlib
 from mesocircuit.analysis import stats
 from mesocircuit.parameterization.base_plotting_params import plot_dict
 from mesocircuit.parameterization.base_plotting_params import rcParams
@@ -1042,7 +1043,8 @@ def plot_coherence_vs_frequency(
         noverlap=196,
         method='mlab',
         tbin=0.5,
-        TRANSIENT=500):
+        TRANSIENT=500,
+        show_legend=True):
     with h5py.File(fname, 'r') as f:
         Fs = f['srate'][()]
         T0 = int(Fs * TRANSIENT / 1000)  # t < T0 transient
@@ -1083,11 +1085,12 @@ def plot_coherence_vs_frequency(
                 mean = c[mask][r[mask] == d].mean(axis=0)
                 finds = chfreqs <= 500.
                 ax.plot(chfreqs[finds], mean[finds], '-', lw=1, alpha=1,
-                        label='{} mm'.format(d),
+                        label='{} mm'.format(d * 1E-3),  # µm->mm
                         color=colors(j))
             j += 1
     ax.set_ylabel('coherence')
-    ax.legend(loc='best', frameon=False, )
+    if show_legend:
+        ax.legend(loc='best', frameon=False, )
     remove_axis_junk(ax)
     ax.set_xlabel('frequency (Hz)')
 
