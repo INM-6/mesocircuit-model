@@ -129,7 +129,7 @@ def derive_dependent_parameters(base_net_dict):
     net_dict['full_num_neurons_sum'] = \
         np.round(np.sum(full_num_neurons)).astype(int)
 
-    # TODO adjust when parameters are final
+    # in-degrees from connectivity matrix of 1mm2 model
     if net_dict['base_model'] == 'PD2014':
         conn_probs_1mm2 = np.zeros(pop_shape)
         conn_probs_1mm2[:, :-1] = net_dict['conn_probs_1mm2_PD2014']
@@ -180,8 +180,6 @@ def derive_dependent_parameters(base_net_dict):
             net_dict['K_area_scaling'] = scale_indegrees_to_mask_radius(
                 mask_radius=net_dict['mask_radius'],
                 decay=net_dict['beta'], profile='exponential')
-        elif net_dict['K_area_scale_method'] == 'old':
-            net_dict['K_area_scaling'] = old_indegree_scaling()
         else:
             raise Exception('K_area_scale_method incorrect.')
 
@@ -197,41 +195,13 @@ def derive_dependent_parameters(base_net_dict):
             full_indegrees[int(target)][int(source)] *= factor
 
     # adjust external indegrees to compensate for changed interal indegrees
-    # (either from upscaling or from specific modifications),
-    # this does not apply to thalamus
-    if net_dict['use_old_external_indegrees']:
-        full_ext_indegrees = np.array([1701.752083840871, 1621.1260232237535,
-                                       1864.2670612706677, 2443.1073800264094,
-                                       1939.3421758918564, 1724.031970381723,
-                                       3051.092229479683, 2245.9301959805216])
-    else:
-        full_ext_indegrees = adjust_ext_indegrees_to_preserve_mean_input(
-            indegrees_1mm2[:, :-1], full_indegrees[:, :-1],
-            ext_indegrees_1mm2,
-            net_dict['mean_rates_' + net_dict['base_model']],
-            net_dict['bg_rate'],
-            PSC_matrix_mean_tau_syn_default[:, :-1],
-            PSC_ext_tau_syn_default)
-
-    if net_dict['use_old_full_num_synapses']:
-        full_num_synapses = np.array(
-            [[828882273.000247, 392373667.961514, 379559653.820154, 177882649.346106, 62060854.238871, -0.0, 43300793.76242, -0.0, 0.],
-             [312286600.613029, 89730383.554041, 77382503.429251,
-                 31553447.415552, 40984338.606205, -0.0, 6748860.463846, -0.0, 0.],
-             [66788887.061005, 14434115.3848, 457490148.137505, 264727072.297861,
-                 13627055.533483, 133952.826066, 273856633.522986, -0.0, 37310957.265509],
-             [150193546.203107, 1773566.976223, 182931727.34158, 106203163.37557,
-                 1677819.868631, -0.0, 160119167.736337, -0.0, 5865966.713957],
-             [193400955.023919, 33747733.417738, 102879922.954544, 2898312.47049,
-                 37512090.889222, 39236078.439484, 27267785.471299, -0.0, 0.],
-             [23140305.947658, 3200662.840475, 11486196.96599, 245608.859384,
-                 4751682.267154, 6233644.993468, 2523097.347322, -0.0, 0.],
-             [88907168.023082, 10606303.565132, 127442417.574458, 25062536.950038, 76562189.60893,
-                 5782052.956883, 157215604.064241, 184383740.844691, 12742511.126558],
-             [42517558.793266, 329037.040456, 4202790.94696, 154504.650571, 7584616.411093, 480652.990745, 53551271.623572, 24121713.759947, 997799.00007]])
-
-        full_indegrees = (full_num_synapses /
-                          full_num_neurons[:-1][:, np.newaxis])
+    full_ext_indegrees = adjust_ext_indegrees_to_preserve_mean_input(
+        indegrees_1mm2[:, :-1], full_indegrees[:, :-1],
+        ext_indegrees_1mm2,
+        net_dict['mean_rates_' + net_dict['base_model']],
+        net_dict['bg_rate'],
+        PSC_matrix_mean_tau_syn_default[:, :-1],
+        PSC_ext_tau_syn_default)
 
     net_dict['full_indegrees'] = np.round(full_indegrees).astype(int)
     full_num_synapses = full_indegrees * full_num_neurons[:-1][:, np.newaxis]
@@ -355,22 +325,6 @@ def derive_dependent_parameters(base_net_dict):
     return net_dict
 
 
-def old_indegree_scaling():
-    # includes old conn_prob_modifications
-    # TC set manually
-    t = 1.2
-    K_indegree_scaling = \
-        np.array([[1.146, 1.105, 1.179, 1.157, 1.185, 1.000, 1.199, 1.000, t],
-                  [1.126, 1.124, 1.185, 1.174, 1.16, 1.000, 1.201, 1.000, t],
-                  [1.199, 1.2, 1.175, 0.956, 1.199, 1.203, 1.178, 1.000, t],
-                  [1.164, 1.202, 1.158, 1.279, 1.201, 1.000, 1.143, 1.000, t],
-                  [1.146, 1.168, 1.175, 1.2, 1.156, 1.025, 1.192, 1.000, t],
-                  [1.172, 1.188, 1.189, 1.202, 0.935, 0.911, 1.198, 1.000, t],
-                  [1.194, 1.199, 1.191, 1.194, 1.171, 1.192, 1.181, 1.071, t],
-                  [1.183, 1.203, 1.201, 1.203, 1.188, 1.199, 1.166, 1.120, t]])
-    return K_indegree_scaling
-
-
 def scale_indegrees_to_mask_radius(mask_radius, decay, profile):
     """
     Computes a matrix of factors to scale indegrees from a disc of area 1mm2 to
@@ -455,21 +409,6 @@ def adjust_ext_indegrees_to_preserve_mean_input(
     sum_diff_rec_inputs = np.sum(diff_rec_inputs, axis=1)
 
     full_ext_indegrees = ext_indegrees_1mm2 + sum_diff_rec_inputs
-
-    # TODO could be converted into a unit test
-    # full = np.zeros_like(mean_rates)
-    # mm2 = np.zeros_like(mean_rates)
-    # for i in np.arange(len(PSC_matrix_mean)): # target
-    #    rec_input_full = 0.
-    #    rec_input_1mm2 = 0.
-    #    for j in np.arange(len(PSC_matrix_mean[i])): # source
-    #        rec_input_full += full_indegrees[i][j] * PSC_matrix_mean[i][j] * mean_rates[j]
-    #        rec_input_1mm2 += indegrees_1mm2[i][j] * PSC_matrix_mean[i][j] * mean_rates[j]
-    #
-    #    diff_rec_input = rec_input_1mm2 - rec_input_full
-    #
-    #    full[i] = rec_input_full + full_ext_indegrees[i] * PSC_ext * bg_rate
-    #    mm2[i] = rec_input_1mm2 + ext_indegrees_1mm2[i] * PSC_ext * bg_rate
 
     return full_ext_indegrees
 
