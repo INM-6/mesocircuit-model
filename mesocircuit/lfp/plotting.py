@@ -1,20 +1,19 @@
 #!/usr/bin/env python
 '''prototype LFP simulation analysis'''
+import os
 import scipy.signal as ss
 from scipy.optimize import curve_fit
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from hybridLFPy import helperfun
-import matplotlib
+import numpy as np
+import h5py
 import LFPy
 from mesocircuit.analysis import stats
 from mesocircuit.parameterization.base_plotting_params import plot_dict
 from mesocircuit.parameterization.base_plotting_params import rcParams
-import numpy as np
-import h5py
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-from matplotlib.collections import PolyCollection  # , LineCollection
-import os
+from matplotlib.collections import PolyCollection
 if 'DISPLAY' not in os.environ:
     import matplotlib
     matplotlib.use('Agg')
@@ -75,8 +74,6 @@ def network_lfp_activity_animation(PS, net_dict, networkSim, T=(
 
         spikes[X] = np.zeros(gid_t.shape[0],
                              dtype=[('pos', float, 2),
-                                    # dtype=[('pos', float,
-                                    # networkSim.positions[X].shape),
                                     ('size', float, tbins.size - 1)])
         # set position arrays
         spikes[X]['pos'] = networkSim.positions[X][:N_X[j]]
@@ -108,7 +105,6 @@ def network_lfp_activity_animation(PS, net_dict, networkSim, T=(
     # reshape
     data = data.reshape(
         (int(np.sqrt(PS.electrodeParams['x'].size)), -1, data.shape[-1]))
-    # srate = f['srate'][()]
 
     # draw image plot on axes
     im = ax.pcolormesh(np.r_[0:4001:400] - 2000,
@@ -280,7 +276,7 @@ def morphology_table(ax, PS, annotations=True):
 
             if i > 0 and prevpop != pop:
                 ax.vlines(xpos, -1800, 900,
-                        clip_on=False)
+                          clip_on=False)
                 j += 1
 
             if j > 7:  # HACK
@@ -290,8 +286,15 @@ def morphology_table(ax, PS, annotations=True):
 
             ax.text(xpos + 30, 100, size, ha='left', clip_on=False)
 
-            ax.text(xpos + 30, 200, '{:.1f}'.format(100 * float(size) / bigsize),
-                    ha='left')
+            ax.text(
+                xpos +
+                30,
+                200,
+                '{:.1f}'.format(
+                    100 *
+                    float(size) /
+                    bigsize),
+                ha='left')
             ax.text(xpos + 30, 400, '{}'.format(totnsegs[i]))
             ax.text(xpos + 30, 500, mtype,
                     ha='left', clip_on=False)
@@ -313,9 +316,19 @@ def morphology_table(ax, PS, annotations=True):
         ax.text(90, 700, r'Pop. size $N_Y$:', ha='right', clip_on=False)
         ax.text(90, 600, r'Cell type $y$:', ha='right', clip_on=False)
         ax.text(90, 500, r'Morphology $M_y$:', ha='right', clip_on=False)
-        ax.text(90, 400, r'Segments $n_\mathrm{comp}$:', ha='right', clip_on=False)
+        ax.text(
+            90,
+            400,
+            r'Segments $n_\mathrm{comp}$:',
+            ha='right',
+            clip_on=False)
         ax.text(90, 300, r'Occurrence $F_y$ (%):', ha='right', clip_on=False)
-        ax.text(90, 200, r'Rel. Occurr. $F_{yY}$ (%):', ha='right', clip_on=False)
+        ax.text(
+            90,
+            200,
+            r'Rel. Occurr. $F_{yY}$ (%):',
+            ha='right',
+            clip_on=False)
         ax.text(90, 100, r'Cell count $N_y$:', ha='right', clip_on=False)
 
     else:
@@ -329,7 +342,7 @@ def morphology_table(ax, PS, annotations=True):
 
             if i > 0 and prevpop != pop:
                 ax.vlines(xpos, -1800, 300,
-                        clip_on=False)
+                          clip_on=False)
                 j += 1
 
             if j > 7:  # HACK
@@ -338,7 +351,7 @@ def morphology_table(ax, PS, annotations=True):
             ax.text(xpos + 30, 100, layerind, ha='left', clip_on=False,
                     stretch='ultra-condensed',
                     size=matplotlib.rcParams['font.size'] * 0.8
-            )
+                    )
 
             if prevpop != pop:
                 ax.text(xpos + 30, 200, pop.replace('23', '2/3'),
@@ -446,7 +459,7 @@ def layout_illustration(
 
 
 def plot_single_channel_lfp_data(
-    ax, PS, net_dict, ana_dict, fname, title='LFP', ylabel=r'$\Phi$ (mV)', T=[
+    ax, PS, fname, title='LFP', ylabel=r'$\Phi$ (mV)', T=[
         500, 550], CONTACTPOS=(
             (-200, 200), (200, -200)), subtract_mean=True):
     '''
@@ -454,10 +467,6 @@ def plot_single_channel_lfp_data(
     ---------
     ax: matplotlib.axes._subplots.AxesSubplot
     PS: NeurotNeuroTools.parameters.ParameterSet
-    net_dict: dict
-        network settings
-    ana_dict: dict
-        analysis settings
     fname: str
         path to .h5 file
     title: str
@@ -487,7 +496,7 @@ def plot_single_channel_lfp_data(
 
 
 def plot_single_channel_csd_data(
-        ax, PS, net_dict, ana_dict, fname,
+        ax, PS, fname,
         title='CSD',
         ylabel=r'CSD ($\frac{\mathrm{nA}}{\mathrm{µm}^3}$)',
         T=[500, 550],
@@ -632,7 +641,7 @@ def plot_signal_correlation_or_covariance(
 
     if isinstance(data, str) and os.path.isfile(data):
         with h5py.File(data, 'r') as f:
-            shape = f['data'].shape
+            shape = f['data'][()].shape
             srate = f['srate'][()]
             T0 = int(srate * TRANSIENT / 1000)  # t < T0 transient
             if len(shape) > 2:
@@ -709,12 +718,13 @@ def plot_signal_correlation_or_covariance(
         # plot individual observations
         for v in unique:
             y = c[mask][r[mask] == v]
-            ax.plot(np.ones(y.size) * v / 1000. + (np.random.uniform(size=y.size) - 0.5) * 0.05, 
-                    y, '.',
-                    color=(0.7, 0.7, 0.7),
-                    markersize=1, 
-                    zorder=-10,
-                    label='_nolabel_',)
+            ax.plot(np.ones(y.size) *
+                    v /
+                    1000. +
+                    (np.random.uniform(size=y.size) -
+                     0.5) *
+                    0.05, y, '.', color=(0.7, 0.7, 0.7), markersize=1, zorder=-
+                    10, label='_nolabel_',)
 
     # set up axes stealing space from main axes
     divider = make_axes_locatable(ax)
@@ -729,7 +739,6 @@ def plot_signal_correlation_or_covariance(
              color='k', clip_on=False, density=density)
 
     # beautify
-    # axd.set_xticks([axd.axis()[1]])
     axd.set_xticks([])
     if density:
         axd.set_xlabel('$p$ (a.u.)')
@@ -1077,10 +1086,8 @@ def plot_coherence_vs_frequency(
                         label='{} mm'.format(d),
                         color=colors(j))
             j += 1
-    # if i == 0:
     ax.set_ylabel('coherence')
     ax.legend(loc='best', frameon=False, )
-    # ax.set_xlim(0, 500)
     remove_axis_junk(ax)
     ax.set_xlabel('frequency (Hz)')
 
