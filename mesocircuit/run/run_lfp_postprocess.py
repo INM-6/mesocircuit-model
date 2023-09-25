@@ -35,7 +35,6 @@ predictions using the present scheme, running the model on nothing but a large-
 scale compute facility is strongly discouraged.
 '''
 import sys
-from tkinter import W
 from mpi4py import MPI
 from lfpykit import CurrentDipoleMoment, VolumetricCurrentSourceDensity
 import mesocircuit
@@ -43,7 +42,7 @@ import mesocircuit.mesocircuit_framework as mesoframe
 from mesocircuit.lfp.lfp_parameters import get_parameters
 from mesocircuit.lfp.periodiclfp import PeriodicLFP, LaminarProbe
 from hybridLFPy import PostProcess
-import neuron  # needs to be imported before MPI
+import neuron
 from time import time
 import matplotlib.pyplot as plt
 import numpy as np

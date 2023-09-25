@@ -133,7 +133,7 @@ PS = get_parameters(path_lfp_data=path_lfp_data,
 # create file for simulation time(s) to file
 if RANK == 0:
     simstats = open(os.path.join(
-        PS.savefolder, f'simstats_{sys.argv[1]}.dat'), 'w')
+        PS.savefolder, f'simstats_{sys.argv[1]}.dat'), 'w', encoding='utf-8')
     simstats.write('task time\n')
 
 # tic toc
