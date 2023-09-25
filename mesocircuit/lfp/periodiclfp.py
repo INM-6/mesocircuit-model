@@ -68,6 +68,7 @@ class LaminarProbe(PeriodicLFP):
     **kwargs
         parameters parsed to class PeriodicLFP
     '''
+
     def __init__(self, **kwargs):
         '''Initialize LaminarProbe class wrapping PeriodicLFP class'''
         super().__init__(**kwargs)
@@ -92,7 +93,7 @@ if __name__ == '__main__':
     z = np.zeros(x.size)
     n = 50
     r = 10.
-    N = [[0., 0., 1.]]*x.size
+    N = [[0., 0., 1.]] * x.size
 
     # normal prediction without periodic boundaries
     electrode = LFPy.RecExtElectrode(cell=cell, x=x, y=y, z=z,
@@ -105,7 +106,6 @@ if __name__ == '__main__':
                            order=2,
                            side_length=4000.)
     cell.simulate(probes=[electrode, periodic])
-
 
     _, axes = plt.subplots(1, 2, figsize=(10, 6), sharex=False, sharey=True)
     for i, (probe, ax) in enumerate(zip([electrode, periodic], axes)):

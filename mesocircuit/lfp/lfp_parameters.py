@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 '''derived parameters for hybridLFPy forward-model predictions'''
 import os
+import json
 import numpy as np
 from parameters import ParameterSet
-import json
 
 
 def flattenlist(lst):
@@ -213,7 +213,9 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         # derived parameters for CachedTopoNetwork instance
         network_params=dict(
             simtime=sim_dict['t_presim'] + sim_dict['t_sim'],
-            dt=2**-2,  # sim_dict['sim_resolution'],  # run at 4kHz; we're downsampling outputs anyway.
+            dt=2**-2,
+            # sim_dict['sim_resolution'],  # run at 4kHz; we're downsampling
+            # outputs anyway.
             spike_output_path=os.path.join(os.path.split(path_lfp_data)[0],
                                            'processed_data'),
             label=sim_dict['rec_dev'][0],
@@ -254,7 +256,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
             r=7.5,
             n=50,
             seedvalue=None,
-            method='root_as_point',          
+            method='root_as_point',
         ),
         electrodeFile='PeriodicLFP_sum.h5',
         laminarProbeFile='LaminarProbe_sum.h5',
@@ -272,7 +274,8 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         X=net_dict['populations'].tolist(),
         Y=(net_dict['populations'][net_dict['populations'] != 'TC']).tolist(),
         N_X=net_dict['num_neurons'],
-        N_Y=(net_dict['num_neurons'][net_dict['populations'] != 'TC']).tolist(),
+        N_Y=(net_dict['num_neurons']
+             [net_dict['populations'] != 'TC']).tolist(),
         y_in_Y=[
             [['p23'], ['b23', 'nb23']],
             [['p4', 'ss4(L23)', 'ss4(L4)'], ['b4', 'nb4']],
@@ -353,16 +356,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
                 N_y[k] += PS.N_Y[layer * 2 + pop] - np.sum(N_y)
             PS.N_y = np.r_[PS.N_y, N_y]
 
-    assert(np.sum(PS.N_Y) == np.sum(PS.N_y)), 'sum(N_y) != sum(N_Y)'
-
-    '''
-    PS.N_y = np.round(
-        np.array([PS.N_Y[layer * 2 + pop] * PS.F_yY[layer][pop][k]
-                  for layer, y_in_Y in enumerate(PS.y_in_Y)
-                  for pop, cell_types in enumerate(y_in_Y)
-                  for k, _ in enumerate(cell_types)])).astype(int)'''
-    # PS.N_y *= PSET.density
-    # PS.N_y = PS.N_y.astype(int)
+    assert (np.sum(PS.N_Y) == np.sum(PS.N_y)), 'sum(N_y) != sum(N_Y)'
 
     # make a nice structure with data for each subpopulation
     PS.y_zip_list = list(zip(PS.y, PS.m_y, PS.depths, PS.N_y))
@@ -394,7 +388,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     for y, _, depth, N_y in PS.y_zip_list:
         PS.populationParams.update({
             y: {
-                'number': int(np.round(N_y / 10.)) if testing else N_y, 
+                'number': int(np.round(N_y / 10.)) if testing else N_y,
                 'z_min': depth - 25,
                 'z_max': depth + 25,
             }
@@ -422,13 +416,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     ############################################
 
     # concatenate number of synapses of TC and cortical populations
-    # K_YX = np.c_[np.array(PSET.full_num_synapses_th),
-    #             np.array(PSET.full_num_synapses)].astype(float)
     K_YX = net_dict['num_synapses']
-
-    # Scale the number of synapses according to network density parameter
-    # K_YX *= PSET.density
-    # K_YX = K_YX.astype(int)
 
     # spatial connection probabilites on each subpopulation
     # Each key must correspond to a subpopulation like 'L23E' used everywhere
@@ -476,8 +464,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         PS.synParams.update({
             y: {
                 'syntype': 'ExpSynI',  # current based exponential synapse
-                'section': section,
-                # 'tau' : PSET.model_params["/tau_syn_ex"],
+                'section': section
             },
         })
 
@@ -501,7 +488,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
     PS.tau_yX = {}
     for y in PS.y:
         PS.tau_yX.update({
-            y: [net_dict['neuron_params']['tau_syn_in'] if X.rfind('I') >= 0 
+            y: [net_dict['neuron_params']['tau_syn_in'] if X.rfind('I') >= 0
                 else net_dict['neuron_params']['tau_syn_ex'] for X in PS.X]
         })
 
@@ -571,7 +558,8 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
                     'kernel': 'fixedtotalnumber'
                 })
             else:
-                mssg = f"connect_method {net_dict['connect_method']} not implemented"
+                mssg = f"connect_method {net_dict['connect_method']}" + \
+                    " not implemented"
                 raise NotImplementedError(mssg)
 
     return PS

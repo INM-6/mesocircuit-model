@@ -69,8 +69,11 @@ for i, y in enumerate(PS.y):
     df_y = pd.read_csv(fname, delimiter=' ')
     df = pd.concat([
         df,
-        pd.DataFrame(np.array([y] + df_y['time'].to_list(), dtype='object').reshape((1, -1)),
-                     columns=['y', 'CachedNetwork', 'Population', 'run', 'collect'])
+        pd.DataFrame(np.array([y] + df_y['time'].to_list(),
+                              dtype='object'
+                              ).reshape((1, -1)),
+                     columns=['y', 'CachedNetwork',
+                              'Population', 'run', 'collect'])
     ], ignore_index=True)
 
 df.to_csv('simstats.csv', index=False)
@@ -79,7 +82,8 @@ df.to_csv('simstats.csv', index=False)
 df = pd.read_csv('simstats.csv')
 # sum
 df['sum'] = np.round(
-    df[['CachedNetwork', 'Population', 'run', 'collect']].sum(axis=1)).astype(int)
+    df[['CachedNetwork', 'Population', 'run', 'collect']
+       ].sum(axis=1)).astype(int)
 # per second of total simulation duration
 df['per_s'] = np.round(df['sum'] /
                        (sim_dict['t_presim'] +
@@ -97,7 +101,6 @@ ax.set_xlabel('cell type ($y$)')
 ax.set_ylabel('time (s)')
 ax.set_title('simulation time')
 
-# print(df)
 print(df[['y', 'per_s']])
 print(df[['per_s']].to_numpy().flatten().tolist())
 
@@ -152,19 +155,19 @@ fig, axes = plt.subplots(3, 1, figsize=(plot_dict['fig_width_1col'],
                                         plot_dict['fig_width_1col']))
 T = [sim_dict['t_presim'], sim_dict['t_presim'] + 500]
 fname = os.path.join(path_lfp_data, PS.electrodeFile)
-lfpplt.plot_single_channel_lfp_data(axes[0], PS, net_dict, ana_dict, fname,
+lfpplt.plot_single_channel_lfp_data(axes[0], PS, fname,
                                     T=T, CONTACTPOS=CONTACTPOS)
 plt.setp(axes[0].get_xticklabels(), visible=False)
 
 # Figure 7C: plot CSD in same channel
 fname = os.path.join(path_lfp_data, PS.CSDFile)
-lfpplt.plot_single_channel_csd_data(axes[1], PS, net_dict, ana_dict, fname,
+lfpplt.plot_single_channel_csd_data(axes[1], PS, fname,
                                     T=T, CONTACTPOS=CONTACTPOS)
 plt.setp(axes[1].get_xticklabels(), visible=False)
 
 # Figure 7D: plot MUA in same channel
 fname = os.path.join(path_lfp_data, PS.MUAFile)
-lfpplt.plot_single_channel_lfp_data(axes[2], PS, net_dict, ana_dict, fname,
+lfpplt.plot_single_channel_lfp_data(axes[2], PS, fname,
                                     T=T, CONTACTPOS=CONTACTPOS,
                                     title='MUA', ylabel=r'$s^{-1}$')
 axes[2].set_xlabel('time (ms)')
@@ -182,23 +185,22 @@ gs = GridSpec(3, 4, wspace=0.7, hspace=0.3)
 
 # Figure 7A
 CONTACTPOS = ((600, 600), (600, 1000), (-1400, -1400))
-# CONTACTPOS = ((600, 1000), (600, 600), (-1400, -1400))
 ax = fig.add_subplot(gs[:, :2])
 axes.append(ax)
 lfpplt.layout_illustration(ax, PS, net_dict, ana_dict, CONTACTPOS=CONTACTPOS)
 
-# Figure 7B: plot LFP in each channeli
+# Figure 7B: plot LFP in each channel
 for i in range(3):
     axes.append(fig.add_subplot(gs[i, 2]))
 T = [sim_dict['t_presim'], sim_dict['t_presim'] + 100]
 fname = os.path.join(path_lfp_data, PS.electrodeFile)
-lfpplt.plot_single_channel_lfp_data(axes[1], PS, net_dict, ana_dict, fname,
+lfpplt.plot_single_channel_lfp_data(axes[1], PS, fname,
                                     T=T, CONTACTPOS=CONTACTPOS)
 plt.setp(axes[1].get_xticklabels(), visible=False)
 
 # Figure 7C: plot CSD in same channel
 fname = os.path.join(path_lfp_data, PS.CSDFile)
-lfpplt.plot_single_channel_csd_data(axes[2], PS, net_dict, ana_dict, fname,
+lfpplt.plot_single_channel_csd_data(axes[2], PS, fname,
                                     T=T, CONTACTPOS=CONTACTPOS)
 plt.setp(axes[2].get_xticklabels(), visible=False)
 
@@ -207,8 +209,6 @@ fname = os.path.join(path_lfp_data, PS.MUAFile)
 lfpplt.plot_single_channel_lfp_data(
     axes[3],
     PS,
-    net_dict,
-    ana_dict,
     fname,
     T=T,
     CONTACTPOS=CONTACTPOS,
@@ -359,8 +359,10 @@ fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_III.pdf'))
 
 # Figure 8: new
 fig, axes = plt.subplots(
-    2, 2, figsize=(
-        plot_dict['fig_width_2col'], plot_dict['fig_width_1col'] * 1.5), sharex=True)
+    2, 2,
+    figsize=(plot_dict['fig_width_2col'],
+             plot_dict['fig_width_1col'] * 1.5),
+    sharex=True)
 fig.subplots_adjust(wspace=0.15, hspace=0.15)
 axes = axes.flatten()
 
@@ -382,19 +384,19 @@ plt.setp(axd.get_yticklabels(), visible=False)
 try:
     # DUMB!!! - hardcode file paths to precomputed correlations
     fname = os.path.join(
-        circuit.data_dir, 
-        'upscaled_CCs_only', 
-        '3be54d189b4f3a23c4859e0aea6b5fa8', 
-        'processed_data', 
+        circuit.data_dir,
+        'upscaled_CCs_only',
+        '3be54d189b4f3a23c4859e0aea6b5fa8',
+        'processed_data',
         'all_CCs_distances.h5')
     assert os.path.isfile(fname)
 except AssertionError:
     fname = os.path.join(
-    circuit.data_dir_circuit, 
-    'processed_data', 
-    'all_CCs_distances.h5')
-    print(f'NOTE: falling back to pairwise correlations ' + 
-          'for figure_08.pdf in file {fname}')
+        circuit.data_dir_circuit,
+        'processed_data',
+        'all_CCs_distances.h5')
+    print('NOTE: falling back to pairwise correlations ' +
+          f'for figure_08.pdf in file {fname}')
 
 with h5py.File(fname, 'r') as f:
     for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [40, 10])):
@@ -411,17 +413,14 @@ with h5py.File(fname, 'r') as f:
         c = f[X]['ccs'][()]
         mask = c != np.nan
 
-        # bins = np.linspace(np.nanmin(c[mask]), np.nanmax(c[mask]), nbins)
-        bins = np.linspace(c[mask].mean() - c[mask].std() * 1.5, 
-                           c[mask].mean() + c[mask].std() * 1.5, 
+        bins = np.linspace(c[mask].mean() - c[mask].std() * 1.5,
+                           c[mask].mean() + c[mask].std() * 1.5,
                            nbins)
         axd.hist(c[mask], bins=bins, histtype='step', orientation='horizontal',
-                color=plot_dict['pop_colors'][i], clip_on=False, density=True)
+                 color=plot_dict['pop_colors'][i], clip_on=False, density=True)
 
 # beautify
-# axd.set_xticks([axd.axis()[1]])
 axd.set_xticks([])
-# axd.set_xlabel('$p$ (a.u.)')
 ax.set_ylabel(ylabel, labelpad=0.1)
 ax.set_title(paneltitle)
 
@@ -454,7 +453,6 @@ for i, ax in enumerate(axes):
     if i < 2:
         plt.setp(ax.get_xticklabels(), visible=False)
     ax.axis(ax.axis('tight'))
-    
 
 fig.savefig(os.path.join(path_fig_files, 'figure_08.pdf'))
 
@@ -570,13 +568,3 @@ for i, ax in enumerate(axes.flatten()):
     plot.add_label(ax, 'ABCDEF'[i])
 
 fig.savefig(os.path.join(path_fig_files, 'figure_09.pdf'))
-
-
-'''
-fig = lfpplt.network_lfp_activity_animation(
-    PS, net_dict,
-    networkSim, T=(100, 300),
-    N_X=PS.N_X,
-    save_anim=True)
-# plt.close(fig)
-'''
