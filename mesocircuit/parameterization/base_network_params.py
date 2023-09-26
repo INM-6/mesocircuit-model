@@ -110,7 +110,7 @@ net_dict = {
               4.20258522768281,
               478.851911854799,
               220.365998044097]]),
-    # use the total number of synapses from the arxiv preprint
+    # legacy parameter to be removed
     'use_old_full_num_synapses': False,
     # connection probabilities from thalamus
     'conn_probs_th_1mm2':

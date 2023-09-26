@@ -247,19 +247,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
             # dendrite line sources, soma as sphere source (Linden2014)
             method='root_as_point',
         ),
-        laminarProbeParams=dict(
-            x=np.zeros(16),
-            y=np.zeros(16),
-            z=-np.mgrid[0:16] * 100,
-            sigma=0.3,
-            N=np.array([[1, 0, 0]] * 16),
-            r=7.5,
-            n=50,
-            seedvalue=None,
-            method='root_as_point',
-        ),
         electrodeFile='PeriodicLFP_sum.h5',
-        laminarProbeFile='LaminarProbe_sum.h5',
         CSDParams=dict(
             # volumetric bin edges
             x=np.linspace(-2000, 2000, 11),
@@ -268,7 +256,6 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         ),
         CSDFile='VolumetricCurrentSourceDensity_sum.h5',
         MUAFile='MUA.h5',
-        CurrentDipoleMomentFile='CurrentDipoleMoment_sum.h5',
         Y_MUA=['L23E', 'L23I'],
         MUA_bin_edges=np.linspace(-2000, 2000, 11),
         X=net_dict['populations'].tolist(),

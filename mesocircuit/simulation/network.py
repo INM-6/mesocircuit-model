@@ -136,56 +136,13 @@ class Network:
 
         return
 
-    def tar_raw_data(self,
-                     delete_files=True,
-                     filepatterns=['*.dat'],
-                     mode='w'):
-        '''
-        Create tar file of content in `raw_data/<>` and optionally
-        delete files matching given pattern.
-
-        Parameters
-        ----------
-        output_path: path
-            params.raw_nest_output_path
-        delete_files: bool
-            if True, delete files matching pattern
-        filepatterns: list of str
-            patterns of files being deleted
-        mode: String
-            tarfile.open file mode. Default: 'w'
-        '''
-        output_path = os.path.join(self.data_dir_circuit, 'raw_data')
-
-        if nest.Rank() == 0:
-            # create tarfile
-            fname = output_path + '.tar'
-            with tarfile.open(fname, mode) as t:
-                t.add(output_path,
-                      arcname=os.path.split(output_path)[-1])
-
-            # remove files from <raw_nest_output_path>
-            if delete_files:
-                for pattern in filepatterns:
-                    for p in Path(output_path).glob(pattern):
-                        while p.is_file():
-                            try:
-                                p.unlink()
-                            except OSError as e:
-                                print('Error: {} : {}'.format(p, e.strerror))
-                # remove raw directory
-                os.rmdir(output_path)
-
-        MPI.COMM_WORLD.Barrier()
-        return
-
     def __write_spikes(self, fname='spike_recorder.h5'):
         """
         Writes recorded spikes from memory to HDF5 file.
 
         Parameters
         ----------
-        fname: str
+        fname
             Output file name. Path to raw data folder will be prepended
 
         """
@@ -351,7 +308,7 @@ class Network:
                     f.write('{} {}\n'.format(pop[0].global_id,
                                              pop[-1].global_id))
 
-        # Gather and write all positions to HDF5 file
+        # gather and write all positions to HDF5 file
         fn = os.path.join(self.data_dir_circuit, 'raw_data', 'positions.h5')
         if nest.Rank() == 0:
             f = h5py.File(fn, 'w')
@@ -372,13 +329,13 @@ class Network:
             names = ['nodeid', 'x-position_mm', 'y-position_mm']
             formats = ['i4', 'f8', 'f8']
 
-            # construct record arrau
+            # construct record array
             data = np.recarray((len(nodes), ), names=names, formats=formats)
             data['nodeid'] = nodes
             data['x-position_mm'] = pos[:, 0]
             data['y-position_mm'] = pos[:, 1]
 
-            # Gather to RANK 0
+            # gather to RANK 0
             DATA = GathervRecordArray(data)
 
             # write
@@ -506,8 +463,9 @@ class Network:
                    'start': self.net_dict['dc_start'],
                    'stop': (self.net_dict['dc_start'] +
                             self.net_dict['dc_dur'])}
+        # one DC generator per cortical population (thalamic population does not
+        # get DC input)
         self.dc_stim_input = nest.Create('dc_generator',
-                                         # not for thalamus
                                          n=self.net_dict['num_pops'] - 1,
                                          params=dc_dict)
         return
@@ -522,7 +480,6 @@ class Network:
             for j, source_pop in enumerate(self.pops):
                 if self.net_dict['num_synapses'][i][j] >= 0.:
 
-                    # TODO simplify these loops and conditions
                     # specify which connections exist
                     if self.net_dict['connect_method'] == 'fixedtotalnumber':
                         conn_dict_rec = {
@@ -550,7 +507,6 @@ class Network:
                                     beta=self.net_dict['beta'][i][j]),
                             'mask': {'circular': {
                                 'radius': self.net_dict['mask_radius'][i][j]}}}
-                    # TODO only temporary
                     elif self.net_dict['connect_method'] == 'distr_indegree_gauss':
                         conn_dict_rec = {
                             'rule': 'pairwise_bernoulli',

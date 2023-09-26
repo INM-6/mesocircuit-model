@@ -589,8 +589,6 @@ def plot_crosscorrelation_funcs_thalamic_pulses(
                     color=color_fit)
 
         ax.axis(ax.axis('tight'))
-        # grid lines
-        # ax.grid(which='major', axis='x', linestyle=':', color='k')
         ax.plot([0, 0], [0, th_radius],
                 '-', color='k')
         ax.text(0, th_radius, 'TC',
@@ -848,7 +846,7 @@ def plot_layer_panels(
     layer, iterating over populations.
     """
     gs_c = gridspec.GridSpecFromSubplotSpec(
-        4, 1, subplot_spec=gs)  # , hspace=0.5)
+        4, 1, subplot_spec=gs)
 
     layer_count = 0
     for i, X in enumerate(populations):
@@ -862,10 +860,6 @@ def plot_layer_panels(
 
         # specific plot
         plotfunc(ax, X, i, **kwargs)
-
-        # y-scale and y-limits
-        # if ax.get_yscale() == 'log':
-        #    ax.set_yticks([10.**x for x in np.arange(-15, 15)])
 
         if ylims:
             ax.set_ylim(ylims[0], ylims[1])
@@ -910,7 +904,7 @@ def plot_population_panels(
     num_pops = len(populations)
 
     gs_c = gridspec.GridSpecFromSubplotSpec(
-        num_pops, 1, subplot_spec=gs)  # , hspace=0.5)
+        num_pops, 1, subplot_spec=gs)
 
     for i, X in enumerate(populations):
         # select subplot

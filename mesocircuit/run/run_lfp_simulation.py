@@ -165,9 +165,7 @@ print(('NEST simulation and gdf file processing done in  %.3f seconds' % toc))
 if PROPERRUN:
     probes = []
     probes.append(PeriodicLFP(cell=None, **PS.electrodeParams))
-    probes.append(LaminarProbe(cell=None, **PS.laminarProbeParams))
     probes.append(VolumetricCurrentSourceDensity(cell=None, **PS.CSDParams))
-    probes.append(CurrentDipoleMoment(cell=None))
 
 ##############################################################################
 # Create multicompartment neuron populations for LFP predictions

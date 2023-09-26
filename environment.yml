@@ -16,11 +16,9 @@ dependencies:
   - libtool
   - readline
   - mpi4py
-  - nest-simulator
   - gsl
   - cython
   - doxygen
-  - graphviz  # for dot
   - pkg-config
   - nose
   - h5py
@@ -45,7 +43,7 @@ dependencies:
   - sphinx-gallery
   - pip:
       - nnmt
-      - git+https://github.com/LFPy/LFPy@v2.2.6
-      - git+https://github.com/NeuralEnsemble/parameters
+      - parameters
+      - git+https://github.com/LFPy/LFPy@v2.3
       - git+https://github.com/INM-6/hybridLFPy@master
       - -e . # mesocircuit

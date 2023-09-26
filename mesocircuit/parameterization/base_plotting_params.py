@@ -31,8 +31,8 @@ rcParams = {
 
 plot_dict = {
 
-    # plot format (use '.eps' for final figures)
-    # TODO: inkscape etc. for eps conversion not available on JURECA
+    # plot format, for details on conversion options see custom function
+    # savefig()
     'extension': '.pdf',
 
     # figure width for the J Neurosci (in inch):
@@ -81,7 +81,7 @@ plot_dict = {
     'distr_max_rate': 10.,
     # maximum bin for LV distributions, first is at 0
     'distr_max_lv': 2.,
-    # maximum bin for CC distributions, symmetrically around 0)
+    # maximum bin for CC distributions, symmetrically around 0
     'distr_max_cc': 0.02,
 
     # maximum frequency to show for PSDs (in Hz)

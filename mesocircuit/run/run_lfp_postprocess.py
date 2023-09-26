@@ -131,7 +131,7 @@ PS = get_parameters(path_lfp_data=path_lfp_data,
 # create file for simulation time(s) to file
 if RANK == 0:
     simstats = open(os.path.join(
-        PS.savefolder, 'simstats_postprocess.dat'), 'w')
+        PS.savefolder, 'simstats_postprocess.dat'), 'w', encoding='utf-8')
     simstats.write('task time\n')
 
 # tic toc
@@ -148,9 +148,7 @@ ticc = tic
 if PROPERRUN:
     probes = []
     probes.append(PeriodicLFP(cell=None, **PS.electrodeParams))
-    probes.append(LaminarProbe(cell=None, **PS.laminarProbeParams))
     probes.append(VolumetricCurrentSourceDensity(cell=None, **PS.CSDParams))
-    probes.append(CurrentDipoleMoment(cell=None))
 
 
 ##############################################################################
