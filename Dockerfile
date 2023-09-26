@@ -88,12 +88,10 @@ RUN pip --no-cache-dir install --no-deps git+https://github.com//alejoe91/MEAuti
   pip --no-cache-dir install --no-deps git+https://github.com/NeuralEnsemble/parameters@b95bac2bd17f03ce600541e435e270a1e1c5a478 && \
   pip --no-cache-dir install --no-deps git+https://github.com/INM-6/nnmt.git@v1.3.0#egg=nnmt
 
+RUN pip --no-cache-dir install --no-deps pytest
 
-# ---- TODO: install meso_analysis package ----
-# ---- TODO: deal with core module ----
-# This would be way easier with a public project - can't really access local host files during build.
-# RUN pip --no-cache-dir install --no-deps git+https://github.com/INM-6/mesocircuit-model.git#egg=mesocircuit_model
-
+# ---- install meso_analysis package ----
+RUN pip --no-cache-dir install --no-deps git+https://github.com/INM-6/mesocircuit-model.git#egg=mesocircuit
 
 # If running with Singularity/Apptainer, run the below line in the host.
 # PYTHONPATH set here doesn't carry over:
