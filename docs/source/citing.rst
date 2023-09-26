@@ -3,9 +3,10 @@
 How to cite 
 ===========
 
-The main reference is our preprint on ArXiv: :footcite:t:`Senk18_arxiv`
+The main reference is our preprint on arXiv: :footcite:t:`Senk18_arxiv`
 
-Note that the model details have changed from the first version of the preprint and we plan to upload an updated version soon.
+Note that the model details have changed between manuscript versions.
+This repository corresponds to the latest manuscript version.
 
 In addition, please also provide a link to our GitHub repository
 (https://github.com/INM-6/mesocircuit-model)

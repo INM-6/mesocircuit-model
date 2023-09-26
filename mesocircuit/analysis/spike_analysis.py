@@ -361,7 +361,7 @@ def _first_glance_at_data(circuit, num_neurons, num_spikes):
     num_spikes
         An array of spike counts per population.
     """
-    # compute firing rates in 1/s
+    # compute firing rates in spikes/s
     rates = num_spikes / num_neurons / \
         ((circuit.sim_dict['t_sim'] + circuit.sim_dict['t_presim']) / 1000.)
 
@@ -637,8 +637,7 @@ def _time_and_space_binned_sptrains_X(positions, sptrains_bintime, space_bins, d
                     (map_x == pos_x[i]) & (map_y == pos_y[i]))[0]
                 row[j:j + n] = ind
             except ValueError:
-                # TODO: ignore spike events from units outside spatial grid
-                mssg = 'neurons must be on spatial analysis grid'
+                mssg = 'Neurons must be on spatial analysis grid.'
                 raise NotImplementedError(mssg)
         j += n
 
@@ -1002,7 +1001,7 @@ def _compute_ccs_distances(X, circuit, sptrains_X, binsize_time, positions_X):
     # pairwise-distances between correlated neurons
     xy_pos = np.vstack((x_pos, y_pos)).T
     distances = _pdist_pbc(xy_pos,
-                           extent=[circuit.net_dict['extent']] * 2, 
+                           extent=[circuit.net_dict['extent']] * 2,
                            edge_wrap=True)
 
     ccs_dic = {'ccs': ccs,
