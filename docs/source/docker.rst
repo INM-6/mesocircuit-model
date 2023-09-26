@@ -1,6 +1,12 @@
 Docker
 ======
 
+Docker (https://www.docker.com) provides a solution for packaging all	
+project requirements in a single container. This can be used for	
+simulations and analysis, and may be supported on the HPC resource	
+(e.g., via Singularity or Apptainer). Make sure the Docker client is running on the	
+host.
+
 General instructions
 --------------------
 
