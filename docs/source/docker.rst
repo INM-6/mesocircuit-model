@@ -1,6 +1,9 @@
 Docker
 ======
 
+General instructions
+--------------------
+
 We provide a Docker (https://www.docker.com) container build file with
 codes required for this project. To get started, install Docker and
 issue
@@ -44,19 +47,11 @@ http://127.0.0.1:5000/?token=dcf8f859f859740fc858c568bdd5b015e0cf15bfc2c5b0c1
 
 .. _docker-1:
 
-Docker
-------
+Jupyter/Ipython
+---------------
 
-Docker (https://www.docker.com) provides a solution for packaging all
-project requirements in a single container. This can be used for
-simulations and analysis, and may be supported on the HPC resource
-(e.g., via Singularity). Make sure the Docker client is running on the
-host. Then:
-
+The Docker container can be used to run Jupyter notebooks and/or Ipython as
 ::
-
-   # build image using Docker:
-   docker build -t mesocircuit - < Dockerfile
 
    # start container mounting local file system, then open a jupyter-notebook session:
    docker run --mount type=bind,source="$(pwd)",target=/opt/data -it -p 5000:5000 mesocircuit
@@ -80,13 +75,14 @@ host. Then:
    # run a simulation with MPI, assuming we have access to 1024 physical CPU cores (also make sure that parameter files have been created by an earlier call to `python run_pscan.py`)
    /# mpiexec -n 1024 python task.py
 
-Singularity
------------
 
-Singularity things (see
+Singularity/Apptainer
+---------------------
+
+Singularity/Apptainer things (see
 https://apps.fz-juelich.de/jsc/hps/jusuf/cluster/container-runtime.html):
 
-Build singularity container ``lfpykernels.sif`` using the JSC build
+Build singularity container ``mesocircuit.sif`` using the old JSC build
 system:
 
 ::
@@ -111,28 +107,3 @@ nonexistant display on compute node(s) module –force purge module load
 Stages/2022 GCCcore/.11.2.0 Apptainer-Tools/2022 GCC/11.2.0
 ParaStationMPI/5.5.0-1 srun –mpi=pmi2 singularity exec mesocircuit.sif
 python3 -u task.py # execute simulation
-
-
-
-Installation
-============
-
-Docker
-------
-
-For reference we here provide a ``Dockerfile`` for building a [Docker](https://docker.com) image with all project dependencies.
-To build the image run:
-
-```bash
-docker build --platform=linux/amd64 -t mesocircuit -f Dockerfile .
-```
-
-To run the image in a container run:
-
-```bash
-docker run --platform=linux/amd64 -it mesocircuit <binary>
-```
-
-
-```bash
-The container recipe should also work with build systems for other containerization technologies such as [Singularity](https://sylabs.io/singularity/), see also [https://apps.fz-juelich.de/jsc/hps/jureca/container-runtime.html](https://apps.fz-juelich.de/jsc/hps/jureca/container-runtime.html).
