@@ -4,10 +4,10 @@ Installation
 High-performance computing is needed for running the full mesocircuit model.
 To set up the compute environment, refer to :ref:`hpc-label`.
 
-For testing locally (e.g., on a laptop), we recommend to use the provided conda environment following the steps described in :ref:`local-label`.
+For local testing and development (e.g., on a laptop), we recommend to use the provided conda environment following the steps described in :ref:`local-label`.
 Note that only downscaled versions of the model can be simulated locally.
 
-As an alternative, the mesocircuit framework can also be obtained va docker.
+As an alternative, the mesocircuit framework can also be obtained via Docker.
 
 .. _hpc-label:
 
@@ -90,10 +90,17 @@ NEST
    mkdir -p $NEST_BUILD_DIR
    cd $NEST_BUILD_DIR
 
-   cmake -DCMAKE_INSTALL_PREFIX:PATH=$NEST_INSTALL_DIR -DCMAKE_C_COMPILER=mpicc -DCMAKE_CXX_COMPILER=mpic++ -Dwith-mpi=ON -Dwith-boost=ON $NEST_SRC_DIR
+   cmake -DCMAKE_INSTALL_PREFIX:PATH=$NEST_INSTALL_DIR \
+      -DCMAKE_C_COMPILER=mpicc \
+      -DCMAKE_CXX_COMPILER=mpic++ \
+      -Dwith-mpi=ON \
+      -Dwith-boost=ON \
+      $NEST_SRC_DIR
 
    make -j && make install
 
    source $NEST_INSTALL_DIR/bin/nest_vars.sh
 
 
+Note that for local use with the ``mesocircuit`` conda environment, it can be useful to set ``NEST_INSTALL_DIR`` to ``$CONDA_PREFIX``.
+Then, all NEST executables are available in the ``mesocircuit`` conda environment without sourcing the ``nest_vars.sh`` script.
