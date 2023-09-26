@@ -111,3 +111,28 @@ nonexistant display on compute node(s) module –force purge module load
 Stages/2022 GCCcore/.11.2.0 Apptainer-Tools/2022 GCC/11.2.0
 ParaStationMPI/5.5.0-1 srun –mpi=pmi2 singularity exec mesocircuit.sif
 python3 -u task.py # execute simulation
+
+
+
+Installation
+============
+
+Docker
+------
+
+For reference we here provide a ``Dockerfile`` for building a [Docker](https://docker.com) image with all project dependencies.
+To build the image run:
+
+```bash
+docker build --platform=linux/amd64 -t mesocircuit -f Dockerfile .
+```
+
+To run the image in a container run:
+
+```bash
+docker run --platform=linux/amd64 -it mesocircuit <binary>
+```
+
+
+```bash
+The container recipe should also work with build systems for other containerization technologies such as [Singularity](https://sylabs.io/singularity/), see also [https://apps.fz-juelich.de/jsc/hps/jureca/container-runtime.html](https://apps.fz-juelich.de/jsc/hps/jureca/container-runtime.html).
