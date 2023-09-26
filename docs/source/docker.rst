@@ -1,6 +1,15 @@
 Docker
 ======
 
+Docker (https://www.docker.com) provides a solution for packaging all	
+project requirements in a single container. This can be used for	
+simulations and analysis, and may be supported on the HPC resource	
+(e.g., via Singularity or Apptainer). Make sure the Docker client is running on the	
+host.
+
+General instructions
+--------------------
+
 We provide a Docker (https://www.docker.com) container build file with
 codes required for this project. To get started, install Docker and
 issue
@@ -44,19 +53,11 @@ http://127.0.0.1:5000/?token=dcf8f859f859740fc858c568bdd5b015e0cf15bfc2c5b0c1
 
 .. _docker-1:
 
-Docker
-------
+Jupyter/Ipython
+---------------
 
-Docker (https://www.docker.com) provides a solution for packaging all
-project requirements in a single container. This can be used for
-simulations and analysis, and may be supported on the HPC resource
-(e.g., via Singularity). Make sure the Docker client is running on the
-host. Then:
-
+The Docker container can be used to run Jupyter notebooks and/or Ipython as
 ::
-
-   # build image using Docker:
-   docker build -t mesocircuit - < Dockerfile
 
    # start container mounting local file system, then open a jupyter-notebook session:
    docker run --mount type=bind,source="$(pwd)",target=/opt/data -it -p 5000:5000 mesocircuit
@@ -80,13 +81,14 @@ host. Then:
    # run a simulation with MPI, assuming we have access to 1024 physical CPU cores (also make sure that parameter files have been created by an earlier call to `python run_pscan.py`)
    /# mpiexec -n 1024 python task.py
 
-Singularity
------------
 
-Singularity things (see
+Singularity/Apptainer
+---------------------
+
+Singularity/Apptainer things (see
 https://apps.fz-juelich.de/jsc/hps/jusuf/cluster/container-runtime.html):
 
-Build singularity container ``lfpykernels.sif`` using the JSC build
+Build singularity container ``mesocircuit.sif`` using the old JSC build
 system:
 
 ::

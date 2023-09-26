@@ -30,6 +30,7 @@ Installation
    :maxdepth: 1
 
    installation
+   docker
 
 The main model requires high-performance computing and we provide installation instructions for the supercomputer JURECA.
 For local testing on a laptop, the mesocircuit can be set up via conda.
