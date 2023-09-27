@@ -26,7 +26,7 @@ copyright = '2023, Johanna Senk, Espen Hagen'
 author = 'Johanna Senk, Espen Hagen'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+release = '1.0-rc'
 
 
 # -- General configuration ---------------------------------------------------
