@@ -2,9 +2,9 @@
 
 [![Documentation Status](https://readthedocs.org/projects/mesocircuit-model/badge/?version=latest)](https://mesocircuit-model.readthedocs.io/en/latest/?badge=latest)
 
-.. figure:: _static/images/network_model_sketch_upscaled.png
-   :scale: 50 %
-   :alt: Mesocircuit network model sketch
+<p align="center">
+<img src="docs/source/_static/images/network_model_sketch_upscaled.png" alt="Mesocircuit network model sketch" width="300"/>
+</p>
 
 Mesoscopic, layered cortical network model with distance-dependent connectivity for spiking activity and local field potentials.
 
