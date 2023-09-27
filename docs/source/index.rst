@@ -6,6 +6,7 @@ Mesocircuit Model
    :hidden:
    :maxdepth: 2
 
+   self
    overview
    citing
    authors
