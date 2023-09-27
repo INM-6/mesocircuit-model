@@ -2,6 +2,10 @@
 
 [![Documentation Status](https://readthedocs.org/projects/mesocircuit-model/badge/?version=latest)](https://mesocircuit-model.readthedocs.io/en/latest/?badge=latest)
 
+<p align="center">
+<img src="docs/source/_static/images/network_model_sketch_upscaled.png" alt="Mesocircuit network model sketch" width="300"/>
+</p>
+
 Mesoscopic, layered cortical network model with distance-dependent connectivity for spiking activity and local field potentials.
 
 This repository provides the functionality to define, simulate, and analyze network models such as the mesocircuit model  in a self-contained framework.
@@ -13,7 +17,7 @@ Documentation on ReadTheDocs: [https://mesocircuit-model.readthedocs.io](https:/
 Please report bugs and feature requests as
 [Issues](https://github.com/INM-6/mesocircuit-model/issues/new)
 and contribute to source code or documentation via
-[Pull Requests](https://github.com/INM-6/mesocircuit-model/compare)
+[Pull Requests](https://github.com/INM-6/mesocircuit-model/compare).
 
 If you use the code, please cite the following publication:
 
