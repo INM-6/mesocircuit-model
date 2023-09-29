@@ -22,11 +22,11 @@ and contribute to source code or documentation via
 If you use the code, please cite the following publication:
 
 ```bibtex
-@article{Senk18_arxiv,
+@article{Senk23_arxiv_v2,
   doi     = {10.48550/ARXIV.1805.10235},
   author  = {Senk, Johanna and Hagen, Espen and van Albada, Sacha J. and Diesmann, Markus},
   title   = {Reconciliation of weak pairwise spike-train correlations and highly coherent local field potentials across space},
-  journal = {arXiv},
-  year    = {2018}
+  journal = {arXiv:1805.10235v2 [q-bio.NC]},
+  year    = {2023}
 }
 ```
