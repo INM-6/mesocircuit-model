@@ -66,8 +66,8 @@ class MesocircuitExperiment():
 
         # check if data directory exists
         if not os.path.isdir(self.data_dir_exp):
-            raise Exception(
-                f'Data directory does not exist: {self.data_dir_exp}')
+            print(f'creating directory {self.data_dir_exp}')
+            os.makedirs(self.data_dir_exp)
         
         print(f'Data directory: {self.data_dir_exp}')
 
