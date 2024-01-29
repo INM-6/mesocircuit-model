@@ -196,42 +196,55 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
 
     if plot_statistics:
         print('Plotting statistics.')
-        fig = plt.figure(figsize=(ref_circuit.plot_dict['fig_width_2col'], 6))
-        gs = gridspec.GridSpec(2, 1)
-        gs.update(left=0.08, right=0.99, bottom=0.08, top=0.93, hspace=0.5)
 
-        labels = [['A', 'B', 'C', 'D', 'E', 'F', 'G'],
-                  ['H', 'I', 'J', 'K', 'L', 'M', 'N']]
+        def _plotting_statistics(key_ccs):
+            fig = plt.figure(figsize=(ref_circuit.plot_dict['fig_width_2col'], 6))
+            gs = gridspec.GridSpec(2, 1)
+            gs.update(left=0.08, right=0.99, bottom=0.08, top=0.93, hspace=0.5)
 
-        titles = ['reference model, ' + r'1 mm$^2$',
-                  'upscaled model, ' + r'1 mm$^2$ sampled']
+            labels = [['A', 'B', 'C', 'D', 'E', 'F', 'G'],
+                    ['H', 'I', 'J', 'K', 'L', 'M', 'N']]
 
-        for i, prefix in enumerate(['ref', 'ups']):
-            all_CCs = {}
-            all_CCs_distances = d[prefix + '_all_CCs_distances']
-            for X in all_CCs_distances:
-                if isinstance(all_CCs_distances[X], h5py._hl.group.Group):
-                    all_CCs[X] = all_CCs_distances[X]['ccs']
-                else:
-                    all_CCs[X] = np.array([])
+            titles = ['reference model, ' + r'1 mm$^2$',
+                    'upscaled model, ' + r'1 mm$^2$ sampled']
 
-            axes = plot.plot_statistics_overview(
-                gs[i],
-                d[prefix + '_all_FRs'],
-                d[prefix + '_all_LVs'],
-                all_CCs,
-                d[prefix + '_all_PSDs'],
-                ref_circuit.ana_dict['Y'],
-                ref_circuit.plot_dict,
-                ylims_boxcharts_FRs=[0., 11.],
-                ylims_boxcharts_LVs=[0., 2.],
-                ylims_boxcharts_CCs=[-0.01, 0.01],
-                ylims_PSDs=[0.00001, 10])
-            for l, label in enumerate(labels[i]):
-                plot.add_label(axes[l], label)
-            axes[4].set_title(titles[i], pad=15)
+            for i, prefix in enumerate(['ref', 'ups']):
+                all_CCs = {}
+                all_CCs_distances = d[prefix + '_all_CCs_distances']
+                for X in all_CCs_distances:
+                    if isinstance(all_CCs_distances[X], h5py._hl.group.Group):
+                        all_CCs[X] = all_CCs_distances[X][key_ccs]
+                    else:
+                        all_CCs[X] = np.array([])
 
-        plt.savefig(os.path.join(output_dir, 'rev_vs_ups_statistics.pdf'))
+                axes = plot.plot_statistics_overview(
+                    gs[i],
+                    d[prefix + '_all_FRs'],
+                    d[prefix + '_all_LVs'],
+                    all_CCs,
+                    d[prefix + '_all_PSDs'],
+                    ref_circuit.ana_dict['Y'],
+                    ref_circuit.plot_dict,
+                    ylims_boxcharts_FRs=[0., 11.],
+                    ylims_boxcharts_LVs=[0., 2.],
+                    ylims_boxcharts_CCs=[-0.01, 0.01],
+                    ylims_PSDs=[0.00001, 10])
+                for l, label in enumerate(labels[i]):
+                    plot.add_label(axes[l], label)
+                axes[4].set_title(titles[i], pad=15)
+
+            return fig
+
+        try:
+            # stats plot for different time bins 
+            for i, ccs_time_interval in enumerate(iter(circuit.ana_dict['ccs_time_interval'])):
+                    key_ccs = f'ccs_{ccs_time_interval}'
+                    fig = _plotting_statistics(key_ccs)
+                    fig.savefig(os.path.join(output_dir, f'rev_vs_ups_statistics_delta{ccs_time_interval}ms.pdf'))
+        except TypeError as _:
+            ccs_time_interval = circuit.ana_dict['ccs_time_interval']
+            key_ccs = f'ccs_{ccs_time_interval}'
+            fig.savefig(os.path.join(output_dir, f'rev_vs_ups_statistics_delta{ccs_time_interval}ms.pdf'))
     return
 
 

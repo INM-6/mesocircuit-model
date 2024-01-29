@@ -826,10 +826,22 @@ def _compute_statistics_X(i, X, circuit):
 
             # correlation coefficients with distances
             elif datatype == 'CCs_distances':
-                dataset = _compute_ccs_distances(
-                    X, circuit,
-                    d['sptrains_X'], circuit.sim_dict['sim_resolution'],
-                    d['positions_X'])
+                try:
+                    dataset = {}
+                    for i, ccs_time_interval in enumerate(iter(circuit.ana_dict['ccs_time_interval'])):
+                        dataset.update(_compute_ccs_distances(
+                            X, circuit,
+                            d['sptrains_X'], 
+                            circuit.sim_dict['sim_resolution'],
+                            ccs_time_interval,
+                            d['positions_X']))
+                except TypeError as _:
+                    dataset = _compute_ccs_distances(
+                        X, circuit,
+                        d['sptrains_X'], 
+                        circuit.sim_dict['sim_resolution'],
+                        circuit.ana_dict['ccs_time_interval'],
+                        d['positions_X'])
 
             # power spectral densities
             elif datatype == 'PSDs':
@@ -923,7 +935,7 @@ def _compute_lvs(sptrains_X):
     return lvs
 
 
-def _compute_ccs_distances(X, circuit, sptrains_X, binsize_time, positions_X):
+def _compute_ccs_distances(X, circuit, sptrains_X, binsize_time, ccs_time_interval, positions_X):
     """
     Computes Pearson correlation coefficients (excluding auto-correlations)
     and distances between correlated neurons.
@@ -938,6 +950,8 @@ def _compute_ccs_distances(X, circuit, sptrains_X, binsize_time, positions_X):
         Sptrains of population X in sparse csr format.
     binsize_time
         Temporal resolution of sptrains_X (in ms).
+    ccs_time_interval
+        Temporal bin size for correlation coefficients calculation (in ms)
     positions_X
         Positions of population X.
     """
@@ -953,7 +967,7 @@ def _compute_ccs_distances(X, circuit, sptrains_X, binsize_time, positions_X):
     # number of time steps in data
     num_timesteps = sptrains_X.shape[1] - 1  # last time bin discarded
     # number of time bins to be combined
-    ntbin = int(circuit.ana_dict['ccs_time_interval'] / binsize_time)
+    ntbin = int(ccs_time_interval / binsize_time)
     # container for binned spike trains of the selected number
     spt = np.empty((num_neurons, int(num_timesteps/ntbin)), dtype=int)
     mask_nrns = np.zeros(num_neurons_data, dtype=bool)
@@ -1004,7 +1018,7 @@ def _compute_ccs_distances(X, circuit, sptrains_X, binsize_time, positions_X):
                            extent=[circuit.net_dict['extent']] * 2,
                            edge_wrap=True)
 
-    ccs_dic = {'ccs': ccs,
+    ccs_dic = {f'ccs_{ccs_time_interval}': ccs,
                'distances_mm': distances}
     return ccs_dic
 

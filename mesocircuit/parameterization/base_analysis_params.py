@@ -63,8 +63,9 @@ ana_dict = {
     # latter is also assumed.
     'ccs_num_neurons': 200,
     # time interval for computing correlation coefficients (in ms).
-    # a good choice is equal to the refractory time
-    'ccs_time_interval': 2.0,
+    # a good choice is equal to the refractory time. 
+    # Can also be an iterable list of time intervals.
+    'ccs_time_interval': [2., 20., 50., 200.],
 
     # number of data points used in each block for the FFT
     'psd_NFFT': 512,
