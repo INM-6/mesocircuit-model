@@ -212,7 +212,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
         savefolder=path_lfp_data,
         # derived parameters for CachedTopoNetwork instance
         network_params=dict(
-            simtime=sim_dict['t_presim'] + sim_dict['t_sim'],
+            simtime=sim_dict['t_presim'] + sim_dict['t_sim_lfp'],
             dt=2**-2,
             # sim_dict['sim_resolution'],  # run at 4kHz; we're downsampling
             # outputs anyway.
@@ -288,7 +288,7 @@ def get_parameters(path_lfp_data=None, sim_dict=None, net_dict=None):
             'lambda_f': 100,
             'dt': 2**-2,  # sim_dict['sim_resolution'],
             'tstart': 0,
-            'tstop': sim_dict['t_presim'] + sim_dict['t_sim'],
+            'tstop': sim_dict['t_presim'] + sim_dict['t_sim_lfp'],
             'verbose': False,
         }
     ))
