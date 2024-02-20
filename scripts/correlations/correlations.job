@@ -1,0 +1,12 @@
+#!/bin/bash -x
+#SBATCH --job-name=correlations
+#SBATCH --account jinb33
+#SBATCH --partition=dc-cpu
+#SBATCH --output=/p/scratch/cjinb33/hagen1/mesocircuit_data/upscaled_1mm2/3be54d189b4f3a23c4859e0aea6b5fa8/stdout/correlations.txt
+#SBATCH --error=/p/scratch/cjinb33/hagen1/mesocircuit_data/upscaled_1mm2/3be54d189b4f3a23c4859e0aea6b5fa8/stdout/correlations.txt
+#SBATCH --ntasks=32
+#SBATCH --mem=64000
+#SBATCH --time=06:00:00
+unset DISPLAY
+set -o pipefail
+python3 -u correlations.py
