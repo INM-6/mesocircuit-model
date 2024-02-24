@@ -13,6 +13,8 @@ from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
+import matplotlib.colors as mc
+import colorsys
 from mpi4py import MPI
 import os
 import warnings
@@ -457,6 +459,55 @@ def plot_spatial_snapshots(
     return ax
 
 
+def plot_population_panels_2cols(
+        gs,
+        plotfunc,
+        populations,
+        data2d,
+        pop_colors,
+        xlabel='',
+        ylabel='',
+        ylim_top=False,
+        yticklabels=True,
+        **kwargs):
+    """
+    Generic function to plot 2 columns of panels for an even number of populations.
+    Multiple curves per population are possible.
+    """
+    num_pops = len(populations)
+
+    gs_c = gridspec.GridSpecFromSubplotSpec(
+        num_pops, 1, subplot_spec=gs)
+
+    for i, X in enumerate(populations):
+        # select subplot
+        ax = plt.subplot(gs_c[i])
+        for loc in ['top', 'right']:
+            ax.spines[loc].set_color('none')
+
+        # iterate over 2 dimensional data
+        num = len(data2d)
+        for j in np.arange(num):
+            colors = [adjust_lightness(c, 1-j/(num-1)) for c in pop_colors]
+            plotfunc(ax, X, i, data=data2d[j], pop_colors=colors, **kwargs)
+
+        if i == num_pops - 1:
+            ax.set_xlabel(xlabel)
+        else:
+            ax.set_xticklabels([])
+
+        if i == 0:
+            ax.set_ylabel(ylabel)
+            ax_label = ax
+
+        if ylim_top:
+            ax.set_ylim(top=ylim_top)
+
+        if not yticklabels:
+            ax.set_yticklabels([])
+    return ax_label
+
+
 def plot_crosscorrelation_funcs_thalamic_pulses(
         gs,
         all_CCfuncs_thalamic_pulses,
@@ -899,7 +950,7 @@ def plot_population_panels(
         yticklabels=True,
         **kwargs):
     """
-    Generic function to plot four vertically arranged panels, one for each
+    Generic function to plot vertically arranged panels, one for each
     population.
     """
     num_pops = len(populations)
@@ -1218,7 +1269,7 @@ def plotfunc_CCs_distance(
         return
 
     distances = data[X]['distances_mm'][:max_num_pairs]
-    ccs = data[X][key_ccs][:max_num_pairs]
+    ccs = data[X][key_ccs + 'ms'][:max_num_pairs]
 
     # loop for reducing zorder-bias
     blocksize = int(len(distances) / nblocks)
@@ -1290,6 +1341,18 @@ def plotfunc_theory_power_spectra(ax, X, i, data, pop_colors):
     ax.set_yscale('log')
     ax.xaxis.set_major_locator(MaxNLocator(nbins=3))
     return
+
+
+def adjust_lightness(color, amount=0.5):
+    """
+    Function from: https://stackoverflow.com/questions/37765197/darken-or-lighten-a-color-in-matplotlib
+    """
+    try:
+        c = mc.cnames[color]
+    except:
+        c = color
+    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
+    return colorsys.hls_to_rgb(c[0], max(0, min(1, amount * c[1])), c[2])
 
 
 def colorbar(
