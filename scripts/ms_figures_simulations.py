@@ -18,7 +18,7 @@ import parametersets
 # correlation coefficients)
 
 
-model = 1
+model = 2
 run_jobs = True
 
 ################################################################################
@@ -43,7 +43,8 @@ if model == 2:
     name_upscaled_1mm2 = 'upscaled_1mm2'
     custom_params_upscaled_1mm2 = dict(
         parametersets.ps_dicts['mesocircuit_MAMV1'])
-    custom_params_upscaled_1mm2.update({'ana_dict': {'extract_1mm2': True}})
+    custom_params_upscaled_1mm2.update({'ana_dict': {'extract_1mm2': True,
+                                        'ccs_time_interval': [2., 50., 200.]}})
     custom_params_upscaled_1mm2.update({'sim_dict': {'t_sim': t_sim}})
     custom_params_upscaled_1mm2['sys_dict']['hpc']['network'].update(
         {'wall_clock_time': '02:00:00'}),
@@ -114,8 +115,9 @@ if run_jobs:
     circuit.run_jobs(
         jobs=[
             'network',
-            'analysis',
-            # 'analysis_and_plotting'
+            # 'analysis',
+            'analysis_and_plotting'
         ],
-        machine='hpc'
+        # machine='hpc'
+        machine='local'
     )
