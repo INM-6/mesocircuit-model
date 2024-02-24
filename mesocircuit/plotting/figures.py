@@ -300,7 +300,15 @@ def statistics_overview(circuit, all_FRs, all_LVs, all_CCs_distances, all_PSDs):
     all_CCs = {}
     for X in all_CCs_distances:
         if isinstance(all_CCs_distances[X], h5py._hl.group.Group):
-            all_CCs[X] = all_CCs_distances[X]['ccs']
+            try:
+                iter(circuit.ana_dict['ccs_time_interval'])
+                ccs_time_interval = circuit.ana_dict['ccs_time_interval'][0]
+                all_CCs[X] = all_CCs_distances[X][f'ccs_{ccs_time_interval}ms']
+
+                print('CCs in statistics_overview use only first value in list of time intervals: ' +
+                      f'{ccs_time_interval}')
+            except TypeError:
+                all_CCs[X] = all_CCs_distances[X][f'ccs_{circuit.ana_dict["ccs_time_interval"]}ms']
         else:
             all_CCs[X] = np.array([])
 
