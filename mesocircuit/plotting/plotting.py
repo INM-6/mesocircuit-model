@@ -875,7 +875,8 @@ def plot_layer_panels(
                 else:
                     y0 = 0
 
-                ax.set_ylim(y0, np.max([ymax, ymax1]) * 1.1)
+                ax.set_ylim(np.min([ymin, ymin1, y0]),
+                            np.max([ymax, ymax1]) * 1.1)
 
         if layer_count == len(layer_labels) - 1:
             ax.set_xlabel(xlabel)
@@ -1204,6 +1205,7 @@ def plotfunc_CCs_distance(
         X,
         i,
         data,
+        key_ccs,
         pop_colors,
         max_num_pairs=10000,
         markersize_scale=0.4,
@@ -1216,7 +1218,7 @@ def plotfunc_CCs_distance(
         return
 
     distances = data[X]['distances_mm'][:max_num_pairs]
-    ccs = data[X]['ccs'][:max_num_pairs]
+    ccs = data[X][key_ccs][:max_num_pairs]
 
     # loop for reducing zorder-bias
     blocksize = int(len(distances) / nblocks)
@@ -1350,6 +1352,10 @@ def savefig(
 
     Parameters
     ----------
+    data_dir_circuit
+        Path to data directory
+    extension
+        File extension.
     filename
         Name of the file.
     eps_conv
