@@ -330,21 +330,35 @@ def corrcoef_distance(circuit, all_CCs_distances):
     """
     print('Plotting correlation coefficients vs. distance.')
 
-    fig = plt.figure(figsize=(circuit.plot_dict['fig_width_1col'], 5.))
-    gs = gridspec.GridSpec(1, 1)
-    gs.update(top=0.98, bottom=0.09, left=0.17, right=0.98)
-    ax = plot.plot_layer_panels(
-        gs[0, 0],
-        plotfunc=plot.plotfunc_CCs_distance,
-        populations=circuit.ana_dict['Y'],
-        layer_labels=circuit.plot_dict['layer_labels'],
-        pop_colors=circuit.plot_dict['pop_colors'],
-        data=all_CCs_distances,
-        xlabel='distance (mm)',
-        ylabel=r'$CC$')
+    def _corrcoef_distance(key_ccs):
+        fig = plt.figure(figsize=(circuit.plot_dict['fig_width_1col'], 5.))
+        gs = gridspec.GridSpec(1, 1)
+        gs.update(top=0.98, bottom=0.09, left=0.17, right=0.98)
+        ax = plot.plot_layer_panels(
+            gs[0, 0],
+            plotfunc=plot.plotfunc_CCs_distance,
+            populations=circuit.ana_dict['Y'],
+            layer_labels=circuit.plot_dict['layer_labels'],
+            pop_colors=circuit.plot_dict['pop_colors'],
+            data=all_CCs_distances,
+            key_ccs=key_ccs,
+            xlabel='distance (mm)',
+            ylabel=r'$CC$')
+        return fig
 
-    plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
-                 'corrcoef_distance')
+    try:
+        # one figure per time interval if a list is provided
+        for i, ccs_time_interval in enumerate(iter(circuit.ana_dict['ccs_time_interval'])):
+            key_ccs = f'ccs_{ccs_time_interval}'
+            fig = _corrcoef_distance(key_ccs)
+            plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+                         f'corrcoef_distance_{key_ccs}ms')
+    except TypeError as _:
+        ccs_time_interval = circuit.ana_dict['ccs_time_interval']
+        key_ccs = f'ccs_{ccs_time_interval}'
+        fig = _corrcoef_distance(key_ccs)
+        plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+                     f'corrcoef_distance_{key_ccs}ms')
     return
 
 
