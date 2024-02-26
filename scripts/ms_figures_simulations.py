@@ -7,6 +7,7 @@ This script needs to be executed before `ms_figures_plotting.py`.
 import numpy as np
 from mesocircuit import mesocircuit_framework as mesoframe
 import parametersets
+import cross_correlation_function as ccfunc
 
 ################################################################################
 # Decide which model to setup and whether to submit jobs.
@@ -16,10 +17,15 @@ import parametersets
 # stimulation)
 # 4: upscaled_CCs_only (full upscaled model simulated but only analysis for
 # correlation coefficients)
+#
+# To calculate pairwise spike train cross-correlation functions for model 2
+# (after the respective network simulation and analysis has taken place),
+# select: model = 2, run_jobs = False, run_ccfct = True.
 
-
-model = 2
+model = 1
 run_jobs = True
+run_ccfunc = False
+
 
 ################################################################################
 # Configure the parameters of the simulation experiments.
@@ -118,6 +124,12 @@ if run_jobs:
             # 'analysis',
             'analysis_and_plotting'
         ],
-        # machine='hpc'
-        machine='local'
-    )
+        machine='hpc')
+
+################################################################################
+# Submit job for calculating and plotting pairwise spike train cross-correlation
+# functions.
+
+if model == 2 and run_jobs == False and run_ccfunc == True:
+    ccfunc.write_jobscripts(circuit)
+    ccfunc.run_job(circuit, machine='hpc')
