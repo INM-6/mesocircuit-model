@@ -26,7 +26,6 @@ model = 1
 run_jobs = True
 run_ccfunc = False
 
-
 ################################################################################
 # Configure the parameters of the simulation experiments.
 # The biological model time is in general set to 5 min, but for the evoked model

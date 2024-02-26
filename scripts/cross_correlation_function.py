@@ -21,6 +21,8 @@ name = 'crosscorrfunc'
 def write_jobscripts(circuit):
     """
     """
+    print('Writing jobscripts for cross-correlation functions.')
+
     name = 'crosscorrfunc'
 
     # define machine specifics
@@ -29,7 +31,6 @@ def write_jobscripts(circuit):
         jobscript = '#!/bin/bash -x\n'
 
         if machine == 'hpc':
-            print(machine)
             dic = circuit.sys_dict['hpc']['analysis_and_plotting']
             stdout = os.path.join(circuit.data_dir_circuit,
                                   'stdout', name + '.txt')
@@ -77,7 +78,15 @@ def run_job(circuit, machine='hpc'):
     """
     fname = os.path.join(circuit.data_dir_circuit, 'jobscripts',
                          f"{machine}_{name}.sh")
-    subprocess.call(fname)
+
+    if machine == 'hpc':
+        submit = f'sbatch --account $BUDGET_ACCOUNTS {fname}'
+        output = subprocess.getoutput(submit)
+        print(output, submit)
+    elif machine == 'local':
+        retval = os.system(f'bash {fname}')
+        if retval != 0:
+            raise Exception(f'os.system failed: {retval}')
     return
 
 
@@ -88,10 +97,11 @@ def compute_and_plot_cross_correlation_function():
         data_dir=sys.argv[-3], name_exp=sys.argv[-2], ps_id=sys.argv[-1],
         load_parameters=True)
 
-    print(circuit)
+    # TODO continue here
+    print(1234)
 
     return
 
 
-if __name__ == '__main__()':
+if __name__ == '__main__':
     compute_and_plot_cross_correlation_function()
