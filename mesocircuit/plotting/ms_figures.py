@@ -249,8 +249,7 @@ def correlation(output_dir, circuit):
     """
     # load data
     d = {}
-    for all_datatype in ['all_CCs_distances',
-                         ]:
+    for all_datatype in ['all_CCs_distances', 'all_cross_correlation_functions']:
         fn = os.path.join(
             circuit.data_dir_circuit, 'processed_data', all_datatype + '.h5')
         data = h5py.File(fn, 'r')
@@ -270,21 +269,48 @@ def correlation(output_dir, circuit):
     bins_unscaled = (np.arange(0, circuit.plot_dict['distr_num_bins'] + 1) /
                      circuit.plot_dict['distr_num_bins'])
 
-    fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 6))
+    fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 3))
     gs = gridspec.GridSpec(1, 2)
     # gs.update(left=0.08, right=0.99, bottom=0.08, top=0.93, hspace=0.5)
 
+    # distributions of correlation coefficients for different time lags
     ax = plot.plot_population_panels_2cols(
         gs[0, 0],
         plotfunc=plot.plotfunc_distributions,
-        populations=circuit.ana_dict['Y'],
+        populations=circuit.net_dict['populations'][:-1],
+        layer_labels=circuit.plot_dict['layer_labels'],
         data2d=all_CCs,
         pop_colors=circuit.plot_dict['pop_colors'],
-        xlabel=r'$CC$',
-        bins=2. * (bins_unscaled - 0.5) * 1.5,  # range adjusted
+        xlabel='$CC$',
+        ylabel='p (a.u.)',
+        bins=2. * (bins_unscaled - 0.5) * 0.15,  # range adjusted
         MaxNLocatorNBins=2)
 
-    # plot.add_label(ax, labels[2])
+    plot.add_label(ax, 'A')
+
+    # legend
+    num = len(circuit.ana_dict['ccs_time_interval'])
+    legend_labels = [
+        r'$\Delta t_{CC}=$' + f'{t} ms' for t in circuit.ana_dict['ccs_time_interval']]
+
+    colors = [plot.adjust_lightness(
+        circuit.plot_dict['pop_colors'][0], 1-j/(num-1)) for j in np.arange(num)]
+
+    lines = [matplotlib.lines.Line2D([0], [0], color=c) for c in colors]
+
+    ax.legend(lines, legend_labels)
+
+    #####
+
+    # spike train cross-correlation functions
+    ax = plot.plot_cross_correlation_functions(
+        gs[0, 1],
+        populations=circuit.net_dict['populations'][:-1],
+        layer_labels=circuit.plot_dict['layer_labels'],
+        all_cross_correlation_functions=d['all_cross_correlation_functions'],
+        pop_colors=circuit.plot_dict['pop_colors'])
+
+    plot.add_label(ax, 'B')
 
     plt.savefig(os.path.join(output_dir, 'correlation.pdf'))
 

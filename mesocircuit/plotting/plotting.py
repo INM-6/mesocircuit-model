@@ -463,25 +463,24 @@ def plot_population_panels_2cols(
         gs,
         plotfunc,
         populations,
+        layer_labels,
         data2d,
         pop_colors,
         xlabel='',
         ylabel='',
-        ylim_top=False,
-        yticklabels=True,
         **kwargs):
     """
     Generic function to plot 2 columns of panels for an even number of populations.
     Multiple curves per population are possible.
     """
-    num_pops = len(populations)
-
-    gs_c = gridspec.GridSpecFromSubplotSpec(
-        num_pops, 1, subplot_spec=gs)
+    ncols = int(np.floor(np.sqrt(len(populations))))
+    nrows = len(populations) // ncols
+    gsf = gridspec.GridSpecFromSubplotSpec(
+        nrows, ncols, subplot_spec=gs)  # , wspace=wspace)
 
     for i, X in enumerate(populations):
         # select subplot
-        ax = plt.subplot(gs_c[i])
+        ax = plt.subplot(gsf[i])
         for loc in ['top', 'right']:
             ax.spines[loc].set_color('none')
 
@@ -489,22 +488,78 @@ def plot_population_panels_2cols(
         num = len(data2d)
         for j in np.arange(num):
             colors = [adjust_lightness(c, 1-j/(num-1)) for c in pop_colors]
-            plotfunc(ax, X, i, data=data2d[j], pop_colors=colors, **kwargs)
+            plotfunc(ax, X, i, data=data2d[j],
+                     pop_colors=colors, **kwargs)
 
-        if i == num_pops - 1:
+        layer = layer_labels[int(i / 2.)]
+        if i == 0:
+            ax.set_title('E')
+            ax.set_ylabel(ylabel + '\n' + layer)
+            ax_label = ax
+        if i % ncols == 0 and i != 0:
+            ax.set_ylabel(layer)
+
+        if i == 1:
+            ax.set_title('I')
+
+        if i % ncols > 0:
+            ax.set_yticklabels([])
+
+        if i >= len(populations) - 2:
             ax.set_xlabel(xlabel)
         else:
             ax.set_xticklabels([])
 
+    return ax_label
+
+
+def plot_cross_correlation_functions(
+        gs,
+        populations,
+        layer_labels,
+        all_cross_correlation_functions,
+        pop_colors):
+    """
+    """
+    spcorrs = all_cross_correlation_functions
+
+    lag_inds = np.arange(spcorrs['L23E:L23E'].shape[0])
+    # lag_inds = np.array(spcorrs['lag_inds']) # TODO why is this different?
+    # print(lag_inds)
+    lag_max = np.array(spcorrs['lag_times'])[-1]
+    lags = (lag_inds - lag_inds.size // 2)
+    inds = (lags >= -lag_max) & (lags <= lag_max)
+
+    gsf = gridspec.GridSpecFromSubplotSpec(
+        2, 2, subplot_spec=gs)  # hspace=0.5)
+
+    for i, L in enumerate(['L23', 'L4', 'L5', 'L6']):
+        ax = plt.subplot(gsf[i])
+        for j, key in enumerate([f'{L}E:{L}E', f'{L}E:{L}I', f'{L}I:{L}I']):
+            XY = key.split(':')
+            if XY[0][-1] == 'E' and XY[1][-1] == 'E':
+                color = pop_colors[::2][i]
+            elif XY[0][-1] == 'I' and XY[1][-1] == 'I':
+                color = pop_colors[1::2][i]
+            else:
+                color = 'k'
+            ax.plot(lags[inds], spcorrs[key][inds], color=color, label=key)
+            # print(key)
+
+        ax.set_title(layer_labels[i])
+        ax.axhline(y=0, color="grey", ls=':')
+        ax.axvline(x=0, color="grey", ls=':')
+        # ax.legend()
+
         if i == 0:
-            ax.set_ylabel(ylabel)
             ax_label = ax
+        if i < 2:
+            ax.set_xticklabels([])
+        if i >= 2:
+            ax.set_xlabel('lag (ms)')
+        if i % 2 == 0:
+            ax.set_ylabel('$c_{XY}$')
 
-        if ylim_top:
-            ax.set_ylim(top=ylim_top)
-
-        if not yticklabels:
-            ax.set_yticklabels([])
     return ax_label
 
 
@@ -652,7 +707,7 @@ def plot_crosscorrelation_funcs_thalamic_pulses(
         if i == 0:
             ax.set_title('E')
             ax.set_ylabel('distance (mm)\n' + layer)
-            ax_return = ax
+            ax_label = ax
         if i % ncols == 0 and i != 0:
             ax.set_ylabel(layer)
 
@@ -689,7 +744,7 @@ def plot_crosscorrelation_funcs_thalamic_pulses(
                     cb = fig.colorbar(
                         im, cax=cax, orientation='vertical')
                 cb.set_label(r'$CC^\nu$', labelpad=0.1)
-    return ax_return
+    return ax_label
 
 
 def plot_theory_overview(

@@ -105,11 +105,10 @@ def compute_cross_correlation_functions(
         data_dir=sys.argv[-3], name_exp=sys.argv[-2], ps_id=sys.argv[-1],
         load_parameters=True)
 
-    populations = circuit.net_dict['populations'][::-1]  # no TC
+    populations = circuit.net_dict['populations'][:-1]  # no TC
     time_step = circuit.ana_dict['binsize_time']
     time_interval = [circuit.ana_dict['t_transient'],
                      circuit.ana_dict['t_transient'] + circuit.sim_dict['t_sim']]
-    print(time_interval)
     time_indices = np.arange(time_interval[0] / time_step,
                              time_interval[1] / time_step).astype(int)
 
@@ -146,7 +145,7 @@ def compute_cross_correlation_functions(
     # compute spike correlations and write them to file
     f = h5py.File(os.path.join(
         circuit.data_dir_circuit, 'processed_data',
-        'correlation_functions.h5'), 'w')
+        'all_cross_correlation_functions.h5'), 'w')
 
     print('Computing spike correlations for:')
     for X, Y in zip(['L23E', 'L23E', 'L23I',
@@ -157,10 +156,6 @@ def compute_cross_correlation_functions(
                      'L4E', 'L4I', 'L4I',
                      'L5E', 'L5I', 'L5I',
                      'L6E', 'L6I', 'L6I']):
-        # TODO fix IndexError: index 377 is out of bounds for axis 0 with size 377
-        if (X == 'L5E' and Y == 'L5I') or (X == 'L6E' and Y == 'L6I'):
-            f[f'{X}:{Y}'] = np.array([])
-            continue
         print(f'    {X}:{Y}')
         spcorrs = np.array(_compute_spike_correlations(
             sptrains[X], sptrains[Y], lag_inds, num_jobs=num_jobs))
@@ -188,4 +183,5 @@ def _compute_spike_correlations(sptrains_X, sptrains_Y, lag_inds, num_jobs=1):
 
 
 if __name__ == '__main__':
-    compute_cross_correlation_functions(num_jobs=6)
+    compute_cross_correlation_functions(
+        num_trains=512, binsize_time_resampled=2, lag_max=50., num_jobs=64)
