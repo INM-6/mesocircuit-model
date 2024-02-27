@@ -7,7 +7,7 @@ This script needs to be executed before `ms_figures_plotting.py`.
 import numpy as np
 from mesocircuit import mesocircuit_framework as mesoframe
 import parametersets
-import cross_correlation_function as ccfunc
+import ms_figures_cross_correlation_function as ccfunc
 
 ################################################################################
 # Decide which model to setup and whether to submit jobs.
