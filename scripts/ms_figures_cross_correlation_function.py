@@ -24,6 +24,7 @@ import scipy.signal as ss
 
 name = 'crosscorrfunc'
 
+
 def write_jobscripts(circuit):
     """
     """
@@ -113,7 +114,7 @@ def compute_cross_correlation_functions(
     time_indices = np.arange(time_interval[0] / time_step,
                              time_interval[1] / time_step).astype(int)
 
-    # reshaping to temporally resample
+    # number of bins to sum for temporally resampling
     q = int(binsize_time_resampled / time_step)
 
     # load and resample binned spike trains
@@ -124,7 +125,7 @@ def compute_cross_correlation_functions(
         with h5py.File(fname, 'r') as f:
             data = load_h5_to_sparse_X(X, f)
 
-        # slice according to time interval
+        # extract number of spike trains and slice according to time interval
         data = data[:num_trains, time_indices]
         data = data.toarray().astype(float)
 
@@ -132,16 +133,15 @@ def compute_cross_correlation_functions(
         data = data.reshape(
             (data.shape[0], data.shape[1] // q, q)).sum(axis=-1)
 
-        # scale spike count to instantaneous rate in spikes / s
-        data = data / (time_step * q * 1e-3)
+        # normalize data by subtracting mean and dividing by standard deviation
         data = ((data.T - data.mean(axis=1)) / data.std(axis=1)).T
 
         sptrains[X] = data
 
-    # lag indices
+    # lag indices (computed with last data)
     lag_inds = np.arange(
-        data.shape[1] // 2 - lag_max / time_step / q,
-        data.shape[1] // 2 + lag_max / time_step / q + 1).astype(int)
+        data.shape[1] // 2 - lag_max / binsize_time_resampled,
+        data.shape[1] // 2 + lag_max / binsize_time_resampled + 1).astype(int)
 
     # compute spike correlations and write them to file
     f = h5py.File(os.path.join(
@@ -162,7 +162,6 @@ def compute_cross_correlation_functions(
             sptrains[X], sptrains[Y], lag_inds, num_jobs=num_jobs))
         f[f'{X}:{Y}'] = spcorrs
 
-    f['lag_inds'] = lag_inds
     f['lag_times'] = np.linspace(-lag_max, lag_max, lag_inds.size)
     f.close()
 
@@ -175,10 +174,12 @@ def _compute_spike_correlations(sptrains_X, sptrains_Y, lag_inds, num_jobs=1):
     """
     """
     n_trains = sptrains_X.shape[0]
-    mask = np.tri(n_trains, k=0) != True
+    mask = np.tri(n_trains, k=0) != True  # ignoring auto-correlations
 
     def corr(ij, sptrains_X, sptrains_Y, lag_inds):
-        return ss.correlate(sptrains_X[ij[0]], sptrains_Y[ij[1]], 'same')[lag_inds] / sptrains_X[ij[0]].size
+        cross_corr = ss.correlate(
+            sptrains_X[ij[0]], sptrains_Y[ij[1]], mode='same')
+        return cross_corr[lag_inds] / sptrains_X[ij[0]].size
 
     # use multiprocessing for parallelization
     spcorrs = Parallel(n_jobs=num_jobs)(delayed(corr)(
@@ -189,5 +190,4 @@ def _compute_spike_correlations(sptrains_X, sptrains_Y, lag_inds, num_jobs=1):
 
 if __name__ == '__main__':
     compute_cross_correlation_functions(
-        num_trains=512,
-        binsize_time_resampled=2, lag_max=50., num_jobs=64)
+        num_trains=512, binsize_time_resampled=2, lag_max=25., num_jobs=64)

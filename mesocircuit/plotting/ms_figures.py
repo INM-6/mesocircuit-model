@@ -271,7 +271,7 @@ def correlation(output_dir, circuit):
 
     fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 3))
     gs = gridspec.GridSpec(1, 2)
-    # gs.update(left=0.08, right=0.99, bottom=0.08, top=0.93, hspace=0.5)
+    gs.update(left=0.04, right=0.96, bottom=0.09, top=0.93, wspace=0.3)
 
     # distributions of correlation coefficients for different time lags
     ax = plot.plot_population_panels_2cols(
@@ -283,29 +283,30 @@ def correlation(output_dir, circuit):
         pop_colors=circuit.plot_dict['pop_colors'],
         xlabel='$CC$',
         ylabel='p (a.u.)',
-        bins=2. * (bins_unscaled - 0.5) * 0.15,  # range adjusted
+        bins=2. * (bins_unscaled - 0.5) * 0.1,  # range adjusted
         MaxNLocatorNBins=2)
 
     plot.add_label(ax, 'A')
 
     # legend
     num = len(circuit.ana_dict['ccs_time_interval'])
-    legend_labels = [
-        r'$\Delta t_{CC}=$' + f'{t} ms' for t in circuit.ana_dict['ccs_time_interval']]
+    legend_labels = circuit.ana_dict['ccs_time_interval']
 
     colors = [plot.adjust_lightness(
         circuit.plot_dict['pop_colors'][0], 1-j/(num-1)) for j in np.arange(num)]
 
     lines = [matplotlib.lines.Line2D([0], [0], color=c) for c in colors]
 
-    ax.legend(lines, legend_labels)
+    ax.legend(lines, legend_labels, title=r'$\Delta t_{CC}\, \text{(ms)}$',
+              loc='center', bbox_to_anchor=(0.9, 0.75),
+              frameon=False,
+              fontsize=matplotlib.rcParams['font.size'] * 0.8)
 
     #####
 
     # spike train cross-correlation functions
     ax = plot.plot_cross_correlation_functions(
         gs[0, 1],
-        populations=circuit.net_dict['populations'][:-1],
         layer_labels=circuit.plot_dict['layer_labels'],
         all_cross_correlation_functions=d['all_cross_correlation_functions'],
         pop_colors=circuit.plot_dict['pop_colors'])

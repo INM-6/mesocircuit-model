@@ -515,26 +515,44 @@ def plot_population_panels_2cols(
 
 def plot_cross_correlation_functions(
         gs,
-        populations,
         layer_labels,
         all_cross_correlation_functions,
-        pop_colors):
+        pop_colors,
+        lag_max_plot=None):
     """
     """
     spcorrs = all_cross_correlation_functions
 
-    lag_inds = np.arange(spcorrs['L23E:L23E'].shape[0])
-    # lag_inds = np.array(spcorrs['lag_inds']) # TODO why is this different?
-    # print(lag_inds)
-    lag_max = np.array(spcorrs['lag_times'])[-1]
-    lags = (lag_inds - lag_inds.size // 2)
-    inds = (lags >= -lag_max) & (lags <= lag_max)
+    # average cross-correlation functions
+    spcorrs_mean = {}
+    for X, Y in zip(['L23E', 'L23E', 'L23I',
+                    'L4E', 'L4E', 'L4I',
+                     'L5E', 'L5E', 'L5I',
+                     'L6E', 'L6E', 'L6I'],
+                    ['L23E', 'L23I', 'L23I',
+                    'L4E', 'L4I', 'L4I',
+                     'L5E', 'L5I', 'L5I',
+                     'L6E', 'L6I', 'L6I']):
+
+        spcorrs_mean[f'{X}:{Y}'] = spcorrs[f'{X}:{Y}'][()].mean(axis=0)
+
+    # which time lags to plot
+    lag_times = np.array(spcorrs['lag_times'])
+    if not lag_max_plot:
+        lag_max = lag_times[-1]
+    else:
+        lag_max = lag_max_plot
+    inds = (lag_times >= -lag_max) & (lag_times <= lag_max)
 
     gsf = gridspec.GridSpecFromSubplotSpec(
-        2, 2, subplot_spec=gs)  # hspace=0.5)
+        2, 2, subplot_spec=gs, hspace=0.5, wspace=0.8)
 
     for i, L in enumerate(['L23', 'L4', 'L5', 'L6']):
         ax = plt.subplot(gsf[i])
+
+        for loc in ['top', 'right']:
+            ax.spines[loc].set_color('none')
+
         for j, key in enumerate([f'{L}E:{L}E', f'{L}E:{L}I', f'{L}I:{L}I']):
             XY = key.split(':')
             if XY[0][-1] == 'E' and XY[1][-1] == 'E':
@@ -543,22 +561,29 @@ def plot_cross_correlation_functions(
                 color = pop_colors[1::2][i]
             else:
                 color = 'k'
-            ax.plot(lags[inds], spcorrs[key][inds], color=color, label=key)
-            # print(key)
+
+            if L == 'L23':
+                label = 'L2/3' + XY[0][-1] + ':' + 'L2/3' + XY[1][-1]
+            else:
+                label = key
+            ax.plot(lag_times[inds], spcorrs_mean[key]
+                    [inds], color=color, label=label)
 
         ax.set_title(layer_labels[i])
         ax.axhline(y=0, color="grey", ls=':')
         ax.axvline(x=0, color="grey", ls=':')
-        # ax.legend()
+        ax.legend(frameon=False,
+                  loc='center', bbox_to_anchor=(1., 0.8),
+                  fontsize=matplotlib.rcParams['font.size'] * 0.8)
 
         if i == 0:
             ax_label = ax
         if i < 2:
             ax.set_xticklabels([])
         if i >= 2:
-            ax.set_xlabel('lag (ms)')
+            ax.set_xlabel('time lag (ms)')
         if i % 2 == 0:
-            ax.set_ylabel('$c_{XY}$')
+            ax.set_ylabel('$CC^s$')
 
     return ax_label
 
