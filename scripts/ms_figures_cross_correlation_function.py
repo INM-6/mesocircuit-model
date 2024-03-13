@@ -10,6 +10,7 @@
 import os
 import sys
 import numpy as np
+import time
 import h5py
 import pandas as pd
 import subprocess
@@ -22,7 +23,6 @@ from joblib import Parallel, delayed
 import scipy.signal as ss
 
 name = 'crosscorrfunc'
-
 
 def write_jobscripts(circuit):
     """
@@ -74,7 +74,6 @@ unset DISPLAY
                              f"{machine}_{name}.sh")
         with open(fname, 'w') as f:
             f.write(jobscript)
-
     return
 
 
@@ -101,6 +100,8 @@ def compute_cross_correlation_functions(
     """
     Compute pairwise spike trains ignoring autocorrelations.
     """
+    start = time.time()
+
     circuit = mesoframe.Mesocircuit(
         data_dir=sys.argv[-3], name_exp=sys.argv[-2], ps_id=sys.argv[-1],
         load_parameters=True)
@@ -117,7 +118,7 @@ def compute_cross_correlation_functions(
 
     # load and resample binned spike trains
     fname = os.path.join(
-        circuit.data_dir_circuit, 'processed_data', 'all_sptrains.h5')
+        circuit.data_dir_circuit, 'processed_data', 'all_sptrains_bintime.h5')
     sptrains = {}
     for X in populations:
         with h5py.File(fname, 'r') as f:
@@ -165,10 +166,14 @@ def compute_cross_correlation_functions(
     f['lag_times'] = np.linspace(-lag_max, lag_max, lag_inds.size)
     f.close()
 
+    end = time.time()
+    print(f'Computing spike correlations took {end - start:.2f} s.')
     return
 
 
 def _compute_spike_correlations(sptrains_X, sptrains_Y, lag_inds, num_jobs=1):
+    """
+    """
     n_trains = sptrains_X.shape[0]
     mask = np.tri(n_trains, k=0) != True
 
@@ -184,4 +189,5 @@ def _compute_spike_correlations(sptrains_X, sptrains_Y, lag_inds, num_jobs=1):
 
 if __name__ == '__main__':
     compute_cross_correlation_functions(
-        num_trains=512, binsize_time_resampled=2, lag_max=50., num_jobs=64)
+        num_trains=512,
+        binsize_time_resampled=2, lag_max=50., num_jobs=64)
