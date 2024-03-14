@@ -232,6 +232,89 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
             axes[4].set_title(titles[i], pad=15)
 
         plt.savefig(os.path.join(output_dir, 'rev_vs_ups_statistics.pdf'))
+
+    return
+
+
+def correlation(output_dir, circuit):
+    """
+    Figure of correlation structure.
+
+    Parameters
+    ----------
+    output_dir
+        Output directory.
+    circuit
+        Mesocircuit instance.
+    """
+    # load data
+    d = {}
+    for all_datatype in ['all_CCs_distances', 'all_cross_correlation_functions']:
+        fn = os.path.join(
+            circuit.data_dir_circuit, 'processed_data', all_datatype + '.h5')
+        data = h5py.File(fn, 'r')
+        d.update({all_datatype: data})
+
+    # extract all_CCs from all_CCs_distances
+    ccs_time_intervals = np.array(
+        circuit.ana_dict['ccs_time_interval']).reshape(-1)
+    all_CCs = {}
+    for i, interval in enumerate(ccs_time_intervals):
+        all_CCs[i] = {}
+        for X in d['all_CCs_distances']:
+            if X != 'TC':
+                all_CCs[i][X] = d['all_CCs_distances'][X][f'ccs_{interval}ms']
+
+    # bins used in distribution in [0,1]
+    bins_unscaled = (np.arange(0, circuit.plot_dict['distr_num_bins'] + 1) /
+                     circuit.plot_dict['distr_num_bins'])
+
+    fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 3))
+    gs = gridspec.GridSpec(1, 2)
+    gs.update(left=0.04, right=0.96, bottom=0.09, top=0.93, wspace=0.3)
+
+    # distributions of correlation coefficients for different time lags
+    ax = plot.plot_population_panels_2cols(
+        gs[0, 0],
+        plotfunc=plot.plotfunc_distributions,
+        populations=circuit.net_dict['populations'][:-1],
+        layer_labels=circuit.plot_dict['layer_labels'],
+        data2d=all_CCs,
+        pop_colors=circuit.plot_dict['pop_colors'],
+        xlabel='$CC$',
+        ylabel='p (a.u.)',
+        bins=2. * (bins_unscaled - 0.5) * 0.06,  # range adjusted
+        MaxNLocatorNBins=2)
+
+    plot.add_label(ax, 'A')
+
+    # legend
+    num = len(circuit.ana_dict['ccs_time_interval'])
+    legend_labels = circuit.ana_dict['ccs_time_interval']
+
+    colors = [plot.adjust_lightness(
+        circuit.plot_dict['pop_colors'][0], 1-j/(num-1)) for j in np.arange(num)]
+
+    lines = [matplotlib.lines.Line2D([0], [0], color=c) for c in colors]
+
+    ax.legend(lines, legend_labels, title=r'$\Delta t_{CC}$ (ms)',
+              loc='center', bbox_to_anchor=(0.9, 0.75),
+              frameon=False,
+              fontsize=matplotlib.rcParams['font.size'] * 0.8)
+
+    #####
+
+    # spike train cross-correlation functions
+    ax = plot.plot_cross_correlation_functions(
+        gs[0, 1],
+        layer_labels=circuit.plot_dict['layer_labels'],
+        all_cross_correlation_functions=d['all_cross_correlation_functions'],
+        pop_colors=circuit.plot_dict['pop_colors'])
+
+    plot.add_label(ax, 'B')
+
+    plt.savefig(os.path.join(output_dir, 'correlation.pdf'))
+
     return
 
 

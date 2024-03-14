@@ -7,6 +7,7 @@ This script needs to be executed before `ms_figures_plotting.py`.
 import numpy as np
 from mesocircuit import mesocircuit_framework as mesoframe
 import parametersets
+import ms_figures_cross_correlation_function as ccfunc
 
 ################################################################################
 # Decide which model to setup and whether to submit jobs.
@@ -16,10 +17,14 @@ import parametersets
 # stimulation)
 # 4: upscaled_CCs_only (full upscaled model simulated but only analysis for
 # correlation coefficients)
-
+#
+# To calculate pairwise spike train cross-correlation functions for model 2
+# (after the respective network simulation and analysis has taken place),
+# select: model = 2, run_jobs = False, run_ccfct = True.
 
 model = 1
 run_jobs = True
+run_ccfunc = False
 
 ################################################################################
 # Configure the parameters of the simulation experiments.
@@ -43,7 +48,8 @@ if model == 2:
     name_upscaled_1mm2 = 'upscaled_1mm2'
     custom_params_upscaled_1mm2 = dict(
         parametersets.ps_dicts['mesocircuit_MAMV1'])
-    custom_params_upscaled_1mm2.update({'ana_dict': {'extract_1mm2': True}})
+    custom_params_upscaled_1mm2.update({'ana_dict': {'extract_1mm2': True,
+                                        'ccs_time_interval': [2., 50., 200.]}})
     custom_params_upscaled_1mm2.update({'sim_dict': {'t_sim': t_sim}})
     custom_params_upscaled_1mm2['sys_dict']['hpc']['network'].update(
         {'wall_clock_time': '02:00:00'}),
@@ -114,8 +120,15 @@ if run_jobs:
     circuit.run_jobs(
         jobs=[
             'network',
-            'analysis',
-            # 'analysis_and_plotting'
+            # 'analysis',
+            'analysis_and_plotting'
         ],
-        machine='hpc'
-    )
+        machine='hpc')
+
+################################################################################
+# Submit job for calculating and plotting pairwise spike train cross-correlation
+# functions.
+
+if model == 2 and run_jobs == False and run_ccfunc == True:
+    ccfunc.write_jobscripts(circuit)
+    ccfunc.run_job(circuit, machine='hpc')
