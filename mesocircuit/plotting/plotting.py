@@ -468,6 +468,7 @@ def plot_population_panels_2cols(
         pop_colors,
         xlabel='',
         ylabel='',
+        wspace=0.3,
         **kwargs):
     """
     Generic function to plot 2 columns of panels for an even number of populations.
@@ -476,7 +477,7 @@ def plot_population_panels_2cols(
     ncols = int(np.floor(np.sqrt(len(populations))))
     nrows = len(populations) // ncols
     gsf = gridspec.GridSpecFromSubplotSpec(
-        nrows, ncols, subplot_spec=gs)  # , wspace=wspace)
+        nrows, ncols, subplot_spec=gs, wspace=wspace)
 
     for i, X in enumerate(populations):
         # select subplot
@@ -518,7 +519,9 @@ def plot_cross_correlation_functions(
         layer_labels,
         all_cross_correlation_functions,
         pop_colors,
-        lag_max_plot=None):
+        lag_max_plot=None,
+        scale_exp_plot=5,
+        cc_max_plot=9.):
     """
     """
     spcorrs = all_cross_correlation_functions
@@ -545,7 +548,7 @@ def plot_cross_correlation_functions(
     inds = (lag_times >= -lag_max) & (lag_times <= lag_max)
 
     gsf = gridspec.GridSpecFromSubplotSpec(
-        2, 2, subplot_spec=gs, hspace=0.5, wspace=0.8)
+        2, 2, subplot_spec=gs, hspace=0.5, wspace=0.5)
 
     for i, L in enumerate(['L23', 'L4', 'L5', 'L6']):
         ax = plt.subplot(gsf[i])
@@ -566,8 +569,13 @@ def plot_cross_correlation_functions(
                 label = 'L2/3' + XY[0][-1] + ':' + 'L2/3' + XY[1][-1]
             else:
                 label = key
-            ax.plot(lag_times[inds], spcorrs_mean[key]
-                    [inds], color=color, label=label)
+
+            ax.plot(lag_times[inds],
+                    spcorrs_mean[key][inds] * 10**(scale_exp_plot),
+                    color=color,
+                    label=f'{XY[0][-1]}:{XY[1][-1]}')
+            
+        ax.set_ylim(-cc_max_plot, cc_max_plot)
 
         ax.set_title(layer_labels[i])
         ax.axhline(y=0, color="grey", ls=':')
@@ -582,8 +590,13 @@ def plot_cross_correlation_functions(
             ax.set_xticklabels([])
         if i >= 2:
             ax.set_xlabel('time lag (ms)')
+
+        ylabel = '$CC^s$'
+        if scale_exp_plot != 1:
+            ylabel += r' ($10^{' + f'{-scale_exp_plot}'  + r'}$)'
+
         if i % 2 == 0:
-            ax.set_ylabel('$CC^s$')
+            ax.set_ylabel(ylabel)
 
     return ax_label
 

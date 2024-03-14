@@ -283,7 +283,7 @@ def correlation(output_dir, circuit):
         pop_colors=circuit.plot_dict['pop_colors'],
         xlabel='$CC$',
         ylabel='p (a.u.)',
-        bins=2. * (bins_unscaled - 0.5) * 0.1,  # range adjusted
+        bins=2. * (bins_unscaled - 0.5) * 0.06,  # range adjusted
         MaxNLocatorNBins=2)
 
     plot.add_label(ax, 'A')
@@ -297,7 +297,7 @@ def correlation(output_dir, circuit):
 
     lines = [matplotlib.lines.Line2D([0], [0], color=c) for c in colors]
 
-    ax.legend(lines, legend_labels, title=r'$\Delta t_{CC}\, \text{(ms)}$',
+    ax.legend(lines, legend_labels, title=r'$\Delta t_{CC}$ (ms)',
               loc='center', bbox_to_anchor=(0.9, 0.75),
               frameon=False,
               fontsize=matplotlib.rcParams['font.size'] * 0.8)
