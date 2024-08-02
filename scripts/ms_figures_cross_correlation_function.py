@@ -12,12 +12,9 @@ import sys
 import numpy as np
 import time
 import h5py
-import pandas as pd
 import subprocess
 import mesocircuit
 import mesocircuit.mesocircuit_framework as mesoframe
-import mesocircuit.analysis.spike_analysis as sana
-import mesocircuit.helpers.parallelism_time as pt
 from mesocircuit.helpers.io import load_h5_to_sparse_X
 from joblib import Parallel, delayed
 import scipy.signal as ss
@@ -189,5 +186,10 @@ def _compute_spike_correlations(sptrains_X, sptrains_Y, lag_inds, num_jobs=1):
 
 
 if __name__ == '__main__':
+
+    start_time = time.time()
     compute_cross_correlation_functions(
-        num_trains=512, binsize_time_resampled=2, lag_max=25., num_jobs=64)
+        num_trains=512, binsize_time_resampled=2, lag_max=25., num_jobs=1)
+    end_time = time.time()
+
+    print(f'Cross-correlation analysis took {end_time - start_time} s.')
