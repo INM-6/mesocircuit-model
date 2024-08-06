@@ -206,12 +206,14 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
         titles = ['reference model, ' + r'1 mm$^2$',
                   'upscaled model, ' + r'1 mm$^2$ sampled']
 
+        interval = ref_circuit.ana_dict['ccs_time_interval']
+
         for i, prefix in enumerate(['ref', 'ups']):
             all_CCs = {}
             all_CCs_distances = d[prefix + '_all_CCs_distances']
             for X in all_CCs_distances:
                 if isinstance(all_CCs_distances[X], h5py._hl.group.Group):
-                    all_CCs[X] = all_CCs_distances[X]['ccs']
+                    all_CCs[X] = all_CCs_distances[X][f'ccs_{interval}ms']
                 else:
                     all_CCs[X] = np.array([])
 

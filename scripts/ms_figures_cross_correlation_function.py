@@ -44,11 +44,7 @@ def write_jobscripts(circuit):
 #SBATCH --output={stdout}
 #SBATCH --error={stdout}
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --time=06:00:00
-export NUMEXPR_MAX_THREADS={dic['max_num_cores']}
-export OMP_PROC_BIND=TRUE
-export OMP_NUM_THREADS={dic['max_num_cores']}
+#SBATCH --time=12:00:00
 unset DISPLAY
 """
 
@@ -94,7 +90,7 @@ def run_job(circuit, machine='hpc'):
 
 
 def compute_cross_correlation_functions(
-        num_trains=512, binsize_time_resampled=2, lag_max=50., num_jobs=1):
+        num_trains=512, binsize_time_resampled=2, lag_max=25., num_jobs=1):
     """
     Compute pairwise spike trains ignoring autocorrelations.
     """
@@ -187,9 +183,8 @@ def _compute_spike_correlations(sptrains_X, sptrains_Y, lag_inds, num_jobs=1):
 
 if __name__ == '__main__':
 
-    start_time = time.time()
+    # TODO SHOULDN'T BINSIZE_TIME_RESAMPLED BE IDENTICAL TO OUR BINSIZE TIME?
+    # TODO FIX NUM_JOBS PARALLELISM, PROBABLY 64
+    # TODO FIX TIME SHIFT 1 BIN
     compute_cross_correlation_functions(
-        num_trains=512, binsize_time_resampled=2, lag_max=25., num_jobs=1)
-    end_time = time.time()
-
-    print(f'Cross-correlation analysis took {end_time - start_time} s.')
+        num_trains=512, binsize_time_resampled=0.5, lag_max=25., num_jobs=1)

@@ -22,16 +22,16 @@ import ms_figures_cross_correlation_function as ccfunc
 # (after the respective network simulation and analysis has taken place),
 # select: model = 2, run_jobs = False, run_ccfct = True.
 
-model = 1
-run_jobs = True
-run_ccfunc = False
+model = 2
+run_jobs = False
+run_ccfunc = True
 
 ################################################################################
 # Configure the parameters of the simulation experiments.
-# The biological model time is in general set to 5 min, but for the evoked model
+# The biological model time is in general set to 15 min, but for the evoked model
 # only to 10 s.
 
-t_sim = 5 * 60 * 1000.
+t_sim = 15 * 60 * 1000.
 t_sim_evoked = 10 * 1000.
 
 if model == 1:
@@ -40,9 +40,9 @@ if model == 1:
         parametersets.ps_dicts['microcircuit_MAMV1'])
     custom_params_reference.update({'sim_dict': {'t_sim': t_sim}})
     custom_params_reference['sys_dict']['hpc']['network'].update(
-        {'wall_clock_time': '02:00:00'}),
+        {'wall_clock_time': '05:00:00'}),
     custom_params_reference['sys_dict']['hpc'].update(
-        {'analysis_and_plotting': {'wall_clock_time': '02:00:00'}})
+        {'analysis_and_plotting': {'wall_clock_time': '05:00:00'}})
 
 if model == 2:
     name_upscaled_1mm2 = 'upscaled_1mm2'
@@ -52,15 +52,17 @@ if model == 2:
                                         'ccs_time_interval': [2., 50., 200.]}})
     custom_params_upscaled_1mm2.update({'sim_dict': {'t_sim': t_sim}})
     custom_params_upscaled_1mm2['sys_dict']['hpc']['network'].update(
-        {'wall_clock_time': '02:00:00'}),
+        {'wall_clock_time': '05:00:00'}),
     custom_params_upscaled_1mm2['sys_dict']['hpc'].update(
-        {'analysis_and_plotting': {'wall_clock_time': '02:00:00'}})
+        {'analysis_and_plotting': {'wall_clock_time': '05:00:00'}})
 
 if model == 3:
     name_evoked = 'evoked'
     custom_params_evoked = dict(
         parametersets.ps_dicts['mesocircuit_MAMV1_evoked'])
     custom_params_evoked.update({'sim_dict': {'t_sim': t_sim_evoked}})
+    custom_params_evoked['sys_dict']['hpc'].update(
+        {'analysis_and_plotting': {'wall_clock_time': '05:00:00'}})
 
 if model == 4:
     name_upscaled_CCs_only = 'upscaled_CCs_only'
@@ -71,9 +73,9 @@ if model == 4:
                      'datatypes_statistics': np.array(['CCs_distances'])}})
     custom_params_upscaled_CCs_only.update({'sim_dict': {'t_sim': t_sim}})
     custom_params_upscaled_CCs_only['sys_dict']['hpc']['network'].update(
-        {'wall_clock_time': '02:00:00'}),
+        {'wall_clock_time': '05:00:00'}),
     custom_params_upscaled_CCs_only['sys_dict']['hpc'].update(
-        {'analysis_and_plotting': {'wall_clock_time': '02:00:00'}})
+        {'analysis_and_plotting': {'wall_clock_time': '05:00:00'}})
 
 ################################################################################
 # Initialize MesocircuitExperiments for each parameter combination and inspect
@@ -121,6 +123,7 @@ if run_jobs:
         jobs=[
             'network',
             # 'analysis',
+            # 'plotting',
             'analysis_and_plotting'
         ],
         machine='hpc')
