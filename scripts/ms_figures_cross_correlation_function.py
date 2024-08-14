@@ -132,9 +132,10 @@ def compute_cross_correlation_functions(
         sptrains[X] = data
 
     # lag indices (computed with last data)
-    lag_inds = np.arange(
-        data.shape[1] // 2 - lag_max / binsize_time_resampled,
-        data.shape[1] // 2 + lag_max / binsize_time_resampled + 1).astype(int)
+    mode = 'same'
+    lags = ss.correlation_lags(
+        data.shape[1], data.shape[1], mode=mode)
+    lag_inds = np.where((lags >= -lag_max) & (lags <= lag_max))
 
     # compute spike correlations and write them to file
     f = h5py.File(os.path.join(
@@ -152,10 +153,10 @@ def compute_cross_correlation_functions(
                      'L6E', 'L6I', 'L6I']):
         print(f'    {X}:{Y}')
         spcorrs = np.array(_compute_spike_correlations(
-            sptrains[X], sptrains[Y], lag_inds, num_jobs=num_jobs))
+            sptrains[X], sptrains[Y], lag_inds, mode=mode, num_jobs=num_jobs))
         f[f'{X}:{Y}'] = spcorrs
 
-    f['lag_times'] = np.linspace(-lag_max, lag_max, lag_inds.size)
+    f['lag_times'] = lags[lag_inds]
     f.close()
 
     end = time.time()
@@ -163,7 +164,8 @@ def compute_cross_correlation_functions(
     return
 
 
-def _compute_spike_correlations(sptrains_X, sptrains_Y, lag_inds, num_jobs=1):
+def _compute_spike_correlations(
+        sptrains_X, sptrains_Y, lag_inds, mode='same', num_jobs=1):
     """
     """
     n_trains = sptrains_X.shape[0]
@@ -171,7 +173,7 @@ def _compute_spike_correlations(sptrains_X, sptrains_Y, lag_inds, num_jobs=1):
 
     def corr(ij, sptrains_X, sptrains_Y, lag_inds):
         cross_corr = ss.correlate(
-            sptrains_X[ij[0]], sptrains_Y[ij[1]], mode='same')
+            sptrains_X[ij[0]], sptrains_Y[ij[1]], mode=mode)
         return cross_corr[lag_inds] / sptrains_X[ij[0]].size
 
     # use multiprocessing for parallelization
@@ -182,9 +184,5 @@ def _compute_spike_correlations(sptrains_X, sptrains_Y, lag_inds, num_jobs=1):
 
 
 if __name__ == '__main__':
-
-    # TODO SHOULDN'T BINSIZE_TIME_RESAMPLED BE IDENTICAL TO OUR BINSIZE TIME?
-    # TODO FIX NUM_JOBS PARALLELISM, PROBABLY 64
-    # TODO FIX TIME SHIFT 1 BIN
     compute_cross_correlation_functions(
-        num_trains=512, binsize_time_resampled=0.5, lag_max=25., num_jobs=1)
+        num_trains=512, binsize_time_resampled=0.5, lag_max=25., num_jobs=64)

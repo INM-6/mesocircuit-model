@@ -267,9 +267,16 @@ def correlation(output_dir, circuit):
             if X != 'TC':
                 all_CCs[i][X] = d['all_CCs_distances'][X][f'ccs_{interval}ms']
 
+    # use the same bin width but different interval for CC distributions
+    # here and in statistics_overview
+    distr_max_cc = 0.04
+    distr_num_bins = int(circuit.plot_dict['distr_num_bins']
+                         * distr_max_cc
+                         / circuit.plot_dict['distr_max_cc'])
+
     # bins used in distribution in [0,1]
-    bins_unscaled = (np.arange(0, circuit.plot_dict['distr_num_bins'] + 1) /
-                     circuit.plot_dict['distr_num_bins'])
+    bins_unscaled = (np.arange(0, distr_num_bins + 1) / distr_num_bins)
+    bins = 2. * (bins_unscaled - 0.5) * distr_max_cc
 
     fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 3))
     gs = gridspec.GridSpec(1, 2)
@@ -285,14 +292,15 @@ def correlation(output_dir, circuit):
         pop_colors=circuit.plot_dict['pop_colors'],
         xlabel='$CC$',
         ylabel='p (a.u.)',
-        bins=2. * (bins_unscaled - 0.5) * 0.06,  # range adjusted
+        bins=bins,
         MaxNLocatorNBins=2)
 
     plot.add_label(ax, 'A')
 
     # legend
     num = len(circuit.ana_dict['ccs_time_interval'])
-    legend_labels = circuit.ana_dict['ccs_time_interval']
+    legend_labels = np.array(
+        circuit.ana_dict['ccs_time_interval']).astype(int)  # int
 
     colors = [plot.adjust_lightness(
         circuit.plot_dict['pop_colors'][0], 1-j/(num-1)) for j in np.arange(num)]
