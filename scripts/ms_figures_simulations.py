@@ -22,9 +22,9 @@ import ms_figures_cross_correlation_function as ccfunc
 # (after the respective network simulation and analysis has taken place),
 # select: model = 2, run_jobs = False, run_ccfct = True.
 
-model = 2
-run_jobs = False
-run_ccfunc = True
+model = 4
+run_jobs = True
+run_ccfunc = False
 
 ################################################################################
 # Configure the parameters of the simulation experiments.
@@ -122,9 +122,9 @@ if run_jobs:
     circuit.run_jobs(
         jobs=[
             'network',
-            # 'analysis',
+            'analysis',
             # 'plotting',
-            'analysis_and_plotting'
+            # 'analysis_and_plotting'
         ],
         machine='hpc')
 
