@@ -68,7 +68,7 @@ class MesocircuitExperiment():
         if not os.path.isdir(self.data_dir_exp):
             print(f'Creating directory: {self.data_dir_exp}')
             os.makedirs(self.data_dir_exp)
-        
+
         print(f'Data directory: {self.data_dir_exp}')
 
         if not load:
@@ -595,7 +595,7 @@ unset DISPLAY
                                 "LD_PRELOAD skipped because jemalloc is not in PATH.")
 
                     if name in ['lfp_simulation', 'lfp_postprocess', 'lfp_plotting']:
-                        run_cmd = f'srun --mpi=pmi2'
+                        run_cmd = f'srun'
                     else:
                         run_cmd = f'srun --cpus-per-task={dic["local_num_threads"]} --threads-per-core=1 --cpu-bind=rank'
 

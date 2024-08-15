@@ -192,6 +192,12 @@ def raster(circuit, all_sptrains, all_pos_sorting_arrays):
             left = 0.17
             right = 0.92
 
+        # restrict maximum time interval
+        diff_time_interval = time_interval[1] - time_interval[0]
+        max_time_interval = 10000  # maximum interval in ms
+        if diff_time_interval > max_time_interval:
+            time_interval[1] = time_interval[0] + max_time_interval
+
         print(f'Plotting spike raster for interval: {time_interval} ms')
 
         # automatically compute a sample step for this figure
@@ -255,6 +261,12 @@ def instantaneous_firing_rates(circuit, all_sptrains_bintime):
             fig_width = circuit.plot_dict['fig_width_1col']
             left = 0.17
             right = 0.92
+
+        # restrict maximum time interval
+        diff_time_interval = time_interval[1] - time_interval[0]
+        max_time_interval = 10000  # maximum interval in ms
+        if diff_time_interval > max_time_interval:
+            time_interval[1] = time_interval[0] + max_time_interval
 
         print(
             f'Plotting instantaneous firing rates for interval: {time_interval} ms')
