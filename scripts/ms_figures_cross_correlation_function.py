@@ -133,8 +133,11 @@ def compute_cross_correlation_functions(
 
     # lag indices (computed with last data)
     mode = 'same'
+    # lags in units of q
     lags = ss.correlation_lags(
         data.shape[1], data.shape[1], mode=mode)
+    # convert to usual time units (ms)
+    lags *= q
     lag_inds = np.where((lags >= -lag_max) & (lags <= lag_max))
 
     # compute spike correlations and write them to file
