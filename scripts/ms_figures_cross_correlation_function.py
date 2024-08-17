@@ -90,7 +90,7 @@ def run_job(circuit, machine='hpc'):
 
 
 def compute_cross_correlation_functions(
-        num_trains=512, binsize_time_resampled=2, lag_max=25., num_jobs=1):
+        num_trains=512, binsize_time_resampled=2., lag_max=25., num_jobs=1):
     """
     Compute pairwise spike trains ignoring autocorrelations.
     """
@@ -137,7 +137,7 @@ def compute_cross_correlation_functions(
     lags = ss.correlation_lags(
         data.shape[1], data.shape[1], mode=mode)
     # convert to usual time units (ms)
-    lags *= q
+    lags = np.array(lags).astype(float) * binsize_time_resampled
     lag_inds = np.where((lags >= -lag_max) & (lags <= lag_max))
 
     # compute spike correlations and write them to file
