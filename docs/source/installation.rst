@@ -21,7 +21,7 @@ Load modules and general exports:
 
 ::
 
-   module load Stages/2023 StdEnv/2023 CMake GCC GSL jemalloc Boost ParaStationMPI Python SciPy-Stack mpi4py h5py
+   module load Stages/2024 StdEnv/2024 CMake GCC GSL jemalloc Boost ParaStationMPI Python SciPy-Stack mpi4py h5py
 
    jutil env activate -p <XXX>
    export USERNAME=<XXX>
@@ -41,6 +41,7 @@ Install further Python packages via pip:
    pip install --prefix=$PY_DIR git+https://github.com/INM-6/hybridLFPy@master
 
 Then install and source :ref:`nest-label`.
+With the modules named above, NEST 3.8 was used.
 
 Finally, navigate to the repository `mesocircuit-model` and run:
 
@@ -81,11 +82,11 @@ NEST
 
    cd $REPO_DIR
    git clone https://github.com/nest/nest-simulator.git
-   git checkout tags/v3.4
+   git checkout tags/v3.8
 
    export NEST_SRC_DIR=$REPO_DIR/nest-simulator
-   export NEST_BUILD_DIR=$SOFT_DIR/nest/nest_3_4/build
-   export NEST_INSTALL_DIR=$SOFT_DIR/nest/nest_3_4/install
+   export NEST_BUILD_DIR=$SOFT_DIR/nest/nest_3_8/build
+   export NEST_INSTALL_DIR=$SOFT_DIR/nest/nest_3_8/install
 
    mkdir -p $NEST_BUILD_DIR
    cd $NEST_BUILD_DIR
