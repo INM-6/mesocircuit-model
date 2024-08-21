@@ -521,7 +521,7 @@ def plot_cross_correlation_functions(
         pop_colors,
         lag_max_plot=None,
         scale_exp_plot=5,
-        cc_max_plot=5):
+        cc_max_plot=[-2.5, 3.5]):
     """
     """
     spcorrs = all_cross_correlation_functions
@@ -575,7 +575,7 @@ def plot_cross_correlation_functions(
                     color=color,
                     label=f'{XY[0][-1]}:{XY[1][-1]}')
 
-        ax.set_ylim(-cc_max_plot, cc_max_plot)
+        ax.set_ylim(cc_max_plot[0], cc_max_plot[1])
 
         ax.set_title(layer_labels[i])
         ax.axhline(y=0, color="grey", ls=':')
@@ -1306,10 +1306,16 @@ def plotfunc_distributions(
     """
     Inner plot function for distributions.
     """
+
+    # normalize data such that the maximum is 1
+    (counts, bins) = np.histogram(data[X], bins=bins, density=True)
+    counts_norm = np.array(counts).astype(float) / np.max(counts)
+
     ax.hist(
-        data[X],
+        bins[:-1],
         bins=bins,
-        density=True,
+        weights=counts_norm,
+        density=False,
         histtype='step',
         linewidth=matplotlib.rcParams['lines.linewidth'],
         color=pop_colors[i])
