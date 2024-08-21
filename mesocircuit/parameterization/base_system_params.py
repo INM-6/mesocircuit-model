@@ -32,9 +32,9 @@ sys_dict = {
             # number of compute nodes
             'num_nodes': 4,
             # number of MPI processes per node
-            'num_mpi_per_node': 8,
+            'num_mpi_per_node': 2,
             # number of threads per MPI process
-            'local_num_threads': 16,
+            'local_num_threads': 64,
             # wall clock time
             'wall_clock_time': '00:30:00'},
         # analysis, plotting and analysis_and_plotting all use the same
