@@ -20,7 +20,7 @@ if not os.path.isdir(output_dir):
 ################################################################################
 # Parameters.
 
-if 0:
+if 1:
     meso_exp_reference = mesoframe.MesocircuitExperiment(
         'reference', load=True)
     meso_exp_upscaled = mesoframe.MesocircuitExperiment(
@@ -32,7 +32,7 @@ if 0:
 ################################################################################
 # Reference vs. upscaled (1mm2 sampled): spike raster and statistics overview.
 
-if 0:
+if 1:
     meso_exp_reference = mesoframe.MesocircuitExperiment(
         'reference', load=True)
     meso_exp_upscaled_1mm2 = mesoframe.MesocircuitExperiment(

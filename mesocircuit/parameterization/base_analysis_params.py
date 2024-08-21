@@ -65,7 +65,7 @@ ana_dict = {
     # time interval for computing correlation coefficients (in ms).
     # a good choice is equal to the refractory time. 
     # Can also be an iterable list of time intervals.
-    'ccs_time_interval': [2., 20., 50., 200.],
+    'ccs_time_interval': [2., 5., 10., 20., 50., 100., 200.],
 
     # number of data points used in each block for the FFT
     'psd_NFFT': 512,

@@ -364,7 +364,9 @@ try:
     fname = os.path.join(
         circuit.data_dir,
         'upscaled_CCs_only',
-        '3be54d189b4f3a23c4859e0aea6b5fa8',
+        # 'upscaled_1mm2',
+        # '3be54d189b4f3a23c4859e0aea6b5fa8',
+        'fe0d63515f894c0993aa6ba5ad5b4fbb',
         'processed_data',
         'all_CCs_distances.h5')
     assert os.path.isfile(fname)
@@ -377,9 +379,10 @@ except AssertionError:
           f'for figure_08.pdf in file {fname}')
 
 with h5py.File(fname, 'r') as f:
-    for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [40, 10])):
+    for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [200, 50])):
         plot.plotfunc_CCs_distance(
             ax=ax, X=X, i=i, data=f,
+            key_ccs='ccs_2.0',
             pop_colors=plot_dict['pop_colors'],
             max_num_pairs=n_pairs,
             markersize_scale=0.4,
@@ -388,7 +391,7 @@ with h5py.File(fname, 'r') as f:
 
     # add entries with NaNs to mask
     for i, X in enumerate(['L23E', 'L23I']):
-        c = f[X]['ccs'][()]
+        c = f[X]['ccs_2.0'][()]
         mask = c != np.nan
 
         bins = np.linspace(c[mask].mean() - c[mask].std() * 1.5,
