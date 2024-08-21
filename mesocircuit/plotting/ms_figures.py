@@ -308,7 +308,7 @@ def correlation(output_dir, circuit):
     lines = [matplotlib.lines.Line2D([0], [0], color=c) for c in colors]
 
     ax.legend(lines, legend_labels, title=r'$\Delta t_{CC}$ (ms)',
-              loc='center', bbox_to_anchor=(0.9, 0.75),
+              loc='center', bbox_to_anchor=(0.92, 0.75),
               frameon=False,
               fontsize=matplotlib.rcParams['font.size'] * 0.8)
 
