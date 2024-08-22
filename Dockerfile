@@ -3,12 +3,13 @@ FROM buildpack-deps:jammy
 # ---- install .deb packages ----
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
-    cmake=3.22.1-1ubuntu1.22.04.1 \
+    cmake=3.22.1-1ubuntu1.22.04.2 \
     libmpich-dev=4.0-3 \
     mpich=4.0-3 \
     doxygen=1.9.1-2ubuntu2 \
     libboost-dev=1.74.0.3ubuntu7 \
     libgsl-dev=2.7.1+dfsg-3 \
+    libltdl-dev=2.4.6-15build2 \
     fonts-humor-sans=1.0-4 \
     cython3=0.29.28-1ubuntu3 \
     python3-dev=3.10.6-1~22.04 \
@@ -43,9 +44,11 @@ RUN pip --no-cache-dir install --no-deps mpi4py==3.1.3 && \
   pip --no-cache-dir install jupyterlab==3.4.3
 
 # ---- install NEST 3.4 ----
-RUN git clone --depth 1 -b v3.4 https://github.com/nest/nest-simulator /usr/src/nest-simulator && \
+RUN git clone --depth 1 -b v3.8 https://github.com/nest/nest-simulator /usr/src/nest-simulator && \
   mkdir nest-build && \
   cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr/local/ \
+        -Dwith-optimize="-O2" \
+        -Dwith-warning=ON \
         -Dwith-boost=ON \
         -Dwith-ltdl=ON \
         -Dwith-gsl=ON \
@@ -53,9 +56,13 @@ RUN git clone --depth 1 -b v3.4 https://github.com/nest/nest-simulator /usr/src/
         -Dwith-python=ON \
         -Dwith-mpi=ON \
         -Dwith-openmp=ON \
+        -Dwith-libneurosim=OFF \
+        -Dwith-sionlib=OFF \
+        -Dwith-music=OFF \
+        -Dwith-hdf5=OFF \
         -S /usr/src/nest-simulator \
         -B nest-build && \
-  make -j4 -C nest-build && \
+  make -C nest-build && \
   make -C nest-build install && \
   # clean up install/build files
   rm -r /usr/src/nest-simulator && \
