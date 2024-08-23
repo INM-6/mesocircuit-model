@@ -21,7 +21,7 @@ import numpy as np
 import matplotlib
 from scipy.optimize import curve_fit
 from mesocircuit.helpers.io import load_h5_to_sparse_X
-# matplotlib.use('Agg')
+
 matplotlib.rcParams.update(rcParams)
 
 # initialize MPI

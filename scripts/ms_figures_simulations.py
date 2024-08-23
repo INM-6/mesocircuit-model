@@ -18,7 +18,7 @@ import parametersets
 # correlation coefficients)
 
 
-model = 4
+model = 1
 run_jobs = True
 
 ################################################################################
@@ -26,7 +26,7 @@ run_jobs = True
 # The biological model time is in general set to 5 min, but for the evoked model
 # only to 10 s.
 
-t_sim = 15 * 60 * 1000.
+t_sim = 5 * 60 * 1000.
 t_sim_evoked = 10 * 1000.
 
 if model == 1:
@@ -35,9 +35,9 @@ if model == 1:
         parametersets.ps_dicts['microcircuit_MAMV1'])
     custom_params_reference.update({'sim_dict': {'t_sim': t_sim}})
     custom_params_reference['sys_dict']['hpc']['network'].update(
-        {'wall_clock_time': '04:00:00'}),
+        {'wall_clock_time': '02:00:00'}),
     custom_params_reference['sys_dict']['hpc'].update(
-        {'analysis_and_plotting': {'wall_clock_time': '04:00:00'}})
+        {'analysis_and_plotting': {'wall_clock_time': '02:00:00'}})
 
 if model == 2:
     name_upscaled_1mm2 = 'upscaled_1mm2'
@@ -46,9 +46,9 @@ if model == 2:
     custom_params_upscaled_1mm2.update({'ana_dict': {'extract_1mm2': True}})
     custom_params_upscaled_1mm2.update({'sim_dict': {'t_sim': t_sim}})
     custom_params_upscaled_1mm2['sys_dict']['hpc']['network'].update(
-        {'wall_clock_time': '04:00:00'}),
+        {'wall_clock_time': '02:00:00'}),
     custom_params_upscaled_1mm2['sys_dict']['hpc'].update(
-        {'analysis_and_plotting': {'wall_clock_time': '04:00:00'}})
+        {'analysis_and_plotting': {'wall_clock_time': '02:00:00'}})
 
 if model == 3:
     name_evoked = 'evoked'
@@ -65,9 +65,9 @@ if model == 4:
                      'datatypes_statistics': np.array(['CCs_distances'])}})
     custom_params_upscaled_CCs_only.update({'sim_dict': {'t_sim': t_sim}})
     custom_params_upscaled_CCs_only['sys_dict']['hpc']['network'].update(
-        {'wall_clock_time': '04:00:00'}),
+        {'wall_clock_time': '02:00:00'}),
     custom_params_upscaled_CCs_only['sys_dict']['hpc'].update(
-        {'analysis_and_plotting': {'wall_clock_time': '04:00:00'}})
+        {'analysis_and_plotting': {'wall_clock_time': '02:00:00'}})
 
 ################################################################################
 # Initialize MesocircuitExperiments for each parameter combination and inspect
@@ -113,7 +113,7 @@ if model == 4:
 if run_jobs:
     circuit.run_jobs(
         jobs=[
-            # 'network',
+            'network',
             'analysis',
             # 'analysis_and_plotting',
             # 'plotting'
