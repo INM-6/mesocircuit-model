@@ -76,14 +76,12 @@ for i, y in enumerate(PS.y):
                               'Population', 'run', 'collect'])
     ], ignore_index=True)
 
-df.to_csv('simstats.csv', index=False)
+df.to_csv(os.path.join(path_lfp_data, 'simstats.csv'), index=False)
 
-
-df = pd.read_csv('simstats.csv')
 # sum
 df['sum'] = np.round(
     df[['CachedNetwork', 'Population', 'run', 'collect']
-       ].sum(axis=1)).astype(int)
+       ].astype(float).sum(axis=1)).astype(int)
 # per second of total simulation duration
 df['per_s'] = np.round(df['sum'] /
                        (sim_dict['t_presim'] +
@@ -100,9 +98,6 @@ ax.set_xticklabels(PS.y, rotation='vertical')
 ax.set_xlabel('cell type ($y$)')
 ax.set_ylabel('time (s)')
 ax.set_title('simulation time')
-
-print(df[['y', 'per_s']])
-print(df[['per_s']].to_numpy().flatten().tolist())
 
 
 #########################################################################
@@ -156,20 +151,23 @@ fig, axes = plt.subplots(3, 1, figsize=(plot_dict['fig_width_1col'],
 T = [sim_dict['t_presim'], sim_dict['t_presim'] + 500]
 fname = os.path.join(path_lfp_data, PS.electrodeFile)
 lfpplt.plot_single_channel_lfp_data(axes[0], PS, fname,
-                                    T=T, CONTACTPOS=CONTACTPOS)
+                                    T=T, CONTACTPOS=CONTACTPOS,
+                                    report_corrcoefs=True)
 plt.setp(axes[0].get_xticklabels(), visible=False)
 
 # Figure 7C: plot CSD in same channel
 fname = os.path.join(path_lfp_data, PS.CSDFile)
 lfpplt.plot_single_channel_csd_data(axes[1], PS, fname,
-                                    T=T, CONTACTPOS=CONTACTPOS)
+                                    T=T, CONTACTPOS=CONTACTPOS,
+                                    report_corrcoefs=True)
 plt.setp(axes[1].get_xticklabels(), visible=False)
 
 # Figure 7D: plot MUA in same channel
 fname = os.path.join(path_lfp_data, PS.MUAFile)
 lfpplt.plot_single_channel_lfp_data(axes[2], PS, fname,
                                     T=T, CONTACTPOS=CONTACTPOS,
-                                    title='MUA', ylabel=r'$s^{-1}$')
+                                    title='MUA', ylabel=r'$s^{-1}$',
+                                    report_corrcoefs=True)
 axes[2].set_xlabel('time (ms)')
 
 fig.savefig(os.path.join(path_fig_files, 'signal_timeseries_I.pdf'))
@@ -377,7 +375,7 @@ except AssertionError:
           f'for figure_08.pdf in file {fname}')
 
 with h5py.File(fname, 'r') as f:
-    for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [1024, 256])):
+    for i, (X, n_pairs) in enumerate(zip(['L23E', 'L23I'], [512, 512])):
         plot.plotfunc_CCs_distance(
             ax=ax, X=X, i=i, data=f,
             key_ccs='ccs_2.0ms',
@@ -449,10 +447,10 @@ for ax, fname, title in zip(axes, fnames, titles):
     lfpplt.plot_coherence_vs_frequency(
         ax, PS, fname, title,
         colors=plt.get_cmap('viridis', 5),
-        NFFT=256,
-        noverlap=196,
+        NFFT=ana_dict['psd_NFFT'],
+        noverlap=int(ana_dict['psd_NFFT'] * 3 // 4),
         method='mlab',
-        tbin=0.5,
+        tbin=ana_dict['binsize_time'],
         TRANSIENT=sim_dict['t_presim'])
 fig.savefig(os.path.join(path_fig_files, 'signal_coherence.pdf'))
 
@@ -466,8 +464,8 @@ for ax, fname, title, fit_exp in zip(axes, fnames, titles, fit_exps):
     lfpplt.plot_coherence_vs_distance(
         ax, PS, fname,
         max_inds=np.array([2, 6, 16, 26, 38]),
-        NFFT=256, noverlap=196,
-        method='mlab', tbin=0.5,
+        NFFT=ana_dict['psd_NFFT'], noverlap=int(ana_dict['psd_NFFT'] * 3 // 4),
+        method='mlab', tbin=ana_dict['binsize_time'],
         fit_exp=fit_exp,
         phase_coherence=False)
     if fit_exp:
@@ -489,10 +487,10 @@ titles = ['LFP', 'CSD', 'MUA']
 for ax, fname, title in zip(axes, fnames, titles):
     lfpplt.plot_coherence_vs_distance_vs_frequency(
         fig, ax, PS, fname,
-        NFFT=256,
-        noverlap=196,
+        NFFT=ana_dict['psd_NFFT'],
+        noverlap=int(ana_dict['psd_NFFT'] * 3 // 4),
         method='mlab',
-        tbin=0.5,
+        tbin=ana_dict['binsize_time'],
         TRANSIENT=sim_dict['t_presim'],
         title=title
     )
@@ -512,34 +510,71 @@ fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
           os.path.join(path_lfp_data, PS.CSDFile),
           os.path.join(path_lfp_data, PS.MUAFile)]
 
+def _get_clims():
+    # assess the 
+    with h5py.File(fnames[0], 'r') as f:
+        Fs = f['srate'][()]
+        T0 = int(Fs * sim_dict['t_presim'] / 1000)  # t < T0 transient
+        shape = f['data'].shape
+        if len(shape) > 2:
+            # flatten all but last axis
+            data = f['data'][()].reshape((-1, shape[-1]))[:, T0:]
+        else:
+            data = f['data'][()][:, T0:]
+
+    data_x = data
+    data_y = data
+
+    r, c, chfreqs, mask = lfpplt.get_data_coherence(
+    data_x=data_x, data_y=data_y, srate=Fs,
+    positions_x=PS.electrodeParams['x'],
+    positions_y=PS.electrodeParams['y'],
+    tbin=ana_dict['binsize_time'], NFFT=ana_dict['psd_NFFT'], noverlap=int(ana_dict['psd_NFFT'] * 3 // 4),
+    method='mlab',
+    phase_coherence=False)
+
+    unique = np.unique(r[mask])
+    means = []
+    for d in unique:
+        if d == 0:
+            continue
+        means += [c[mask][r[mask] == d].mean(axis=0)]
+    means = np.array(means).T
+
+    return [0, means[chfreqs >= 10, :].max()]
+
+clim = _get_clims()
+
 # panels A-C
 titles = ['LFP', 'CSD', 'MUA']
 for i, (ax, fname, title) in enumerate(zip(axes[0, ], fnames, titles)):
     lfpplt.plot_coherence_vs_frequency(
         ax, PS, fname, title,
         colors=plt.get_cmap('viridis', 5),
-        NFFT=256,
-        noverlap=196,
+        NFFT=ana_dict['psd_NFFT'],
+        noverlap=int(ana_dict['psd_NFFT'] * 3 // 4),
         method='mlab',
-        tbin=0.5,
+        tbin=ana_dict['binsize_time'],
         TRANSIENT=sim_dict['t_presim'],
         show_legend=True if i == 0 else False)
     if i > 0:
         plt.setp(ax.get_yticklabels(), visible=False)
         ax.set_ylabel('')
 ax.axis('tight')
+ax.set_ylim(clim)
 
 # panels D-F
 for i, (ax, fname, title) in enumerate(zip(axes[1, :], fnames, titles)):
     lfpplt.plot_coherence_vs_distance_vs_frequency(
         fig, ax, PS, fname,
-        NFFT=256,
-        noverlap=196,
+        NFFT=ana_dict['psd_NFFT'],
+        noverlap=int(ana_dict['psd_NFFT'] * 3 // 4),
         method='mlab',
-        tbin=0.5,
+        tbin=ana_dict['binsize_time'],
         TRANSIENT=sim_dict['t_presim'],
         title=title,
-        show_cbar=(i == 2)
+        show_cbar=(i == 2),
+        clim=[clim[0], clim[1] * 0.5]
     )
     if i > 0:
         plt.setp(ax.get_yticklabels(), visible=False)
