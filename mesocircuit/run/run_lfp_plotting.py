@@ -179,7 +179,9 @@ fig = plt.figure(
         plot_dict['fig_width_2col'],
         plot_dict['fig_width_1col']))
 axes = []
-gs = GridSpec(3, 4, wspace=0.7, hspace=0.3)
+gs = GridSpec(3, 4, 
+              left=0.04, right=0.975, bottom=0.08, top=0.925, 
+              wspace=0.6, hspace=0.25)
 
 # Figure 7A
 CONTACTPOS = ((600, 600), (600, 1000), (-1400, -1400))
@@ -339,7 +341,8 @@ fig, axes = plt.subplots(
     figsize=(plot_dict['fig_width_2col'],
              plot_dict['fig_width_1col'] * 1.5),
     sharex=True)
-fig.subplots_adjust(wspace=0.15, hspace=0.15)
+fig.subplots_adjust(left=0.08, right=0.975, bottom=0.05, top=0.95, 
+                    wspace=0.15, hspace=0.15)
 axes = axes.flatten()
 
 # Fig 8 A spike train correlations
@@ -504,7 +507,8 @@ fig.savefig(
 fig, axes = plt.subplots(2, 3, figsize=(plot_dict['fig_width_2col'],
                                         plot_dict['fig_width_1col'] * 1.5),
                          sharex='row', sharey='row')
-fig.subplots_adjust(hspace=0.4, wspace=0.4)
+fig.subplots_adjust(left=0.065, right=0.925, bottom=0.05, top=0.95, 
+                    hspace=0.3, wspace=0.3)
 
 fnames = [os.path.join(path_lfp_data, PS.electrodeFile),
           os.path.join(path_lfp_data, PS.CSDFile),
