@@ -43,6 +43,16 @@ if 0:
         plot_rasters=True, plot_statistics=True)
 
 ################################################################################
+# Upscaled (1mm2 sampled): correlation.
+if 1:
+    meso_exp_upscaled_1mm2 = mesoframe.MesocircuitExperiment(
+        'upscaled_1mm2', load=True)
+    figures.correlation(
+        output_dir,
+        meso_exp_upscaled_1mm2.circuits[0])
+
+
+################################################################################
 # Evoked activity.
 
 if 0:

@@ -13,6 +13,8 @@ from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
+import matplotlib.colors as mc
+import colorsys
 from mpi4py import MPI
 import os
 import warnings
@@ -457,6 +459,148 @@ def plot_spatial_snapshots(
     return ax
 
 
+def plot_population_panels_2cols(
+        gs,
+        plotfunc,
+        populations,
+        layer_labels,
+        data2d,
+        pop_colors,
+        xlabel='',
+        ylabel='',
+        wspace=0.3,
+        **kwargs):
+    """
+    Generic function to plot 2 columns of panels for an even number of populations.
+    Multiple curves per population are possible.
+    """
+    ncols = int(np.floor(np.sqrt(len(populations))))
+    nrows = len(populations) // ncols
+    gsf = gridspec.GridSpecFromSubplotSpec(
+        nrows, ncols, subplot_spec=gs, wspace=wspace)
+
+    for i, X in enumerate(populations):
+        # select subplot
+        ax = plt.subplot(gsf[i])
+        for loc in ['top', 'right']:
+            ax.spines[loc].set_color('none')
+
+        # iterate over 2 dimensional data
+        num = len(data2d)
+        for j in np.arange(num):
+            colors = [adjust_lightness(c, 1-j/(num-1)) for c in pop_colors]
+            plotfunc(ax, X, i, data=data2d[j],
+                     pop_colors=colors, **kwargs)
+
+        layer = layer_labels[int(i / 2.)]
+        if i == 0:
+            ax.set_title('E')
+            ax.set_ylabel(ylabel + '\n' + layer)
+            ax_label = ax
+        if i % ncols == 0 and i != 0:
+            ax.set_ylabel(layer)
+
+        if i == 1:
+            ax.set_title('I')
+
+        if i % ncols > 0:
+            ax.set_yticklabels([])
+
+        if i >= len(populations) - 2:
+            ax.set_xlabel(xlabel)
+        else:
+            ax.set_xticklabels([])
+
+    return ax_label
+
+
+def plot_cross_correlation_functions(
+        gs,
+        layer_labels,
+        all_cross_correlation_functions,
+        pop_colors,
+        lag_max_plot=None,
+        scale_exp_plot=5,
+        cc_max_plot=[-2.5, 3.5]):
+    """
+    """
+    spcorrs = all_cross_correlation_functions
+
+    # average cross-correlation functions
+    spcorrs_mean = {}
+    for X, Y in zip(['L23E', 'L23E', 'L23I',
+                    'L4E', 'L4E', 'L4I',
+                     'L5E', 'L5E', 'L5I',
+                     'L6E', 'L6E', 'L6I'],
+                    ['L23E', 'L23I', 'L23I',
+                    'L4E', 'L4I', 'L4I',
+                     'L5E', 'L5I', 'L5I',
+                     'L6E', 'L6I', 'L6I']):
+
+        spcorrs_mean[f'{X}:{Y}'] = spcorrs[f'{X}:{Y}'][()].mean(axis=0)
+
+    # which time lags to plot
+    lag_times = np.array(spcorrs['lag_times'])
+    if not lag_max_plot:
+        lag_max = lag_times[-1]
+    else:
+        lag_max = lag_max_plot
+    inds = (lag_times >= -lag_max) & (lag_times <= lag_max)
+
+    gsf = gridspec.GridSpecFromSubplotSpec(
+        2, 2, subplot_spec=gs, hspace=0.5, wspace=0.5)
+
+    for i, L in enumerate(['L23', 'L4', 'L5', 'L6']):
+        ax = plt.subplot(gsf[i])
+
+        for loc in ['top', 'right']:
+            ax.spines[loc].set_color('none')
+
+        for j, key in enumerate([f'{L}E:{L}E', f'{L}E:{L}I', f'{L}I:{L}I']):
+            XY = key.split(':')
+            if XY[0][-1] == 'E' and XY[1][-1] == 'E':
+                color = pop_colors[::2][i]
+            elif XY[0][-1] == 'I' and XY[1][-1] == 'I':
+                color = pop_colors[1::2][i]
+            else:
+                color = 'k'
+
+            if L == 'L23':
+                label = 'L2/3' + XY[0][-1] + ':' + 'L2/3' + XY[1][-1]
+            else:
+                label = key
+
+            ax.plot(lag_times[inds],
+                    spcorrs_mean[key][inds] * 10**(scale_exp_plot),
+                    color=color,
+                    label=f'{XY[0][-1]}:{XY[1][-1]}')
+
+        ax.set_ylim(cc_max_plot[0], cc_max_plot[1])
+
+        ax.set_title(layer_labels[i])
+        ax.axhline(y=0, color="grey", ls=':')
+        ax.axvline(x=0, color="grey", ls=':')
+        ax.legend(frameon=False,
+                  loc='center', bbox_to_anchor=(1., 0.8),
+                  fontsize=matplotlib.rcParams['font.size'] * 0.8)
+
+        if i == 0:
+            ax_label = ax
+        if i < 2:
+            ax.set_xticklabels([])
+        if i >= 2:
+            ax.set_xlabel('time lag (ms)')
+
+        ylabel = '$CC^s$'
+        if scale_exp_plot != 1:
+            ylabel += r' ($10^{' + f'{-scale_exp_plot}' + r'}$)'
+
+        if i % 2 == 0:
+            ax.set_ylabel(ylabel)
+
+    return ax_label
+
+
 def plot_crosscorrelation_funcs_thalamic_pulses(
         gs,
         all_CCfuncs_thalamic_pulses,
@@ -601,7 +745,7 @@ def plot_crosscorrelation_funcs_thalamic_pulses(
         if i == 0:
             ax.set_title('E')
             ax.set_ylabel('distance (mm)\n' + layer)
-            ax_return = ax
+            ax_label = ax
         if i % ncols == 0 and i != 0:
             ax.set_ylabel(layer)
 
@@ -638,7 +782,7 @@ def plot_crosscorrelation_funcs_thalamic_pulses(
                     cb = fig.colorbar(
                         im, cax=cax, orientation='vertical')
                 cb.set_label(r'$CC^\nu$', labelpad=0.1)
-    return ax_return
+    return ax_label
 
 
 def plot_theory_overview(
@@ -875,7 +1019,8 @@ def plot_layer_panels(
                 else:
                     y0 = 0
 
-                ax.set_ylim(np.min([ymin, ymin1, y0]), np.max([ymax, ymax1]) * 1.1)
+                ax.set_ylim(np.min([ymin, ymin1, y0]),
+                            np.max([ymax, ymax1]) * 1.1)
 
         if layer_count == len(layer_labels) - 1:
             ax.set_xlabel(xlabel)
@@ -898,7 +1043,7 @@ def plot_population_panels(
         yticklabels=True,
         **kwargs):
     """
-    Generic function to plot four vertically arranged panels, one for each
+    Generic function to plot vertically arranged panels, one for each
     population.
     """
     num_pops = len(populations)
@@ -1161,10 +1306,16 @@ def plotfunc_distributions(
     """
     Inner plot function for distributions.
     """
+
+    # normalize data such that the maximum is 1
+    (counts, bins) = np.histogram(data[X], bins=bins, density=True)
+    counts_norm = np.array(counts).astype(float) / np.max(counts)
+
     ax.hist(
-        data[X],
+        bins[:-1],
         bins=bins,
-        density=True,
+        weights=counts_norm,
+        density=False,
         histtype='step',
         linewidth=matplotlib.rcParams['lines.linewidth'],
         color=pop_colors[i])
@@ -1289,6 +1440,18 @@ def plotfunc_theory_power_spectra(ax, X, i, data, pop_colors):
     ax.set_yscale('log')
     ax.xaxis.set_major_locator(MaxNLocator(nbins=3))
     return
+
+
+def adjust_lightness(color, amount=0.5):
+    """
+    Function from: https://stackoverflow.com/questions/37765197/darken-or-lighten-a-color-in-matplotlib
+    """
+    try:
+        c = mc.cnames[color]
+    except:
+        c = color
+    c = colorsys.rgb_to_hls(*mc.to_rgb(c))
+    return colorsys.hls_to_rgb(c[0], max(0, min(1, amount * c[1])), c[2])
 
 
 def colorbar(
