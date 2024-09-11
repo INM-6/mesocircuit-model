@@ -4,7 +4,7 @@
 Definition of default figures plotted with plotting.py.
 """
 
-from mesocircuit.plotting import plotting
+from mesocircuit.plotting import plotting as plot
 from mesocircuit.parameterization import helpers_analysis as helpana
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
@@ -32,7 +32,7 @@ def parameters(circuit):
     axes = []
     if 'full_num_synapses' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_matrix(
+        plot.plot_parameters_matrix(
             axes[-1],
             data=circuit.net_dict['full_num_synapses'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -42,7 +42,7 @@ def parameters(circuit):
 
     if 'full_indegrees' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_matrix(
+        plot.plot_parameters_matrix(
             axes[-1],
             data=circuit.net_dict['full_indegrees'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -52,7 +52,7 @@ def parameters(circuit):
 
     if 'beta' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_matrix(
+        plot.plot_parameters_matrix(
             axes[-1],
             data=circuit.net_dict['beta'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -61,7 +61,7 @@ def parameters(circuit):
 
     if 'K_area_scaling' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_matrix(
+        plot.plot_parameters_matrix(
             axes[-1],
             data=circuit.net_dict['K_area_scaling'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -70,7 +70,7 @@ def parameters(circuit):
 
     if 'delay_offset_matrix' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_matrix(
+        plot.plot_parameters_matrix(
             axes[-1],
             data=circuit.net_dict['delay_offset_matrix'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -79,7 +79,7 @@ def parameters(circuit):
 
     if 'prop_speed_matrix' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_matrix(
+        plot.plot_parameters_matrix(
             axes[-1],
             data=circuit.net_dict['prop_speed_matrix'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -88,7 +88,7 @@ def parameters(circuit):
 
     if 'delay_lin_eff_mean' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_matrix(
+        plot.plot_parameters_matrix(
             axes[-1],
             data=circuit.net_dict['delay_lin_eff_mean'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -97,7 +97,7 @@ def parameters(circuit):
 
     if 'delay_lin_eff_std' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_matrix(
+        plot.plot_parameters_matrix(
             axes[-1],
             data=circuit.net_dict['delay_lin_eff_std'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -106,7 +106,7 @@ def parameters(circuit):
 
     if 'full_weight_matrix_mean' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_matrix(
+        plot.plot_parameters_matrix(
             axes[-1],
             data=circuit.net_dict['full_weight_matrix_mean'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -115,7 +115,7 @@ def parameters(circuit):
 
     if 'p0_raw' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_matrix(
+        plot.plot_parameters_matrix(
             axes[-1],
             data=circuit.net_dict['p0_raw'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -125,7 +125,7 @@ def parameters(circuit):
 
     if 'full_num_neurons' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_vector(
+        plot.plot_parameters_vector(
             axes[-1],
             data=circuit.net_dict['full_num_neurons'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -134,7 +134,7 @@ def parameters(circuit):
 
     if 'full_ext_indegrees' in circuit.net_dict:
         axes.append(plt.subplot(gs[len(axes)]))
-        plotting.plot_parameters_vector(
+        plot.plot_parameters_vector(
             axes[-1],
             data=circuit.net_dict['full_ext_indegrees'],
             pop_labels=circuit.plot_dict['pop_labels'],
@@ -144,9 +144,9 @@ def parameters(circuit):
     labels = [
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N']
     for i, ax in enumerate(axes):
-        plotting.add_label(ax, labels[i])
+        plot.add_label(ax, labels[i])
 
-    plotting.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+    plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
                  'parameters')
 
     plt.rcParams.update({'font.size': orig_fontsize})
@@ -214,7 +214,7 @@ def raster(circuit, all_sptrains, all_pos_sorting_arrays):
         fig = plt.figure(figsize=(fig_width, 5.))
         gs = gridspec.GridSpec(1, 1)
         gs.update(top=0.98, bottom=0.1, left=left, right=right)
-        ax = plotting.plot_raster(
+        ax = plot.plot_raster(
             gs[0, 0],
             all_sptrains,
             all_pos_sorting_arrays,
@@ -225,7 +225,7 @@ def raster(circuit, all_sptrains, all_pos_sorting_arrays):
             time_interval,
             raster_sample_step)
 
-        plotting.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+        plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
                      f'raster_{int(time_interval[0])}-{int(time_interval[1])}ms',
                      eps_conv=True)
     return
@@ -272,9 +272,9 @@ def instantaneous_firing_rates(circuit, all_sptrains_bintime):
         fig = plt.figure(figsize=(fig_width, 5.))
         gs = gridspec.GridSpec(1, 1)
         gs.update(top=0.95, bottom=0.1, left=left, right=right)
-        ax = plotting.plot_population_panels(
+        ax = plot.plot_population_panels(
             gs[0, 0],
-            plotfunc=plotting.plotfunc_instantaneous_rates,
+            plotfunc=plot.plotfunc_instantaneous_rates,
             populations=pops,
             xlabel='time (ms)',
             ylabel=r'$FR$ (spikes/s)',
@@ -284,7 +284,7 @@ def instantaneous_firing_rates(circuit, all_sptrains_bintime):
             time_step=circuit.ana_dict['binsize_time'],
             time_interval=time_interval)
 
-        plotting.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+        plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
                      f'instantaneous_rates_{int(time_interval[0])}-{int(time_interval[1])}ms')
     return
 
@@ -322,13 +322,13 @@ def statistics_overview(circuit, all_FRs, all_LVs, all_CCs_distances, all_PSDs):
     fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 4))
     gs = gridspec.GridSpec(1, 1)
     gs.update(left=0.1, right=0.98, bottom=0.15, top=0.95)
-    axes = plotting.plot_statistics_overview(
+    axes = plot.plot_statistics_overview(
         gs[0], all_FRs, all_LVs, all_CCs, all_PSDs, circuit.ana_dict['Y'], circuit.plot_dict)
     labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
     for i, label in enumerate(labels):
-        plotting.add_label(axes[i], label)
+        plot.add_label(axes[i], label)
 
-    plotting.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+    plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
                  'statistics_overview')
     return
 
@@ -349,9 +349,9 @@ def corrcoef_distance(circuit, all_CCs_distances):
         fig = plt.figure(figsize=(circuit.plot_dict['fig_width_1col'], 5.))
         gs = gridspec.GridSpec(1, 1)
         gs.update(top=0.98, bottom=0.09, left=0.17, right=0.98)
-        ax = plotting.plot_layer_panels(
+        ax = plot.plot_layer_panels(
             gs[0, 0],
-            plotfunc=plotting.plotfunc_CCs_distance,
+            plotfunc=plot.plotfunc_CCs_distance,
             populations=circuit.ana_dict['Y'],
             layer_labels=circuit.plot_dict['layer_labels'],
             pop_colors=circuit.plot_dict['pop_colors'],
@@ -366,13 +366,13 @@ def corrcoef_distance(circuit, all_CCs_distances):
         for i, ccs_time_interval in enumerate(iter(circuit.ana_dict['ccs_time_interval'])):
             key_ccs = f'ccs_{ccs_time_interval}'
             fig = _corrcoef_distance(key_ccs)
-            plotting.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+            plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
                     f'corrcoef_distance_{key_ccs}ms')
     except TypeError as _:
         ccs_time_interval = circuit.ana_dict['ccs_time_interval']
         key_ccs = f'ccs_{ccs_time_interval}'
         fig = _corrcoef_distance(key_ccs)
-        plotting.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+        plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
                     f'corrcoef_distance_{key_ccs}ms')
     return
 
@@ -403,7 +403,7 @@ def spatial_snapshots(circuit, all_inst_rates_bintime_binspace):
         fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 3.))
         gs = gridspec.GridSpec(1, 1)
         gs.update(left=0.09, right=0.97, top=1, bottom=0.1)
-        ax = plotting.plot_spatial_snapshots(
+        ax = plot.plot_spatial_snapshots(
             gs[0, 0],
             all_inst_rates_bintime_binspace,
             pops,
@@ -415,7 +415,7 @@ def spatial_snapshots(circuit, all_inst_rates_bintime_binspace):
             start_time=start_time,
             cbar_pad=0.5)
 
-        plotting.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+        plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
                      f'spatial_snapshots_{int(start_time)}ms')
     return
 
@@ -443,7 +443,7 @@ def crosscorrelation_funcs_thalamic_pulses(circuit, all_CCfuncs_thalamic_pulses)
     fig = plt.figure(figsize=(circuit.plot_dict['fig_width_1col'], 4.5))
     gs = gridspec.GridSpec(1, 1)
     gs.update(left=0.22, right=0.95, top=0.93, bottom=0.22)
-    ax = plotting.plot_crosscorrelation_funcs_thalamic_pulses(
+    ax = plot.plot_crosscorrelation_funcs_thalamic_pulses(
         gs[0, 0],
         all_CCfuncs_thalamic_pulses,
         circuit.ana_dict['Y'],
@@ -451,7 +451,7 @@ def crosscorrelation_funcs_thalamic_pulses(circuit, all_CCfuncs_thalamic_pulses)
         circuit.net_dict['th_radius'],
         circuit.plot_dict['layer_labels'])
 
-    plotting.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+    plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
                  'crosscorrelation_funcs_thalamic_pulses')
     return
 
@@ -482,13 +482,13 @@ def theory_overview(circuit, working_point, frequencies, power, sensitivity):
     fig = plt.figure(figsize=(circuit.plot_dict['fig_width_2col'], 10))
     gs = gridspec.GridSpec(1, 1)
     gs.update(left=0.1, right=0.98, bottom=0.05, top=0.98)
-    axes = plotting.plot_theory_overview(
+    axes = plot.plot_theory_overview(
         gs[0], working_point, frequencies, power, sensitivity,
         circuit.ana_dict['Y'], circuit.plot_dict)
     labels = ['A', 'B', 'C', 'D', 'E']
     for i, label in enumerate(labels):
-        plotting.add_label(axes[i], label)
+        plot.add_label(axes[i], label)
 
-    plotting.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
+    plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
                  'theory_overview')
     return
