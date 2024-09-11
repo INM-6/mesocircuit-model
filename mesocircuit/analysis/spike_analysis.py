@@ -831,14 +831,14 @@ def _compute_statistics_X(i, X, circuit):
                     for i, ccs_time_interval in enumerate(iter(circuit.ana_dict['ccs_time_interval'])):
                         dataset.update(_compute_ccs_distances(
                             X, circuit,
-                            d['sptrains_X'], 
+                            d['sptrains_X'],
                             circuit.sim_dict['sim_resolution'],
                             ccs_time_interval,
                             d['positions_X']))
                 except TypeError as _:
                     dataset = _compute_ccs_distances(
                         X, circuit,
-                        d['sptrains_X'], 
+                        d['sptrains_X'],
                         circuit.sim_dict['sim_resolution'],
                         circuit.ana_dict['ccs_time_interval'],
                         d['positions_X'])
