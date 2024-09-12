@@ -237,6 +237,7 @@ def reference_vs_upscaled(output_dir, ref_circuit, ups_circuit,
 
     return
 
+
 def correlation(output_dir, circuit):
     """
     Figure of correlation structure.
