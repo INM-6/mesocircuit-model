@@ -23,7 +23,7 @@ import numpy as np
 import matplotlib
 from scipy.optimize import curve_fit
 from mesocircuit.helpers.io import load_h5_to_sparse_X
-matplotlib.use('Agg')
+
 matplotlib.rcParams.update(rcParams)
 
 # initialize MPI
@@ -1368,7 +1368,7 @@ def plotfunc_CCs_distance(
         return
 
     distances = data[X]['distances_mm'][:max_num_pairs]
-    ccs = data[X][key_ccs + 'ms'][:max_num_pairs]
+    ccs = data[X][key_ccs][:max_num_pairs]
 
     # loop for reducing zorder-bias
     blocksize = int(len(distances) / nblocks)
@@ -1517,7 +1517,7 @@ def savefig(
     data_dir_circuit
         Path to data directory
     extension
-        File extension.
+        file extension
     filename
         Name of the file.
     eps_conv

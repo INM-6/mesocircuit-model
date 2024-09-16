@@ -4,14 +4,12 @@
 Definition of default figures plotted with plotting.py.
 """
 
-import mesocircuit.plotting.plotting as plot
+from mesocircuit.plotting import plotting as plot
 from mesocircuit.parameterization import helpers_analysis as helpana
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import h5py
-import matplotlib
-matplotlib.use('Agg')
 
 
 def parameters(circuit):
@@ -313,14 +311,11 @@ def statistics_overview(circuit, all_FRs, all_LVs, all_CCs_distances, all_PSDs):
     for X in all_CCs_distances:
         if isinstance(all_CCs_distances[X], h5py._hl.group.Group):
             try:
-                iter(circuit.ana_dict['ccs_time_interval'])
-                ccs_time_interval = circuit.ana_dict['ccs_time_interval'][0]
-                all_CCs[X] = all_CCs_distances[X][f'ccs_{ccs_time_interval}ms']
-
-                print('CCs in statistics_overview use only first value in list of time intervals: ' +
-                      f'{ccs_time_interval}')
-            except TypeError:
-                all_CCs[X] = all_CCs_distances[X][f'ccs_{circuit.ana_dict["ccs_time_interval"]}ms']
+                for i, ccs_time_interval in enumerate(iter(circuit.ana_dict['ccs_time_interval'])):
+                    all_CCs[X] = all_CCs_distances[X][f'ccs_{ccs_time_interval}']
+                    break  # plot statistics overview using only first value in list for now
+            except TypeError as _:
+                all_CCs[X] = all_CCs_distances[X][f'ccs_{circuit.ana_dict["ccs_time_interval"]}']
         else:
             all_CCs[X] = np.array([])
 
@@ -365,20 +360,20 @@ def corrcoef_distance(circuit, all_CCs_distances):
             xlabel='distance (mm)',
             ylabel=r'$CC$')
         return fig
-
+    
     try:
-        # one figure per time interval if a list is provided
+        # stats plot for different time bins 
         for i, ccs_time_interval in enumerate(iter(circuit.ana_dict['ccs_time_interval'])):
             key_ccs = f'ccs_{ccs_time_interval}'
             fig = _corrcoef_distance(key_ccs)
             plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
-                         f'corrcoef_distance_{key_ccs}ms')
+                    f'corrcoef_distance_{key_ccs}ms')
     except TypeError as _:
         ccs_time_interval = circuit.ana_dict['ccs_time_interval']
         key_ccs = f'ccs_{ccs_time_interval}'
         fig = _corrcoef_distance(key_ccs)
         plot.savefig(circuit.data_dir_circuit, circuit.plot_dict['extension'],
-                     f'corrcoef_distance_{key_ccs}ms')
+                    f'corrcoef_distance_{key_ccs}ms')
     return
 
 

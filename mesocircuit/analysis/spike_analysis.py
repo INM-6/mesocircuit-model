@@ -951,7 +951,7 @@ def _compute_ccs_distances(X, circuit, sptrains_X, binsize_time, ccs_time_interv
     binsize_time
         Temporal resolution of sptrains_X (in ms).
     ccs_time_interval
-        Temporal bin size(s) for correlation coefficients calculation (in ms).
+        Temporal bin size for correlation coefficients calculation (in ms)
     positions_X
         Positions of population X.
     """
@@ -1018,7 +1018,7 @@ def _compute_ccs_distances(X, circuit, sptrains_X, binsize_time, ccs_time_interv
                            extent=[circuit.net_dict['extent']] * 2,
                            edge_wrap=True)
 
-    ccs_dic = {f'ccs_{ccs_time_interval}ms': ccs,
+    ccs_dic = {f'ccs_{ccs_time_interval}': ccs,
                'distances_mm': distances}
     return ccs_dic
 

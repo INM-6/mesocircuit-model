@@ -462,7 +462,8 @@ def layout_illustration(
 def plot_single_channel_lfp_data(
     ax, PS, fname, title='LFP', ylabel=r'$\Phi$ (mV)', T=[
         500, 550], CONTACTPOS=(
-            (-200, 200), (200, -200)), subtract_mean=True):
+            (-200, 200), (200, -200)), subtract_mean=True, 
+            report_corrcoefs=False):
     '''
     Arguments
     ---------
@@ -476,6 +477,8 @@ def plot_single_channel_lfp_data(
         x and y coordinate of electrode contact points in PS.electrodeParams
     subtract_mean: bool
         if True, subtract mean value trace
+    report_corrcoefs: bool
+        if True, print pairwise correlations in axes title
     '''
     with h5py.File(fname, 'r') as f:
         srate = f['srate'][()]
@@ -491,6 +494,20 @@ def plot_single_channel_lfp_data(
                 ax.plot(tvec, data[tinds] - data[tinds].mean(), f'C{i}')
             else:
                 ax.plot(tvec, data[tinds], f'C{i}')
+    
+    if report_corrcoefs:
+        with h5py.File(fname, 'r') as f:
+            tind = int(T[0] * srate / 1000)
+            CONTACTS = []
+            for i, CPOS in enumerate(CONTACTPOS):
+                CONTACT = (PS.electrodeParams['x'] == CPOS[0]
+                            ) & (PS.electrodeParams['y'] == CPOS[1])
+                CONTACTS += np.where(CONTACT)
+            CONTACTS = np.array(CONTACTS).ravel()
+            data = f['data'][()][CONTACTS, tind:]
+        cc = np.corrcoef(data)
+        print(f'{title} correlations', CONTACTS + 1, CONTACTPOS, cc)
+    #else:
     ax.set_title(title)
     ax.set_ylabel(ylabel)
     remove_axis_junk(ax)
@@ -501,7 +518,8 @@ def plot_single_channel_csd_data(
         title='CSD',
         ylabel=r'CSD ($\frac{\mathrm{nA}}{\mathrm{µm}^3}$)',
         T=[500, 550],
-        CONTACTPOS=((-200, 200), (200, -200))):
+        CONTACTPOS=((-200, 200), (200, -200)),
+        report_corrcoefs=False):
     # CSD bin edges
     X, Y, Z = np.meshgrid(PS.CSDParams['x'],
                           PS.CSDParams['y'],
@@ -523,6 +541,16 @@ def plot_single_channel_csd_data(
             CONTACT = (Xmid == CPOS[0]) & (Ymid == CPOS[1])
             data = f['data'][()][CONTACT, ].flatten()
             ax.plot(tvec, data[tinds] - data[tinds].mean(), f'C{i}')
+    if report_corrcoefs:
+        datas = []
+        with h5py.File(fname, 'r') as f:
+            tind = int(T[0] * srate / 1000)
+            for i, CPOS in enumerate(CONTACTPOS):
+                CONTACT = (Xmid == CPOS[0]) & (Ymid == CPOS[1])
+                datas += [f['data'][()][CONTACT, ].flatten()[tind:]]
+        cc = np.corrcoef(np.array(datas))
+        print(f'{title} correlations', cc)
+    
     ax.set_title(title)
     ax.set_ylabel(ylabel)
     remove_axis_junk(ax)
@@ -1244,7 +1272,8 @@ def plot_coherence_vs_distance_vs_frequency(
         method='mlab',
         phase_coherence=False,
         title='LFP',
-        show_cbar=True
+        show_cbar=True,
+        clim=[0, 0.25]
 ):
 
     with h5py.File(fname, 'r') as f:
@@ -1279,8 +1308,8 @@ def plot_coherence_vs_distance_vs_frequency(
         unique * 1E-3,  # [µm] -> [mm] unit conversion
         chfreqs,
         means,
-        vmin=0,
-        vmax=0.25,
+        vmin=clim[0],
+        vmax=clim[1],
         cmap='viridis',
         shading='auto')
 
