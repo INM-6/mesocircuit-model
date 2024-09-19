@@ -1018,7 +1018,7 @@ def _compute_ccs_distances(X, circuit, sptrains_X, binsize_time, ccs_time_interv
                            extent=[circuit.net_dict['extent']] * 2,
                            edge_wrap=True)
 
-    ccs_dic = {f'ccs_{ccs_time_interval}': ccs,
+    ccs_dic = {f'ccs_{ccs_time_interval}ms': ccs,
                'distances_mm': distances}
     return ccs_dic
 

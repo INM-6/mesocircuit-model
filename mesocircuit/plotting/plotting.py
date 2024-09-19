@@ -1368,7 +1368,7 @@ def plotfunc_CCs_distance(
         return
 
     distances = data[X]['distances_mm'][:max_num_pairs]
-    ccs = data[X][key_ccs][:max_num_pairs]
+    ccs = data[X][key_ccs + 'ms'][:max_num_pairs]
 
     # loop for reducing zorder-bias
     blocksize = int(len(distances) / nblocks)
