@@ -312,10 +312,10 @@ def statistics_overview(circuit, all_FRs, all_LVs, all_CCs_distances, all_PSDs):
         if isinstance(all_CCs_distances[X], h5py._hl.group.Group):
             try:
                 for i, ccs_time_interval in enumerate(iter(circuit.ana_dict['ccs_time_interval'])):
-                    all_CCs[X] = all_CCs_distances[X][f'ccs_{ccs_time_interval}']
+                    all_CCs[X] = all_CCs_distances[X][f'ccs_{ccs_time_interval}ms']
                     break  # plot statistics overview using only first value in list for now
             except TypeError as _:
-                all_CCs[X] = all_CCs_distances[X][f'ccs_{circuit.ana_dict["ccs_time_interval"]}']
+                all_CCs[X] = all_CCs_distances[X][f'ccs_{circuit.ana_dict["ccs_time_interval"]}ms']
         else:
             all_CCs[X] = np.array([])
 
