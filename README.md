@@ -6,6 +6,8 @@
 <img src="docs/source/_static/images/network_model_sketch_upscaled.png" alt="Mesocircuit network model sketch" width="300"/>
 </p>
 
+## Background
+
 Mesoscopic, layered cortical network model with distance-dependent connectivity for spiking activity and local field potentials.
 
 This repository provides the functionality to define, simulate, and analyze network models such as the mesocircuit model  in a self-contained framework.
@@ -23,7 +25,7 @@ and contribute to source code or documentation via
 
 If you (re)use the code or otherwise find this resource useful, please respect the GPL-3 [LICENSE](https://github.com/INM-6/mesocircuit-model/blob/master/LICENSE.rst) agreement and cite the corresponding scientific publication:
 
-    Johanna Senk, Espen Hagen, Sacha J van Albada, Markus Diesmann, Reconciliation of weak pairwise spike–train correlations and highly coherent local field potentials across space, Cerebral Cortex, Volume 34, Issue 10, October 2024, bhae405, https://doi.org/10.1093/cercor/bhae405
+- Johanna Senk, Espen Hagen, Sacha J van Albada, Markus Diesmann, Reconciliation of weak pairwise spike–train correlations and highly coherent local field potentials across space, Cerebral Cortex, Volume 34, Issue 10, October 2024, bhae405, https://doi.org/10.1093/cercor/bhae405
 
 BiBTeX entry:
 
@@ -47,7 +49,9 @@ BiBTeX entry:
 
 The older preprint version of the publication is available on arXiv:
 
-    Johanna Senk, Espen Hagen, Sacha J van Albada, Markus Diesmann, Reconciliation of weak pairwise spike-train correlations and highly coherent local field potentials across space, arXiv:1805.10235v3 [q-bio.NC], 2024, https://doi.org/10.48550/ARXIV.1805.10235
+- Johanna Senk, Espen Hagen, Sacha J van Albada, Markus Diesmann, Reconciliation of weak pairwise spike-train correlations and highly coherent local field potentials across space, arXiv:1805.10235v3 [q-bio.NC], 2024, https://doi.org/10.48550/ARXIV.1805.10235
+
+Bibtex entry:
 
 ```bibtex
 @article{Senk24_arxiv_v3,
@@ -63,7 +67,7 @@ The older preprint version of the publication is available on arXiv:
 
 The project's source code can be referenced as:
 
-    Senk, J., & Hagen, E. (2024). Mesocircuit Model (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.13798936
+- Senk, J., & Hagen, E. (2024). Mesocircuit Model (v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.13798936
 
 BiBTeX entry:
 
@@ -85,7 +89,7 @@ BiBTeX entry:
 
 The simulated data and codes to reproduce the figures for the published paper can be downloaded from Zenodo.org via
 
-    Senk, J., & Hagen, E. (2024). Codes and data upload for Mesocircuit Model project [Data set]. In arXiv (v1.0.0, pp. 1805.10235v3). Zenodo. https://doi.org/10.5281/zenodo.13799066
+- Senk, J., & Hagen, E. (2024). Codes and data upload for Mesocircuit Model project [Data set]. In arXiv (v1.0.0, pp. 1805.10235v3). Zenodo. https://doi.org/10.5281/zenodo.13799066
 
 
 Bibtex entry:
