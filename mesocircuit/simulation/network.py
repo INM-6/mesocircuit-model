@@ -529,11 +529,11 @@ class Network:
 
                     # specify synapse parameters
                     if self.net_dict['weight_matrix_mean'][i][j] < 0:
-                        w_min = np.NINF
+                        w_min = -np.inf
                         w_max = 0.0
                     else:
                         w_min = 0.0
-                        w_max = np.Inf
+                        w_max = np.inf
 
                     if self.net_dict['delay_type'] == 'normal':
                         delay_param = nest.random.normal(
@@ -562,7 +562,7 @@ class Network:
                             # https://nest-simulator.readthedocs.io/en/latest/nest_behavior
                             # /random_numbers.html#rounding-effects-when-randomizing-delays
                             min=nest.resolution - 0.5 * nest.resolution,
-                            max=np.Inf)}
+                            max=np.inf)}
 
                     # repeat_connect is 1 apart from rule pairwise_bernoulli
                     # ('connect_method' == 'distr_indegree_exp').
